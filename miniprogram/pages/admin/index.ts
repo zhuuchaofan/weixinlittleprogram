@@ -2,6 +2,18 @@ import { uiCopy } from '../../config/ui-copy';
 import { rsvpService, isMock } from '../../services/rsvp';
 import { friendlyError } from '../../utils/validate';
 import type { Dashboard, RsvpRecord } from '../../models';
+function formatUpdatedAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const pad = (number: number) => String(number).padStart(2, '0');
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+function formatRecords(records: RsvpRecord[]): RsvpRecord[] {
+  return records.map((record) => ({
+    ...record,
+    updatedAt: formatUpdatedAt(record.updatedAt),
+  }));
+}
 Page({
   data: {
     copy: uiCopy.admin,
@@ -33,7 +45,11 @@ Page({
     });
     try {
       const result = await rsvpService.dashboard();
-      this.setData({ ...result, authorized: true });
+      this.setData({
+        ...result,
+        records: formatRecords(result.records),
+        authorized: true,
+      });
     } catch (error) {
       this.setData({ error: friendlyError(error) });
     } finally {
@@ -47,7 +63,7 @@ Page({
       const result = await rsvpService.dashboard(this.data.nextCursor);
       this.setData({
         ...result,
-        records: [...this.data.records, ...result.records],
+        records: [...this.data.records, ...formatRecords(result.records)],
       });
     } catch (error) {
       this.setData({

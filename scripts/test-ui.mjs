@@ -112,6 +112,10 @@ try {
     await page.waitForFunction(() => window.__page.data.saved);
     await visit('admin');
     assert.equal(await page.locator('.guest').count(), 1);
+    assert.match(
+      await page.locator('.record-time').innerText(),
+      /^提交于 \d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2}$/,
+    );
     assert.equal(
       await page.evaluate(() => window.__page.data.summary.guests),
       3,

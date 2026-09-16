@@ -1,5 +1,7 @@
-.footer { margin-top: 68rpx; padding: 36rpx 0 calc(30rpx + env(safe-area-inset-bottom)); border-top: 1rpx solid #d9ccbb; color: #736354; text-align: center; }
-.signature { font-size: 24rpx; letter-spacing: 2rpx; }
-.links { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 14rpx; }
-.links navigator, .links button { font: inherit; font-size: 24rpx; color: #736354; padding: 22rpx; line-height: 1.5; margin: 0; background: transparent; min-height: 88rpx; border: 0; text-decoration: none; }
+.footer { margin-top: 68rpx; padding: 34rpx 0 calc(24rpx + env(safe-area-inset-bottom)); border-top: 1rpx solid #d9ccbb; color: #736354; text-align: center; }
+.signature { font-size: 24rpx; letter-spacing: 1rpx; line-height: 1.6; }
+.cats { margin-top: 6rpx; font-size: 20rpx; letter-spacing: 3rpx; color: #9a8876; }
+.links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 22rpx; border-top: 1rpx solid #e5dacb; }
+.links navigator, .links button { display: flex; justify-content: center; align-items: center; min-width: 0; min-height: 78rpx; margin: 0; padding: 14rpx 6rpx; font: inherit; font-size: 23rpx; color: #736354; line-height: 1.4; background: transparent; border: 0; text-decoration: none; }
+.links navigator + navigator, .links button + navigator { border-left: 1rpx solid #e5dacb; }
 .links button::after { border: 0; }

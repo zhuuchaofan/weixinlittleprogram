@@ -103,6 +103,7 @@ export const uiCopy = {
     text17: '遥寄祝福',
     text18: '没有备注',
     text19: '读取更多登记',
+    text20: '提交于 ',
   },
   privacy: {
     text01: '认真对待每一份信任',
