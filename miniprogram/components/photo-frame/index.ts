@@ -7,6 +7,7 @@ Component({
     placeholder: { type: Boolean, value: false },
     compact: { type: Boolean, value: false },
     ratio: { type: String, value: 'portrait' },
+    adaptive: { type: Boolean, value: true },
   },
   data: {
     copy: uiCopy.photoFrame,
@@ -16,10 +17,18 @@ Component({
     attempt: 0,
     visible: true,
     failureHint: '',
+    frameStyle: '',
+    resolvedRatio: '',
   },
   observers: {
     src(source: string) {
-      this.setData({ failed: false, loaded: false, failureHint: '' });
+      this.setData({
+        failed: false,
+        loaded: false,
+        failureHint: '',
+        frameStyle: '',
+        resolvedRatio: '',
+      });
       if (!source) {
         this.setData({ displaySrc: '' });
         return;
@@ -38,8 +47,31 @@ Component({
         if (this.data.src === source) this.error('link');
       }
     },
-    load() {
-      this.setData({ loaded: true, failed: false });
+    load(event?: WechatMiniprogram.BaseEvent) {
+      const rawEvent = event as unknown as
+        { detail?: { width?: number; height?: number } } | undefined;
+      const size = rawEvent?.detail;
+      const width = Number(size?.width);
+      const height = Number(size?.height);
+      const canAdapt = this.data.adaptive && width > 0 && height > 0;
+      const frameStyle = canAdapt
+        ? 'padding-top: ' +
+          Math.min(160, Math.max(55, (height / width) * 100)).toFixed(2) +
+          '%;'
+        : '';
+      const resolvedRatio = !canAdapt
+        ? ''
+        : width / height >= 1.1
+          ? 'landscape'
+          : height / width >= 1.1
+            ? 'portrait'
+            : 'square';
+      this.setData({
+        loaded: true,
+        failed: false,
+        frameStyle,
+        resolvedRatio,
+      });
     },
     error(kind: 'link' | 'load' = 'load') {
       this.setData({
@@ -55,6 +87,8 @@ Component({
         loaded: false,
         visible: false,
         failureHint: '',
+        frameStyle: '',
+        resolvedRatio: '',
       });
       void this.resolve(this.data.src);
       wx.nextTick(() => this.setData({ visible: true }));

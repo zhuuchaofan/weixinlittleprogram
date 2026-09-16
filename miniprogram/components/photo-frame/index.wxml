@@ -1,4 +1,4 @@
-<view class="frame {{ratio}} {{compact ? 'compact' : ''}}">
+<view class="frame {{resolvedRatio || ratio}} {{compact ? 'compact' : ''}}" style="{{frameStyle}}">
   <view wx:if="{{!src || placeholder}}" class="placeholder" bindtap="open" role="button" aria-label="{{caption}}，{{copy.previewHint}}">
     <view class="crop crop-tl"></view><view class="crop crop-br"></view>
     <text class="placeholder-number">{{copy.text01}}</text>

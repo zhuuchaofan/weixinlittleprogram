@@ -56,7 +56,7 @@ confirmed: false,
 - 少量照片可本地试验；完整相册建议用云存储，避免超过微信小程序包体限制。
 - 云端照片将 `thumbnail` 和 `original` 分别换成云存储的 `cloud://...` 文件 ID。项目会在显示和大图预览时自动换成临时 HTTPS 地址；只保存 file ID，不保存临时 URL。外部 HTTPS 图需另外配置合法域名。
 - 当前的 8 张婚纱照已接入 `wedding/original`，暂时将原图同时用于缩略图与大图。正式发出邀请前，建议另传压缩后的缩略图到 `wedding/thumb`，只替换各照片的 `thumbnail`。
-- 图片框使用 `aspectFit`，会保留完整照片；横图选 `landscape`，竖图选 `portrait`。原生大图显示完整图。
+- 图片框使用 `aspectFit`，会保留完整照片；图片加载后会按真实宽高自动调整相框，形成两列杂志式瀑布流。`ratio` 仍是图片尚未加载或加载失败时的兜底比例；横图选 `landscape`，竖图选 `portrait`。原生大图显示完整图。
 
 照片缺失或 `placeholder: true` 时显示明确占位框；大图预览使用 `assets/placeholder-*.png`。这些只是可识别的排版素材，不是假冒的新人照片。将真实照片的 `placeholder` 改为 `false` 才会加载它。
 
