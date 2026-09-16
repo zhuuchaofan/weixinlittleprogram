@@ -15,10 +15,11 @@ Component({
     displaySrc: '',
     attempt: 0,
     visible: true,
+    failureHint: '',
   },
   observers: {
     src(source: string) {
-      this.setData({ failed: false, loaded: false });
+      this.setData({ failed: false, loaded: false, failureHint: '' });
       if (!source) {
         this.setData({ displaySrc: '' });
         return;
@@ -32,18 +33,29 @@ Component({
         const displaySrc = await resolvePhotoUrl(source);
         if (this.data.src === source)
           this.setData({ displaySrc, failed: false });
-      } catch {
-        if (this.data.src === source) this.error();
+      } catch (error) {
+        console.error('[photo-frame] 无法取得云端图片链接', error);
+        if (this.data.src === source) this.error('link');
       }
     },
     load() {
       this.setData({ loaded: true, failed: false });
     },
-    error() {
-      this.setData({ failed: true, loaded: false });
+    error(kind: 'link' | 'load' = 'load') {
+      this.setData({
+        failed: true,
+        loaded: false,
+        failureHint:
+          kind === 'link' ? uiCopy.photoFrame.text07 : uiCopy.photoFrame.text08,
+      });
     },
     retry() {
-      this.setData({ failed: false, loaded: false, visible: false });
+      this.setData({
+        failed: false,
+        loaded: false,
+        visible: false,
+        failureHint: '',
+      });
       void this.resolve(this.data.src);
       wx.nextTick(() => this.setData({ visible: true }));
     },

@@ -144,6 +144,8 @@ export const uiCopy = {
     text04: '照片暂时未能加载',
     text05: '重新加载',
     text06: '尝试查看原图',
+    text07: '未能取得云端图片链接。',
+    text08: '图片链接已取得，但图片文件加载失败。',
   },
   pageFooter: {
     text01: '首页',

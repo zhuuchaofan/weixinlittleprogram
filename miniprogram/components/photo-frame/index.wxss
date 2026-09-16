@@ -19,3 +19,5 @@
 .compact .placeholder-caption { font-size: 25rpx; margin-top: 18rpx; }
 .compact .placeholder-number { font-size: 20rpx; letter-spacing: 1rpx; }
 .compact.landscape .window { display: none; }
+
+.failure-hint { margin-top: 10rpx; font-size: 20rpx; color: #806b59; }
