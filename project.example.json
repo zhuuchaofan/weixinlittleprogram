@@ -1,0 +1,17 @@
+{
+  "description": "两猫一屋 · mock 可独立运行",
+  "miniprogramRoot": "miniprogram/",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "两猫一屋",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": true,
+    "useCompilerPlugins": ["typescript"]
+  },
+  "packOptions": { "ignore": [], "include": [] }
+}

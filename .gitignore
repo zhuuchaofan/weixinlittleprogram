@@ -1,0 +1,8 @@
+node_modules/
+miniprogram/config/local.ts
+project.private.config.json
+project.config.json
+.test-build/
+artifacts/
+*.log
+.DS_Store

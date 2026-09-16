@@ -1,0 +1,16 @@
+<view class="page"><view class="kicker">{{copy.text01}}</view><view class="title">{{copy.text02}}</view><view class="lead">{{copy.text03}}<view>{{copy.text04}}</view></view>
+  <view wx:if="{{isMock}}" class="notice">{{copy.text05}}</view>
+  <view wx:if="{{loading}}" class="status">{{copy.text06}}</view>
+  <view wx:if="{{error}}" class="notice error" role="alert">{{error}}<button wx:if="{{loadFailed}}" class="text-button" bindtap="load">{{copy.text07}}</button></view>
+  <view wx:if="{{!loading && !loadFailed}}" class="section">
+    <view wx:if="{{existing}}" class="small muted saved-date">{{copy.text08}}<view>{{copy.text09}}{{updatedAt}}</view></view>
+    <view class="field"><label class="field-label" for="guest-name">{{copy.text10}} <text class="small muted">{{copy.text11}}</text></label><input id="guest-name" value="{{guestName}}" bindinput="nameInput" maxlength="30" placeholder="{{copy.text12}}" disabled="{{saving}}" /></view>
+    <view class="field"><view class="field-label">{{copy.text13}}</view><view class="attendance"><button class="secondary {{attending ? 'chosen' : ''}}" data-value="yes" bindtap="attend" disabled="{{saving}}">{{copy.text14}}</button><button class="secondary {{!attending ? 'chosen' : ''}}" data-value="no" bindtap="attend" disabled="{{saving}}">{{copy.text15}}</button></view></view>
+    <view wx:if="{{attending}}" class="field"><view class="field-label">{{copy.text16}} <text class="small muted">{{copy.text17}}</text></view><view class="stepper"><button class="secondary" data-delta="-1" bindtap="step" disabled="{{saving || partySize <= 1}}" aria-label="{{copy.text18}}">−</button><text>{{partySize}} {{copy.text19}}</text><button class="secondary" data-delta="1" bindtap="step" disabled="{{saving || partySize >= 10}}" aria-label="{{copy.text20}}">＋</button></view></view>
+    <view class="field"><label class="field-label" for="guest-note">{{copy.text21}} <text class="small muted">{{copy.text22}}</text></label><textarea id="guest-note" value="{{note}}" bindinput="noteInput" maxlength="200" placeholder="{{copy.text23}}" disabled="{{saving}}" /><view class="small muted counter">{{note.length}} / 200</view></view>
+    <checkbox-group bindchange="consentChange"><label class="consent"><checkbox value="agree" checked="{{consent}}" disabled="{{saving}}" color="#783e3c" /><text>{{copy.text24}}</text></label></checkbox-group><navigator url="/pages/privacy/index" class="privacy-link">{{copy.text25}}</navigator>
+    <view wx:if="{{saved}}" class="notice" role="status">{{isMock ? copy.text26 : copy.text27}}</view>
+    <button class="primary" bindtap="submit" loading="{{saving}}" disabled="{{saving}}">{{saving ? copy.text28 : existing ? copy.text29 : isMock ? copy.text30 : copy.text31}}</button>
+    <view class="small muted after-note">{{copy.text32}}<view>{{copy.text33}}</view></view>
+  </view><page-footer />
+</view>

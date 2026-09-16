@@ -1,0 +1,21 @@
+:host { display: block; }
+.frame { position: relative; background: #e9dccb; overflow: hidden; width: 100%; }
+.portrait { height: 0; padding-top: 125%; } .landscape { height: 0; padding-top: 66.6667%; } .square { height: 0; padding-top: 100%; }
+.photo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
+.placeholder { height: 100%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; padding: 22rpx 14rpx; color: #6b5544; box-sizing: border-box; }
+.placeholder-number { font-size: 21rpx; letter-spacing: 3rpx; }
+.placeholder-caption { font-family: 'Songti SC', STSong, SimSun, serif; font-size: 30rpx; text-align: center; margin-top: 26rpx; }
+.placeholder-hint { margin-top: 8rpx; font-size: 21rpx; text-align: center; }
+.window { width: 22%; height: 25%; min-height: 32rpx; border: 1rpx solid #a88c6c; border-radius: 80rpx 80rpx 0 0; margin-top: 20rpx; position: relative; flex-shrink: 0; }
+.sun { width: 26%; height: 22%; border-radius: 50%; background: #c69b6a; position: absolute; right: 16%; top: 20%; }
+.sill { position: absolute; bottom: 38rpx; width: 100%; border-top: 1rpx solid #a88c6c; }
+.crop { position: absolute; width: 30rpx; height: 30rpx; border-color: #a88c6c; border-style: solid; }
+.crop-tl { top: 22rpx; left: 22rpx; border-width: 1rpx 0 0 1rpx; } .crop-br { bottom: 22rpx; right: 22rpx; border-width: 0 1rpx 1rpx 0; }
+.loading, .failed { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20rpx; text-align: center; color: #655344; font-size: 25rpx; }
+.failed { background: #e9dccb; }
+.retry { margin-top: 16rpx; font-size: 24rpx; background: #f7f2e9; color: #783e3c; min-height: 80rpx; }
+.retry::after { border: 0; }
+.compact .placeholder-hint { display: none; }
+.compact .placeholder-caption { font-size: 25rpx; margin-top: 18rpx; }
+.compact .placeholder-number { font-size: 20rpx; letter-spacing: 1rpx; }
+.compact.landscape .window { display: none; }

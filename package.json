@@ -1,0 +1,29 @@
+{
+  "name": "two-cats-one-home",
+  "version": "0.1.0",
+  "private": true,
+  "description": "两猫一屋 · 原生微信生活纪念册",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint miniprogram cloudfunctions scripts tests",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test tests/*.test.cjs",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "preview": "node scripts/preview-server.mjs",
+    "check:native": "node scripts/native-check.mjs",
+    "test:ui": "node scripts/test-ui.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.0.0",
+    "globals": "^16.0.0",
+    "miniprogram-api-typings": "^4.0.0",
+    "playwright": "^1.63.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

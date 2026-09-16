@@ -1,0 +1,10 @@
+<view class="page"><view class="kicker">{{copy.text01}}</view><view class="title">{{copy.text02}}</view><view class="lead">{{copy.text03}}</view>
+  <view wx:if="{{isMock}}" class="notice">{{copy.text04}}</view>
+  <view wx:if="{{loading}}" class="status">{{copy.text05}}</view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">{{copy.text06}}</button></view>
+  <view wx:if="{{authorized}}"><view class="summary section"><view><text class="stat serif">{{summary.guests}}</text><text>{{copy.text07}}</text></view><view><text class="stat serif">{{summary.responses}}</text><text>{{copy.text08}}</text></view></view><view class="small muted">{{summary.attending}} {{copy.text09}} {{summary.declined}} {{copy.text10}}</view>
+  <view class="inline section"><view class="section-title">{{copy.text11}}</view><button class="text-button" bindtap="load" disabled="{{loading}}">{{copy.text12}}</button></view>
+  <view wx:if="{{!records.length}}" class="empty">{{copy.text13}}<view wx:if="{{isMock}}">{{copy.text14}}</view></view>
+  <view wx:for="{{records}}" wx:key="id" class="guest"><view class="inline"><text class="guest-name">{{item.guestName}}</text><text class="tag">{{item.attending ? copy.text15 + item.partySize + copy.text16 : copy.text17}}</text></view><view class="guest-note">{{item.note || copy.text18}}</view><view class="small muted">{{item.updatedAt}}</view></view>
+  <button wx:if="{{nextCursor}}" class="secondary" bindtap="more" loading="{{loading}}" disabled="{{loading}}">{{copy.text19}}</button></view><page-footer />
+</view>

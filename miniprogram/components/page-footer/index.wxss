@@ -1,0 +1,5 @@
+.footer { margin-top: 68rpx; padding: 36rpx 0 calc(30rpx + env(safe-area-inset-bottom)); border-top: 1rpx solid #d9ccbb; color: #736354; text-align: center; }
+.signature { font-size: 24rpx; letter-spacing: 2rpx; }
+.links { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 14rpx; }
+.links navigator, .links button { font: inherit; font-size: 24rpx; color: #736354; padding: 22rpx; line-height: 1.5; margin: 0; background: transparent; min-height: 88rpx; border: 0; text-decoration: none; }
+.links button::after { border: 0; }

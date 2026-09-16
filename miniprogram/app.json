@@ -1,0 +1,25 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/invitation/index",
+    "pages/story/index",
+    "pages/gallery/index",
+    "pages/rsvp/index",
+    "pages/admin/index",
+    "pages/privacy/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "两猫一屋",
+    "navigationBarBackgroundColor": "#F7F2E9",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F7F2E9",
+    "backgroundTextStyle": "dark"
+  },
+  "usingComponents": {
+    "photo-frame": "/components/photo-frame/index",
+    "page-footer": "/components/page-footer/index"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,10 @@
+<view class="page"><view class="kicker">{{copy.text01}}</view><view class="title">{{copy.text02}}</view><view class="lead">{{appConfig.brand}} {{copy.text03}}</view>
+  <view class="notice">{{isMock ? copy.text04 : copy.text05}}</view>
+  <view class="section"><view class="section-title">{{copy.text06}}</view><view>{{copy.text07}}</view></view>
+  <view class="section"><view class="section-title">{{copy.text08}}</view><view>{{copy.text09}}</view></view>
+  <view class="section"><view class="section-title">{{copy.text10}}</view><view>{{copy.text11}}</view></view>
+  <view class="section"><view class="section-title">{{copy.text12}}</view><view>{{appConfig.retention}}</view><view class="section-contact">{{appConfig.privacyContact}}</view><view class="small muted">{{copy.text13}}</view></view>
+  <view class="section"><view class="inline"><view><view>{{copy.text14}}</view><view class="small muted">{{copy.text15}}</view></view><switch checked="{{reduceMotion}}" bindchange="motion" color="#783e3c" aria-label="{{copy.text14}}" /></view></view>
+  <view wx:if="{{message}}" class="notice">{{message}}</view><view wx:if="{{error}}" class="notice error">{{error}}</view>
+  <view class="section"><button class="secondary" bindtap="remove" loading="{{busy}}" disabled="{{busy}}">{{isMock ? copy.text16 : copy.text17}}</button></view><page-footer />
+</view>

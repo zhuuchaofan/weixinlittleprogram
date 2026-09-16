@@ -1,0 +1,11 @@
+<view class="page {{reduceMotion ? '' : 'entrance'}}">
+  <view class="masthead"><text class="brand serif">{{appConfig.brand}}</text><navigator class="edition" url="/pages/invitation/index">{{copy.invitationEntry}}</navigator></view>
+  <view wx:if="{{isMock}}" class="demo">{{copy.text02}}</view>
+  <view class="hero"><photo-frame src="{{coverPhoto.thumbnail}}" caption="{{coverPhoto.caption}}" placeholder="{{coverPhoto.placeholder}}" bind:open="preview" /><view class="photo-label">{{copy.text03}}</view></view>
+  <view class="opening"><view class="names">{{appConfig.names}}</view><view class="title preline">{{appConfig.headline}}</view><view class="lead">{{appConfig.introduction}}</view></view>
+  <view class="date-line"><text class="date serif">{{appConfig.date}}</text><text class="small muted">{{appConfig.dateNote}}</text></view>
+  <button class="primary" bindtap="enter">{{copy.text04}} <text class="arrow">↗</text></button>
+  <view class="contents section"><view class="kicker">{{copy.text05}}</view><navigator wx:for="{{navigation}}" wx:key="url" url="{{item.url}}" class="nav-row"><text class="nav-number">{{item.number}}</text><view class="nav-copy"><view class="serif nav-title">{{item.title}}</view><view class="small muted">{{item.description}}</view></view><text>↗</text></navigator></view>
+  <button class="cat-note" bindtap="cat">{{appConfig.cats[0]}}{{copy.text06}}{{appConfig.cats[1]}}{{copy.text07}} <text>＋</text></button><view wx:if="{{catVisible}}" class="cat-reveal">{{appConfig.catMessage}}</view>
+  <page-footer />
+</view>

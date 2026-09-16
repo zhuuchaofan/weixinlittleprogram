@@ -1,0 +1,12 @@
+.masthead { display: flex; justify-content: space-between; align-items: baseline; gap: 16rpx; padding-bottom: 24rpx; border-bottom: 1rpx solid var(--line); }
+.brand { font-size: 42rpx; letter-spacing: 5rpx; }
+.edition { font-size: 25rpx; letter-spacing: 1rpx; color: var(--accent); min-height: 88rpx; display: flex; align-items: center; }
+.demo { color: var(--accent); font-size: 23rpx; padding-top: 18rpx; }
+.hero { background: #fffaf2; padding: 14rpx 14rpx 0; margin-top: 30rpx; }
+.photo-label { padding: 12rpx 6rpx; color: var(--muted); letter-spacing: 3rpx; font-size: 20rpx; }
+.opening { margin-top: 40rpx; }.names { font-size: 26rpx; letter-spacing: 3rpx; }
+.date-line { display: flex; justify-content: space-between; align-items: baseline; gap: 18rpx; flex-wrap: wrap; margin: 34rpx 0; }
+.date { font-size: 45rpx; }.arrow { margin-left: 24rpx; }
+.nav-row { display: flex; align-items: center; gap: 24rpx; padding: 28rpx 0; border-bottom: 1rpx solid var(--line); }.nav-number { font-size: 23rpx; color: var(--accent); }.nav-copy { flex: 1; }.nav-title { font-size: 37rpx; margin-bottom: 5rpx; }
+.cat-note { margin-top: 36rpx; justify-content: space-between; padding-left: 0; padding-right: 0; font-size: 25rpx; color: var(--muted); }.cat-reveal { font-size: 26rpx; color: var(--accent); padding: 20rpx 0; }
+.entrance { animation: arrival 450ms ease-out; } @keyframes arrival { from { opacity: 0.4; transform: translateY(8rpx); } to { opacity: 1; transform: translateY(0); } }

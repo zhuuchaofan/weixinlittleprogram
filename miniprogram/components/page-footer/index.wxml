@@ -1,0 +1,1 @@
+<view class="footer"><text class="signature">{{brand}} · {{cats}}</text><view class="links"><button bindtap="home">{{copy.text01}}</button><navigator url="/pages/privacy/index">{{copy.text02}}</navigator><navigator url="/pages/admin/index">{{copy.text03}}</navigator></view></view>
