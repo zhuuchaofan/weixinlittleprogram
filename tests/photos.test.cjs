@@ -4,7 +4,8 @@ const { createPhotoHandler } = require('../cloudfunctions/weddingApi/photos');
 function fixture() {
   let identity = 'owner',
     uploads = 0,
-    reads = 0;
+    reads = 0,
+    deletes = 0;
   const docs = {};
   const collection = {
     where: ({ _id }) => ({
@@ -26,7 +27,10 @@ function fixture() {
       getWXContext: () => ({ OPENID: identity }),
       uploadFile: async () => {
         uploads++;
-        return { fileID: 'cloud://env/path.jpg' };
+        return { fileID: 'cloud://env/wedding/managed/uploaded.jpg' };
+      },
+      deleteFile: async () => {
+        deletes++;
       },
     },
     db: { collection: () => collection },
@@ -36,7 +40,7 @@ function fixture() {
     handle,
     docs,
     setIdentity: (v) => (identity = v),
-    stats: () => ({ uploads, reads }),
+    stats: () => ({ uploads, reads, deletes }),
   };
 }
 const photo = {
@@ -58,6 +62,8 @@ test('照片写入、草稿与上传均验证真实管理员，伪造身份无�
     'savePhotoDraft',
     'publishPhotos',
     'uploadPhoto',
+    'inspectManagedPhotoFile',
+    'deleteManagedPhotoFile',
   ])
     assert.equal(
       (
@@ -68,7 +74,7 @@ test('照片写入、草稿与上传均验证真实管理员，伪造身份无�
       ).code,
       'FORBIDDEN',
     );
-  assert.deepEqual(f.stats(), { uploads: 0, reads: 0 });
+  assert.deepEqual(f.stats(), { uploads: 0, reads: 0, deletes: 0 });
 });
 test('草稿不公开，发布后访客按保存顺序读取；发布空数组不会还原旧照片', async () => {
   const f = fixture();
@@ -119,5 +125,68 @@ test('拒绝重复编号、多封面、非法链接、超限照片和伪装图�
     (await f.handle({ action: 'uploadPhoto', payload: { base64: '/9j/AA==' } }))
       .ok,
     true,
+  );
+});
+
+const managedPhoto = {
+  ...photo,
+  id: 'managed',
+  thumbnail: 'cloud://env/wedding/managed/safe-file.jpg',
+  original: 'cloud://env/wedding/managed/safe-file.jpg',
+};
+test('管理员只能检查和删除未被草稿或已发布内容引用的小程序上传文件', async () => {
+  const f = fixture();
+  await f.handle({
+    action: 'publishPhotos',
+    payload: { photos: [managedPhoto] },
+  });
+  const referenced = await f.handle({
+    action: 'inspectManagedPhotoFile',
+    payload: { fileID: managedPhoto.original },
+  });
+  assert.deepEqual(referenced.data.references, { draft: 1, published: 1 });
+  assert.equal(referenced.data.deletable, false);
+  assert.equal(
+    (
+      await f.handle({
+        action: 'deleteManagedPhotoFile',
+        payload: { fileID: managedPhoto.original },
+      })
+    ).ok,
+    false,
+  );
+  assert.equal(f.stats().deletes, 0);
+  await f.handle({ action: 'publishPhotos', payload: { photos: [] } });
+  assert.deepEqual(
+    (
+      await f.handle({
+        action: 'inspectManagedPhotoFile',
+        payload: { fileID: managedPhoto.original },
+      })
+    ).data,
+    {
+      fileID: managedPhoto.original,
+      references: { draft: 0, published: 0 },
+      deletable: true,
+    },
+  );
+  assert.equal(
+    (
+      await f.handle({
+        action: 'deleteManagedPhotoFile',
+        payload: { fileID: managedPhoto.original },
+      })
+    ).ok,
+    true,
+  );
+  assert.equal(f.stats().deletes, 1);
+  assert.equal(
+    (
+      await f.handle({
+        action: 'inspectManagedPhotoFile',
+        payload: { fileID: 'cloud://env/wedding/original/keep.jpg' },
+      })
+    ).ok,
+    false,
   );
 });

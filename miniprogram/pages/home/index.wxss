@@ -3,6 +3,7 @@
 .edition { font-size: 25rpx; letter-spacing: 1rpx; color: var(--accent); min-height: 88rpx; display: flex; align-items: center; }
 .demo { color: var(--accent); font-size: 23rpx; padding-top: 18rpx; }
 .hero { background: #fffaf2; padding: 14rpx 14rpx 0; margin-top: 30rpx; }
+.hero-pending { height: 0; padding-top: 125%; background: #e9dccb; }
 .photo-label { padding: 12rpx 6rpx; color: var(--muted); letter-spacing: 3rpx; font-size: 20rpx; }
 .opening { margin-top: 40rpx; }.names { font-size: 26rpx; letter-spacing: 3rpx; }
 .date-line { display: flex; justify-content: space-between; align-items: baseline; gap: 18rpx; flex-wrap: wrap; margin: 34rpx 0; }
@@ -11,6 +12,8 @@
 .cat-note { margin-top: 36rpx; justify-content: space-between; padding-left: 0; padding-right: 0; font-size: 25rpx; color: var(--muted); }.cat-reveal { font-size: 26rpx; color: var(--accent); padding: 20rpx 0; }
 .entrance { animation: arrival 450ms ease-out; } @keyframes arrival { from { opacity: 0.4; transform: translateY(8rpx); } to { opacity: 1; transform: translateY(0); } }
 
-.cat-photos { display: flex; gap: 20rpx; margin-top: 24rpx; }
-.cat-photo { flex: 1; min-width: 0; }
+.cat-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28rpx 20rpx; align-items: start; margin-top: 24rpx; }
+.cat-photo { min-width: 0; }
 .cat-caption { margin-top: 10rpx; font-size: 24rpx; text-align: center; }
+
+.cat-description { margin-top: 4rpx; font-size: 23rpx; color: var(--muted); text-align: center; overflow-wrap: anywhere; }

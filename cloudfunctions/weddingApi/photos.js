@@ -38,10 +38,39 @@ function validatePhotos(value) {
     };
   });
 }
+function validateManagedFileID(value) {
+  if (
+    typeof value !== 'string' ||
+    value.length > 1024 ||
+    !/^cloud:\/\/[^/]+\/wedding\/managed\/[a-zA-Z0-9_-]+\.(?:jpg|png)$/.test(
+      value,
+    )
+  )
+    throw new PhotoInputError(
+      '只能清理由小程序上传的 wedding/managed/ JPG 或 PNG 文件。',
+    );
+  return value;
+}
+function photoReferenceCount(document, fileID) {
+  if (!Array.isArray(document?.photos)) return 0;
+  return document.photos.filter(
+    (photo) => photo?.thumbnail === fileID || photo?.original === fileID,
+  ).length;
+}
 function createPhotoHandler({ cloud, db, getAdmins }) {
   const collection = db.collection('photo_content');
   const get = async (key) =>
     (await collection.where({ _id: key }).limit(1).get()).data[0] || null;
+  const referencesFor = async (fileID) => {
+    const [draft, published] = await Promise.all([
+      get('draft'),
+      get('published'),
+    ]);
+    return {
+      draft: photoReferenceCount(draft, fileID),
+      published: photoReferenceCount(published, fileID),
+    };
+  };
   return async (event) => {
     const action = event?.action;
     if (
@@ -52,6 +81,8 @@ function createPhotoHandler({ cloud, db, getAdmins }) {
         'savePhotoDraft',
         'publishPhotos',
         'uploadPhoto',
+        'inspectManagedPhotoFile',
+        'deleteManagedPhotoFile',
       ].includes(action)
     )
       return null;
@@ -75,6 +106,22 @@ function createPhotoHandler({ cloud, db, getAdmins }) {
       if (action === 'getPhotoDraft') {
         const draft = (await get('draft')) || (await get('published'));
         return { ok: true, data: draft ? { photos: draft.photos } : null };
+      }
+      if (
+        action === 'inspectManagedPhotoFile' ||
+        action === 'deleteManagedPhotoFile'
+      ) {
+        const fileID = validateManagedFileID(event.payload?.fileID);
+        const references = await referencesFor(fileID);
+        const deletable = references.draft === 0 && references.published === 0;
+        if (action === 'inspectManagedPhotoFile')
+          return { ok: true, data: { fileID, references, deletable } };
+        if (!deletable)
+          throw new PhotoInputError(
+            '这张照片仍被草稿或已发布内容使用。请先移除展示、保存草稿并更新展示。',
+          );
+        await cloud.deleteFile({ fileList: [fileID] });
+        return { ok: true, data: { fileID, deleted: true } };
       }
       if (action === 'uploadPhoto') {
         const base64 = event.payload?.base64;
@@ -125,4 +172,8 @@ function createPhotoHandler({ cloud, db, getAdmins }) {
     }
   };
 }
-module.exports = { createPhotoHandler, validatePhotos };
+module.exports = {
+  createPhotoHandler,
+  validateManagedFileID,
+  validatePhotos,
+};

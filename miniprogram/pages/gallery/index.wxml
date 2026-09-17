@@ -1,7 +1,14 @@
-<view class="page"><view class="kicker">{{copy.text01}}</view><view class="title">{{copy.text02}}</view><view class="lead">{{appConfig.galleryIntro}}</view>
-  <view class="tabs section"><button wx:for="{{albums}}" wx:key="id" class="tab {{active === index ? 'selected' : ''}}" data-index="{{index}}" bindtap="select" aria-label="{{item.title}}，{{active === index ? copy.text03 : copy.text04}}">{{item.title}} <text class="count">{{item.photos.length}}</text></button></view>
-  <view class="album-intro small muted">{{description}} · {{total}} {{copy.text05}}</view>
-  <view wx:if="{{!total}}" class="empty">{{copy.text06}}<view>{{copy.text07}}</view></view>
-  <view wx:else class="photo-grid"><view wx:for="{{columns}}" wx:key="id" wx:for-item="column" class="column"><view wx:for="{{column.photos}}" wx:key="id" wx:for-item="photo" class="tile"><photo-frame compact="{{true}}" src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="{{photo.ratio}}" data-id="{{photo.id}}" bind:open="preview" /><view class="photo-caption">{{photo.caption}}<text wx:if="{{photo.placeholder}}"> {{copy.text08}}</text></view></view></view></view>
-  <view class="small muted gallery-note">{{copy.text09}}</view><page-footer />
+<view class="page">
+  <view class="kicker">{{copy.text01}}</view>
+  <view class="title">{{copy.text02}}</view>
+  <view class="lead">{{appConfig.galleryIntro}}</view>
+  <view wx:if="{{!photoContentReady}}" class="photo-content-pending" aria-label="照片正在准备"></view>
+  <block wx:else>
+    <view class="tabs section"><button wx:for="{{albums}}" wx:key="id" class="tab {{active === index ? 'selected' : ''}}" data-index="{{index}}" bindtap="select" aria-label="{{item.title}}，{{active === index ? copy.text03 : copy.text04}}">{{item.title}} <text class="count">{{item.photos.length}}</text></button></view>
+    <view class="album-intro small muted">{{description}} · {{total}} {{copy.text05}}</view>
+    <view wx:if="{{!total}}" class="empty">{{copy.text06}}<view>{{copy.text07}}</view></view>
+    <view wx:else class="photo-grid"><view wx:for="{{columns}}" wx:key="id" wx:for-item="column" class="column"><view wx:for="{{column.photos}}" wx:key="id" wx:for-item="photo" class="tile"><photo-frame compact="{{true}}" src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="{{photo.ratio}}" data-id="{{photo.id}}" bind:open="preview" /><view class="photo-caption">{{photo.caption}}<text wx:if="{{photo.placeholder}}"> {{copy.text08}}</text></view></view></view></view>
+    <view class="small muted gallery-note">{{copy.text09}}</view>
+  </block>
+  <page-footer />
 </view>

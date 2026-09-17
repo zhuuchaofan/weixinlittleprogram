@@ -31,3 +31,13 @@
 .entry-tools .remove-button { color: var(--accent); }
 .empty-title { color: var(--ink); font-size: 34rpx; margin-bottom: 18rpx; }
 .closing-note { padding: 12rpx 0 24rpx; color: var(--muted); font-size: 24rpx; line-height: 1.9; text-align: center; }
+
+.import-panel { padding: 24rpx; background: #eee3d4; margin: 12rpx 0 28rpx; }
+.import-panel textarea { margin: 20rpx 0; height: 180rpx; font-size: 24rpx; }
+
+.file-id-button { display: block; width: 100%; padding: 14rpx 0 4rpx; color: var(--muted); font-size: 22rpx; text-align: left; }
+.cleanup-panel { margin: 12rpx 0 28rpx; padding: 28rpx 24rpx; border: 1rpx solid var(--line); background: #f6eee4; }
+.cleanup-panel .section-title { margin: 0 0 12rpx; }
+.cleanup-panel textarea { height: 156rpx; margin: 20rpx 0; font-size: 24rpx; background: var(--paper); }
+.cleanup-result { margin-top: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--line); color: var(--muted); font-size: 24rpx; line-height: 1.7; }
+.cleanup-result .remove-button { width: 100%; margin-top: 18rpx; color: #fff; background: var(--accent); }

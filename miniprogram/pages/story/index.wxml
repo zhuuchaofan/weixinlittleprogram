@@ -1,5 +1,12 @@
-<view class="page"><view class="kicker">{{copy.text01}}</view><view class="title">{{copy.text02}}</view><view class="lead">{{appConfig.storyIntro}}</view>
-  <view wx:if="{{!storyItems.length}}" class="empty">{{copy.text03}}</view>
-  <view wx:for="{{storyItems}}" wx:key="id" wx:for-item="story" wx:for-index="storyIndex" class="chapter section"><view class="chapter-date">{{story.date}}</view><view class="chapter-title">{{story.title}}</view><view class="chapter-description">{{story.description}}</view><view wx:for="{{story.photos}}" wx:key="id" wx:for-item="photo" wx:for-index="photoIndex" class="story-photo"><photo-frame src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="landscape" data-story="{{storyIndex}}" data-photo="{{photoIndex}}" bind:open="preview" /><view class="small muted caption">{{photo.caption}}{{photo.placeholder ? copy.text04 : ''}}</view></view></view>
-  <navigator url="/pages/gallery/index"><button class="secondary">{{copy.text05}}</button></navigator><page-footer />
+<view class="page">
+  <view class="kicker">{{copy.text01}}</view>
+  <view class="title">{{copy.text02}}</view>
+  <view class="lead">{{appConfig.storyIntro}}</view>
+  <view wx:if="{{!photoContentReady}}" class="photo-content-pending" aria-label="照片正在准备"></view>
+  <block wx:else>
+    <view wx:if="{{!storyItems.length}}" class="empty">{{copy.text03}}</view>
+    <view wx:for="{{storyItems}}" wx:key="id" wx:for-item="story" wx:for-index="storyIndex" class="chapter section"><view class="chapter-date">{{story.date}}</view><view class="chapter-title">{{story.title}}</view><view class="chapter-description">{{story.description}}</view><view wx:for="{{story.photos}}" wx:key="id" wx:for-item="photo" wx:for-index="photoIndex" class="story-photo"><photo-frame src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="landscape" data-story="{{storyIndex}}" data-photo="{{photoIndex}}" bind:open="preview" /><view class="small muted caption">{{photo.caption}}{{photo.placeholder ? copy.text04 : ''}}</view></view></view>
+    <navigator url="/pages/gallery/index"><button class="secondary">{{copy.text05}}</button></navigator>
+  </block>
+  <page-footer />
 </view>

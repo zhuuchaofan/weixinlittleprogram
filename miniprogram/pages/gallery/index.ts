@@ -1,14 +1,32 @@
-import { getPublishedPhotos } from '../../services/photos';
+import {
+  getPublishedPhotos,
+  photoArrangementSignature,
+} from '../../services/photos';
 import { uiCopy } from '../../config/ui-copy';
 import { appConfig, albums } from '../../services/content';
 import { previewPhotos } from '../../utils/preview';
 import type { Photo } from '../../models';
+
+let galleryRefreshVersion = 0;
+
 function columns(photos: Photo[]) {
   return [
-    { id: 'left', photos: photos.filter((_, i) => i % 2 === 0) },
-    { id: 'right', photos: photos.filter((_, i) => i % 2 !== 0) },
+    { id: 'left', photos: photos.filter((_, index) => index % 2 === 0) },
+    { id: 'right', photos: photos.filter((_, index) => index % 2 !== 0) },
   ];
 }
+
+function galleryPhotoState(photos: Array<Photo & { slot?: string }> | null) {
+  const items = photos
+    ? photos.filter((photo) => photo.slot === 'album')
+    : albums[0]?.photos || [];
+  return {
+    albums: [{ ...albums[0], photos: items }],
+    columns: columns(items),
+    total: items.length,
+  };
+}
+
 Page({
   data: {
     copy: uiCopy.gallery,
@@ -18,18 +36,32 @@ Page({
     description: albums[0]?.description || '',
     columns: columns(albums[0]?.photos || []),
     total: albums[0]?.photos.length || 0,
+    photoContentReady: false,
+    photoSignature: '',
   },
   async onShow() {
-    const photos = await getPublishedPhotos();
-    if (photos !== null) {
-      const items = photos.filter((p) => p.slot === 'album');
+    const refreshVersion = ++galleryRefreshVersion;
+    const result = await getPublishedPhotos();
+    if (refreshVersion !== galleryRefreshVersion) return;
+    if (result.state === 'unavailable' && this.data.photoContentReady) return;
+
+    const state = galleryPhotoState(
+      result.state === 'published' ? result.photos : null,
+    );
+    const photoSignature = photoArrangementSignature(state.albums[0].photos);
+    if (
+      !this.data.photoContentReady ||
+      this.data.photoSignature !== photoSignature
+    )
       this.setData({
-        albums: [{ ...albums[0], photos: items }],
+        albums: state.albums,
         active: 0,
-        columns: columns(items),
-        total: items.length,
+        description: state.albums[0].description,
+        columns: state.columns,
+        total: state.total,
+        photoContentReady: true,
+        photoSignature,
       });
-    }
   },
   select(event: WechatMiniprogram.TouchEvent) {
     const active = Number(event.currentTarget.dataset.index);
@@ -46,7 +78,7 @@ Page({
     const album = this.data.albums[this.data.active];
     if (!album) return;
     const index = album.photos.findIndex(
-      (p) => p.id === event.currentTarget.dataset.id,
+      (photo) => photo.id === event.currentTarget.dataset.id,
     );
     previewPhotos(album.photos, index);
   },

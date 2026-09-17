@@ -61,6 +61,7 @@ test('云图 file ID 在显示前换为短期 HTTPS 地址并缓存，普通本�
   const { localConfig } = require('../miniprogram/config/local.ts');
   const {
     clearPhotoUrlCache,
+    invalidatePhotoUrl,
     resolvePhotoUrl,
   } = require('../miniprogram/services/photo-url.ts');
   const previousEnv = localConfig.cloudEnvId;
@@ -98,9 +99,44 @@ test('云图 file ID 在显示前换为短期 HTTPS 地址并缓存，普通本�
       'https://temporary.example/photo.jpg',
     );
     assert.equal(calls, 1);
+    invalidatePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg');
+    assert.equal(
+      await resolvePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg'),
+      'https://temporary.example/photo.jpg',
+    );
+    assert.equal(calls, 2);
   } finally {
     clearPhotoUrlCache();
     localConfig.cloudEnvId = previousEnv;
+    delete global.wx;
+  }
+});
+test('访客照片读取区分未发布、已发布空数组与暂不可用', async () => {
+  const { localConfig } = require('../miniprogram/config/local.ts');
+  const { getPublishedPhotos } = require('../miniprogram/services/photos.ts');
+  const previousMode = localConfig.mode;
+  let stored;
+  global.wx = {
+    getStorageSync() {
+      return stored;
+    },
+  };
+  try {
+    localConfig.mode = 'mock';
+    assert.deepEqual(await getPublishedPhotos(), { state: 'missing' });
+    stored = [];
+    assert.deepEqual(await getPublishedPhotos(), {
+      state: 'published',
+      photos: [],
+    });
+    stored = {};
+    assert.deepEqual(await getPublishedPhotos(), { state: 'unavailable' });
+    global.wx.getStorageSync = () => {
+      throw new Error('模拟读取失败');
+    };
+    assert.deepEqual(await getPublishedPhotos(), { state: 'unavailable' });
+  } finally {
+    localConfig.mode = previousMode;
     delete global.wx;
   }
 });
@@ -267,4 +303,151 @@ test('后端故障返回失败且不泄露内部信息', async () => {
   const result = await handler({ action: 'getMine' });
   assert.equal(result.ok, false);
   assert.equal(result.message.includes('private'), false);
+});
+
+test('云请求区分超时与拒绝，保留数值错误码且不泄露原始错误内容', () => {
+  const { cloudFailureMessage } = require('../miniprogram/services/cloud.ts');
+  assert.match(
+    cloudFailureMessage({
+      errCode: -504003,
+      errMsg: 'function timed out secret-payload',
+    }),
+    /超时.*-504003/,
+  );
+  assert.doesNotMatch(
+    cloudFailureMessage({ errMsg: 'secret-payload' }),
+    /secret-payload/,
+  );
+  assert.match(cloudFailureMessage({ errMsg: 'access denied' }), /被拒绝/);
+  assert.match(cloudFailureMessage(null), /暂时不可用/);
+});
+
+test('上传诊断记录请求长度不记录照片载荷，保留具体 SDK 错误', () => {
+  const {
+    cloudDiagnostic,
+    cloudFailureMessage,
+  } = require('../miniprogram/services/cloud.ts');
+  const data = { base64: 'a'.repeat(1000) };
+  const diagnostic = cloudDiagnostic(
+    { errCode: -1, errMsg: 'data exceed max size' },
+    'uploadPhoto',
+    data,
+  );
+  assert.match(diagnostic, /data exceed max size/);
+  assert.doesNotMatch(diagnostic, /aaaaa/);
+  assert.equal(
+    JSON.parse(diagnostic).requestCharacters,
+    JSON.stringify({ action: 'uploadPhoto', payload: data }).length,
+  );
+  assert.match(
+    cloudFailureMessage({ errMsg: 'data exceed max size' }),
+    /调用链路限制/,
+  );
+});
+
+test('上传完整请求限制涵盖 Base64 包装，超限不调用云函数', async () => {
+  const {
+    photoRequestSize,
+    fitsPhotoRequest,
+    PHOTO_REQUEST_LIMIT,
+  } = require('../miniprogram/services/photo-upload.ts');
+  const overhead = photoRequestSize('');
+  assert.equal(
+    fitsPhotoRequest('a'.repeat(PHOTO_REQUEST_LIMIT - overhead)),
+    true,
+  );
+  assert.equal(
+    fitsPhotoRequest('a'.repeat(PHOTO_REQUEST_LIMIT - overhead + 1)),
+    false,
+  );
+  const { callCloud } = require('../miniprogram/services/cloud.ts');
+  await assert.rejects(
+    callCloud('uploadPhoto', { base64: 'a'.repeat(430000) }),
+    /尚未发送/,
+  );
+});
+test('照片压缩继续到完整请求可发送，保留原文件且不放大小图', async () => {
+  const {
+    preparePhotoUpload,
+  } = require('../miniprogram/services/photo-upload.ts');
+  let attempts = 0;
+  const calls = [];
+  global.wx = {
+    getImageInfo: async () => ({ width: 800, height: 1200 }),
+    compressImage: async (options) => {
+      calls.push(options);
+      attempts++;
+      return { tempFilePath: 'compressed' };
+    },
+    getFileSystemManager: () => ({
+      readFile: ({ success }) =>
+        success({ data: 'a'.repeat(attempts < 2 ? 430000 : 120000) }),
+    }),
+  };
+  try {
+    const result = await preparePhotoUpload('original');
+    assert.equal(result.base64.length, 120000);
+    assert.equal(attempts, 2);
+    assert.ok(
+      calls.every(
+        (c) =>
+          c.src === 'original' &&
+          c.compressedWidth <= 800 &&
+          c.compressedHeight <= 1200,
+      ),
+    );
+  } finally {
+    delete global.wx;
+  }
+});
+test('无法压缩到限制时明确失败，不发送超限数据', async () => {
+  const {
+    preparePhotoUpload,
+  } = require('../miniprogram/services/photo-upload.ts');
+  global.wx = {
+    getImageInfo: async () => ({ width: 2000, height: 3000 }),
+    compressImage: async () => ({ tempFilePath: 'compressed' }),
+    getFileSystemManager: () => ({
+      readFile: ({ success }) => success({ data: 'a'.repeat(430000) }),
+    }),
+  };
+  try {
+    await assert.rejects(preparePhotoUpload('original'), /尚未发送/);
+  } finally {
+    delete global.wx;
+  }
+});
+
+test('照片选取先经过微信原生隐私授权，拒绝或旧版本不继续', async () => {
+  const {
+    ensurePhotoSelectionAuthorization,
+    openPlatformPrivacyGuide,
+  } = require('../miniprogram/services/privacy.ts');
+  let authorized = 0;
+  let opened = 0;
+  global.wx = {
+    requirePrivacyAuthorize: ({ success }) => {
+      authorized++;
+      success();
+    },
+    openPrivacyContract: ({ success }) => {
+      opened++;
+      success();
+    },
+  };
+  try {
+    await ensurePhotoSelectionAuthorization();
+    await openPlatformPrivacyGuide();
+    assert.equal(authorized, 1);
+    assert.equal(opened, 1);
+    global.wx.requirePrivacyAuthorize = ({ fail }) => fail({ errMsg: 'deny' });
+    await assert.rejects(
+      ensurePhotoSelectionAuthorization(),
+      /未获得照片选择授权/,
+    );
+    global.wx = {};
+    await assert.rejects(ensurePhotoSelectionAuthorization(), /当前微信版本/);
+  } finally {
+    delete global.wx;
+  }
 });

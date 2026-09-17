@@ -2,6 +2,7 @@ import { uiCopy } from '../../config/ui-copy';
 import { appConfig } from '../../services/content';
 import { rsvpService, isMock } from '../../services/rsvp';
 import { friendlyError } from '../../utils/validate';
+import { openPlatformPrivacyGuide } from '../../services/privacy';
 Page({
   data: {
     copy: uiCopy.privacy,
@@ -42,6 +43,14 @@ Page({
       this.setData({ error: friendlyError(error) });
     } finally {
       this.setData({ busy: false });
+    }
+  },
+  async openPlatformGuide() {
+    this.setData({ error: '', message: '' });
+    try {
+      await openPlatformPrivacyGuide();
+    } catch (error) {
+      this.setData({ error: friendlyError(error) });
     }
   },
 });

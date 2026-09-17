@@ -1,17 +1,54 @@
-import { getPublishedPhotos } from '../../services/photos';
+import {
+  getPublishedPhotos,
+  photoArrangementSignature,
+} from '../../services/photos';
 import { uiCopy } from '../../config/ui-copy';
 import { appConfig, storyItems } from '../../services/content';
 import { previewPhotos } from '../../utils/preview';
+import type { Photo } from '../../models';
+
+let storyRefreshVersion = 0;
+
+function storyPhotoState(photos: Array<Photo & { slot?: string }> | null) {
+  return storyItems.map((item, index) => ({
+    ...item,
+    photos:
+      index === 0
+        ? photos
+          ? photos.filter((photo) => photo.slot === 'story')
+          : item.photos
+        : [],
+  }));
+}
+
 Page({
-  data: { copy: uiCopy.story, appConfig, storyItems },
+  data: {
+    copy: uiCopy.story,
+    appConfig,
+    storyItems,
+    photoContentReady: false,
+    photoSignature: '',
+  },
   async onShow() {
-    const photos = await getPublishedPhotos();
-    if (photos !== null)
+    const refreshVersion = ++storyRefreshVersion;
+    const result = await getPublishedPhotos();
+    if (refreshVersion !== storyRefreshVersion) return;
+    if (result.state === 'unavailable' && this.data.photoContentReady) return;
+
+    const items = storyPhotoState(
+      result.state === 'published' ? result.photos : null,
+    );
+    const photoSignature = photoArrangementSignature(
+      items.flatMap((item) => item.photos),
+    );
+    if (
+      !this.data.photoContentReady ||
+      this.data.photoSignature !== photoSignature
+    )
       this.setData({
-        storyItems: storyItems.map((item, i) => ({
-          ...item,
-          photos: i === 0 ? photos.filter((p) => p.slot === 'story') : [],
-        })),
+        storyItems: items,
+        photoContentReady: true,
+        photoSignature,
       });
   },
   preview(event: WechatMiniprogram.CustomEvent) {

@@ -30,3 +30,8 @@ export async function resolvePhotoUrl(source: string): Promise<string> {
 export function clearPhotoUrlCache(): void {
   urlCache.clear();
 }
+
+/** 仅在用户主动重试单张云图时丢弃它的临时地址。 */
+export function invalidatePhotoUrl(source: string): void {
+  if (source.startsWith(cloudFilePrefix)) urlCache.delete(source);
+}

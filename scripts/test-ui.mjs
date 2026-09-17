@@ -21,6 +21,8 @@ async function visit(name) {
     await page.waitForFunction(
       () => !window.__page.data.loading && !window.__page.data.busy,
     );
+  if (['home', 'gallery', 'story'].includes(name))
+    await page.waitForFunction(() => window.__page.data.photoContentReady);
 }
 async function check(name, action) {
   await action();
@@ -72,6 +74,109 @@ try {
   }
   await page.setViewportSize({ width: 393, height: 852 });
   await visit('home');
+  await check('照片组件同源返回不重置，新图预加载成功后才切换', async () => {
+    await page.waitForFunction(
+      () => document.querySelector('photo-frame')?.__component?.data.loaded,
+    );
+    const result = await page
+      .locator('photo-frame')
+      .first()
+      .evaluate(async (host) => {
+        const component = host.__component;
+        const original = component.data.currentSource;
+        component.receive(original);
+        const sameSource = {
+          loaded: component.data.loaded,
+          currentSource: component.data.currentSource,
+        };
+
+        const replacement = '/assets/placeholder-landscape.png';
+        component.data.src = replacement;
+        await component.stage(replacement, false);
+        const waiting = {
+          currentSource: component.data.currentSource,
+          pendingSource: component.data.pendingSource,
+          loaded: component.data.loaded,
+          failed: component.data.failed,
+        };
+        component.load();
+        const switched = {
+          currentSource: component.data.currentSource,
+          pendingSource: component.data.pendingSource,
+          loaded: component.data.loaded,
+        };
+
+        const failingReplacement = '/assets/placeholder-square.png';
+        component.data.src = failingReplacement;
+        await component.stage(failingReplacement, false);
+        component.error();
+        return {
+          original,
+          sameSource,
+          waiting,
+          switched,
+          afterFailure: {
+            currentSource: component.data.currentSource,
+            pendingSource: component.data.pendingSource,
+            loaded: component.data.loaded,
+            failed: component.data.failed,
+          },
+        };
+      });
+    assert.deepEqual(result.sameSource, {
+      loaded: true,
+      currentSource: result.original,
+    });
+    assert.deepEqual(result.waiting, {
+      currentSource: result.original,
+      pendingSource: '/assets/placeholder-landscape.png',
+      loaded: true,
+      failed: false,
+    });
+    assert.deepEqual(result.switched, {
+      currentSource: '/assets/placeholder-landscape.png',
+      pendingSource: '',
+      loaded: true,
+    });
+    assert.deepEqual(result.afterFailure, {
+      currentSource: '/assets/placeholder-landscape.png',
+      pendingSource: '',
+      loaded: true,
+      failed: false,
+    });
+  });
+  await check('照片安排不变不重设页面，读取失败保留当前内容', async () => {
+    await visit('home');
+    const result = await page.evaluate(async () => {
+      const page = window.__page;
+      const originalSetData = page.setData.bind(page);
+      let photoUpdates = 0;
+      page.setData = (patch) => {
+        if ('coverPhoto' in patch || 'catPhotos' in patch) photoUpdates++;
+        return originalSetData(patch);
+      };
+      await page.onShow();
+      const unchangedUpdates = photoUpdates;
+      const signature = page.data.photoSignature;
+      const originalGetStorageSync = window.wx.getStorageSync;
+      window.wx.getStorageSync = (key) => {
+        if (key === 'photos:published') throw new Error('模拟读取失败');
+        return originalGetStorageSync(key);
+      };
+      await page.onShow();
+      window.wx.getStorageSync = originalGetStorageSync;
+      page.setData = originalSetData;
+      return {
+        unchangedUpdates,
+        unavailableUpdates: photoUpdates - unchangedUpdates,
+        signature,
+        ready: page.data.photoContentReady,
+      };
+    });
+    assert.equal(result.unchangedUpdates, 0);
+    assert.equal(result.unavailableUpdates, 0);
+    assert.ok(result.ready && result.signature);
+  });
   await check('猫咪彩蛋展开、首页导航进入相册', async () => {
     await page.getByText('球球与布丁，也在等你来。').click();
     assert.ok(await page.locator('.cat-reveal').isVisible());
@@ -175,51 +280,33 @@ try {
     await page.evaluate(() => window.__page.setData({ storyItems: [] }));
     assert.ok(await page.locator('.empty').isVisible());
   });
-  await check('图片失败占位、重试、恢复可见', async () => {
+  await check('首次加载失败显示提示，重试后可恢复展示', async () => {
     await visit('home');
-    await page.evaluate(() =>
-      window.__page.setData({
-        coverPhoto: {
-          thumbnail: '/assets/missing.png',
-          caption: '故障测试照片',
-          placeholder: false,
-        },
-      }),
-    );
-    await page.locator('photo-frame').evaluate((host) => {
-      host.__component.error();
-    });
-    assert.equal(
-      await page.evaluate(
-        () => document.querySelector('photo-frame').__component.data.failed,
-      ),
-      true,
-    );
+    const result = await page
+      .locator('photo-frame')
+      .first()
+      .evaluate(async (host) => {
+        const component = host.__component;
+        component.receive('');
+        component.data.src = '/assets/missing.png';
+        await component.stage(component.data.src, true);
+        component.error();
+        const failed = component.data.failed;
+        component.retry();
+        component.data.src = '/assets/placeholder-portrait.png';
+        await component.stage(component.data.src, true);
+        component.load();
+        return {
+          failed,
+          recovered: component.data.loaded && !component.data.failed,
+        };
+      });
+    assert.equal(result.failed, true);
+    assert.equal(result.recovered, true);
     await page.screenshot({
-      path: 'artifacts/ui/photo-failure.png',
+      path: 'artifacts/ui/photo-failure-recovered.png',
       fullPage: true,
     });
-    await page.locator('photo-frame').evaluate((host) => {
-      host.__component.retry();
-    });
-    await page.evaluate(() =>
-      window.__page.setData({
-        coverPhoto: {
-          thumbnail: '/assets/placeholder-portrait.png',
-          caption: '恢复测试',
-          placeholder: false,
-        },
-      }),
-    );
-    await page.locator('photo-frame').evaluate((host) => {
-      host.__component.load();
-    });
-    assert.equal(
-      await page.evaluate(
-        () => document.querySelector('photo-frame').__component.data.failed,
-      ),
-      false,
-    );
   });
   await check('减少动效设置保持、深色偏好下保持奶油色与可读文字', async () => {
     await visit('privacy');
@@ -286,6 +373,115 @@ try {
     await visit('gallery');
     await page.waitForFunction(() => window.__page.data.total === 0);
     assert.ok(await page.locator('.empty').isVisible());
+  });
+  await check(
+    '遗留云图导入自动保存，重新进入仍可见且不会自动发布',
+    async () => {
+      await visit('photos');
+      await page.evaluate(async () => {
+        window.__page.setData({
+          importId: 'cloud://test-env/wedding/managed/recovered.jpg',
+        });
+        await window.__page.importPhoto();
+      });
+      await visit('photos');
+      assert.ok(
+        await page.evaluate(() =>
+          window.__page.data.photos.some(
+            (p) =>
+              p.original === 'cloud://test-env/wedding/managed/recovered.jpg',
+          ),
+        ),
+      );
+      await visit('gallery');
+      await page.waitForFunction(() => window.__page.data.total === 0);
+    },
+  );
+  await check('猫咪照片为空或只发布一只时分别保留占位', async () => {
+    await visit('home');
+    await page.waitForFunction(
+      () =>
+        window.__page.data.catPhotos.length === 2 &&
+        window.__page.data.catPhotos.every((p) => p.placeholder),
+    );
+    await visit('photos');
+    await page.evaluate(async () => {
+      const p = window.__page;
+      p.setData({ photos: [{ ...p.data.photos[0], slot: 'qiuqiu' }] });
+      await p.persist(true);
+    });
+    await visit('home');
+    await page.waitForFunction(() =>
+      window.__page.data.catPhotos.some((p) => p.slot === 'qiuqiu'),
+    );
+    assert.ok(
+      await page.evaluate(() =>
+        window.__page.data.catPhotos.some(
+          (p) => p.id === 'buding' && p.placeholder,
+        ),
+      ),
+    );
+  });
+  await check('四张猫咪照片在手机上固定两列，名字清晰可见', async () => {
+    await visit('home');
+    await page.evaluate(async () => {
+      await window.__page.onShow();
+      const catPhotos = Array.from({ length: 4 }, (_, i) => ({
+        id: 'layout-' + i,
+        slot: i === 0 ? 'qiuqiu' : 'buding',
+        thumbnail: '',
+        original: '',
+        placeholder: true,
+        caption: '',
+        ratio: i === 2 ? 'portrait' : 'landscape',
+      }));
+      window.__page.setData({
+        catVisible: true,
+        catPhotos,
+        catColumns: [
+          { id: 'cat-column-0', photos: [catPhotos[0], catPhotos[2]] },
+          { id: 'cat-column-1', photos: [catPhotos[1], catPhotos[3]] },
+        ],
+      });
+    });
+    for (const width of [320, 393, 430]) {
+      await page.setViewportSize({ width, height: 852 });
+      const boxes = await page.locator('.cat-photo').evaluateAll((nodes) =>
+        nodes.map((n) => {
+          const r = n.getBoundingClientRect();
+          return { x: r.x, y: r.y, width: r.width };
+        }),
+      );
+      assert.equal(boxes.length, 4);
+      assert.ok(Math.abs(boxes[0].y - boxes[2].y) < 1);
+      assert.ok(boxes[1].y > boxes[0].y);
+      assert.ok(Math.abs(boxes[0].x - boxes[1].x) < 1);
+      assert.ok(boxes[2].x + boxes[2].width <= width);
+    }
+    assert.deepEqual(await page.locator('.cat-caption').allTextContents(), [
+      '球球',
+      '布丁',
+      '布丁',
+      '布丁',
+    ]);
+    await page
+      .locator('.cat-reveal')
+      .screenshot({ path: 'artifacts/ui/cats-two-columns.png' });
+  });
+  await check('正式隐私与故事页面不显示演示或排版示例文案', async () => {
+    await visit('privacy');
+    await page.evaluate(() => window.__page.setData({ isMock: false }));
+    const privacy = await page.locator('.page').innerText();
+    assert.doesNotMatch(privacy, /演示版本|本机演示|需要我们确认/);
+    assert.match(privacy, /90 天内手动删除/);
+    assert.match(privacy, /永久删除小程序上传的照片文件/);
+    assert.match(privacy, /查看平台隐私保护指引/);
+    await page.screenshot({
+      path: 'artifacts/ui/privacy-production-copy.png',
+      fullPage: true,
+    });
+    await visit('story');
+    assert.doesNotMatch(await page.locator('.page').innerText(), /排版示例/);
   });
   assert.deepEqual(errors, []);
 } finally {

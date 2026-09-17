@@ -218,6 +218,8 @@ function renderNode(node, parent, context, owner, path, skipFor = false) {
     };
     host.__component = component;
     renderComponent();
+    for (const [name, observer] of Object.entries(definition.observers || {}))
+      if (!name.includes(',')) observer.call(component, component.data[name]);
     return;
   }
   const element = document.createElement(
@@ -260,12 +262,8 @@ function renderNode(node, parent, context, owner, path, skipFor = false) {
   }
   if (tag === 'image') {
     element.style.objectFit = 'contain';
-    element.addEventListener('load', () => {
-      if (!owner.data.loaded) call('load');
-    });
-    element.addEventListener('error', () => {
-      if (!owner.data.failed) call('error');
-    });
+    element.addEventListener('load', () => call('load'));
+    element.addEventListener('error', () => call('error'));
   }
   element.addEventListener('click', (event) => {
     if (events.tap) {

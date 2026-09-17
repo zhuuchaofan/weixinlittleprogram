@@ -21,7 +21,7 @@
 | `getMine`    | 按当前真实 OpenID 读取本人记录             |
 | `save`       | 按当前真实 OpenID 更新或新建本人登记       |
 | `removeMine` | 删除本人记录，不接受任意目标 ID            |
-| `dashboard`  | 验证管理员白名单后获取汇总与每页 50 条明细 |
+| `dashboard`  | 验证管理员白名单后获取汇总与每页 50 条明细 | `n  | `inspectManagedPhotoFile` | 仅管理员检查 managed 照片的草稿/已发布引用 | `n  | `deleteManagedPhotoFile` | 仅管理员永久删除无引用 managed 照片 |
 
 所有云函数返回 `{ok,data}` 或 `{ok:false,code,message}`。客户端不会在云端失败时降级成本地成功；提交按钮期间锁定，失败保留表单。重试依然写同一记录。
 
@@ -66,3 +66,13 @@
 实现参考微信官方示例仓库的 [项目配置](https://github.com/wechat-miniprogram/miniprogram-demo/blob/master/project.config.json) 与 CloudBase 官方维护的 [小程序工程指引](https://github.com/TencentCloudBase/awesome-miniprogram-skills/blob/main/SKILL-DEV-GUIDE.md)。可通过 [微信开发文档](https://developers.weixin.qq.com/miniprogram/dev/framework/) 和 [CloudBase 文档](https://docs.cloudbase.net/) 核对当前平台说明。
 
 本次微信文档部分页面无法被研究工具直接抓取，因此不声称核验了当前备案/认证/收费规则；账号、费用和发布事项以主人控制台当日显示为准。
+
+## 隐私整改版本部署顺序
+
+1. 填写 `content.ts` 中的真实微信号联系渠道，执行本地检查。
+2. 确认 `rsvps`、`photo_content` 禁止客户端读写；存储禁止客户端写入。
+3. 部署新版 `weddingApi` 并保留 `ADMIN_OPENIDS`。新增的 `inspectManagedPhotoFile`、`deleteManagedPhotoFile` 均只允许真实管理员调用。
+4. 上传体验版后，在公众平台配置用户隐私保护指引及体验版指引，再用管理员真机测试选图授权。
+5. 完整的双账号、真机和提审资料清单见 [REVIEW-READINESS.md](REVIEW-READINESS.md)。
+
+新版本不会自动变更线上数据库规则、存储规则、环境变量、公众平台隐私指引、备案、认证或审核状态。
