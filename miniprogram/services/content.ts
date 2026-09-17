@@ -2,6 +2,7 @@
 export {
   appConfig,
   coverPhoto,
+  catPhotos,
   storyItems,
   albums,
   navigation,

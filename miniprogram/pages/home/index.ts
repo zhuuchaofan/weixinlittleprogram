@@ -1,5 +1,10 @@
 import { uiCopy } from '../../config/ui-copy';
-import { appConfig, coverPhoto, navigation } from '../../services/content';
+import {
+  appConfig,
+  coverPhoto,
+  navigation,
+  catPhotos,
+} from '../../services/content';
 import { isMock } from '../../services/rsvp';
 import { previewPhotos } from '../../utils/preview';
 Page({
@@ -7,6 +12,7 @@ Page({
     copy: uiCopy.home,
     appConfig,
     coverPhoto,
+    catPhotos,
     navigation,
     isMock,
     reduceMotion: true,
@@ -19,6 +25,16 @@ Page({
   },
   preview() {
     previewPhotos([coverPhoto], 0);
+  },
+  previewCat(event: WechatMiniprogram.CustomEvent) {
+    const selected = catPhotos.find(
+      (photo) => photo.id === event.currentTarget.dataset.id,
+    );
+    const available = catPhotos.filter(
+      (photo) => !photo.placeholder && !!(photo.original || photo.thumbnail),
+    );
+    if (!selected || !available.includes(selected)) return;
+    void previewPhotos(available, available.indexOf(selected));
   },
   enter() {
     wx.navigateTo({ url: '/pages/gallery/index' });

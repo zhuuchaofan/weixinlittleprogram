@@ -2,7 +2,7 @@ import type { Album, Photo, StoryItem } from '../models';
 
 // 唯一婚宴内容入口。坐标来自高德地图 POI（GCJ-02）。
 export const appConfig = {
-  brand: '两猫一屋',
+  brand: '欢迎参加我们的答谢宴',
   subtitle: '记录两个人、两只猫和许多好日子的纪念册。',
   names: '朱超凡 & 高佳益',
   headline: '把平凡的日子\n过成我们的故事。',
@@ -29,8 +29,10 @@ export const appConfig = {
   storyIntro:
     '大事和小事，都值得留一页。\n以下章节是排版示例，等我们把真实的回忆放进来。',
   galleryIntro: '不急着翻完，日子还有很长。',
-  privacyContact: '如需处理云端登记，请联系向你发送请柬的新人。',
-  retention: '建议在宴会结束后 90 天内删除登记；正式使用前由主人确认并落实。',
+  privacyContact:
+    '需要帮忙时，直接联系给你发请柬的我们就好。你也可以点击下方按钮，删除自己的回复。',
+  retention:
+    '这份回复是为了安排这次相聚。我们建议在宴会结束后 90 天内清理登记，具体清理时间还需要我们确认；系统不会自动删除。你不必等到那时，现在就可以自行删除。',
 };
 
 const photo = (
@@ -107,5 +109,25 @@ export const navigation = [
     description: '告诉我们，你的安排',
     url: '/pages/rsvp/index',
     number: '04',
+  },
+];
+
+// 后续替换为球球、布丁的云存储 File ID，并将 placeholder 改为 false。
+export const catPhotos: Photo[] = [
+  {
+    id: 'qiuqiu',
+    thumbnail: '',
+    original: '',
+    caption: '球球',
+    placeholder: true,
+    ratio: 'square',
+  },
+  {
+    id: 'buding',
+    thumbnail: '',
+    original: '',
+    caption: '布丁',
+    placeholder: true,
+    ratio: 'square',
   },
 ];

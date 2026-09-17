@@ -1,3 +1,4 @@
+import { formatUpdatedAt } from '../../utils/date';
 import { uiCopy } from '../../config/ui-copy';
 import { rsvpService, isMock, getRsvpRevision } from '../../services/rsvp';
 import { friendlyError, validateRsvp } from '../../utils/validate';
@@ -39,7 +40,7 @@ Page({
           note: mine.note,
           consent: mine.consent,
           existing: true,
-          updatedAt: mine.updatedAt,
+          updatedAt: formatUpdatedAt(mine.updatedAt),
         });
       else
         this.setData({
@@ -111,7 +112,7 @@ Page({
       this.setData({
         existing: true,
         saved: true,
-        updatedAt: result.updatedAt,
+        updatedAt: formatUpdatedAt(result.updatedAt),
       });
       wx.showToast({
         title: isMock ? uiCopy.rsvp.text34 : uiCopy.rsvp.text35,

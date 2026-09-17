@@ -6,6 +6,15 @@
   <view class="date-line"><text class="date serif">{{appConfig.date}}</text><text class="small muted">{{appConfig.dateNote}}</text></view>
   <button class="primary" bindtap="enter">{{copy.text04}} <text class="arrow">↗</text></button>
   <view class="contents section"><view class="kicker">{{copy.text05}}</view><navigator wx:for="{{navigation}}" wx:key="url" url="{{item.url}}" class="nav-row"><text class="nav-number">{{item.number}}</text><view class="nav-copy"><view class="serif nav-title">{{item.title}}</view><view class="small muted">{{item.description}}</view></view><text>↗</text></navigator></view>
-  <button class="cat-note" bindtap="cat">{{appConfig.cats[0]}}{{copy.text06}}{{appConfig.cats[1]}}{{copy.text07}} <text>＋</text></button><view wx:if="{{catVisible}}" class="cat-reveal">{{appConfig.catMessage}}</view>
+  <button class="cat-note" bindtap="cat">{{appConfig.cats[0]}}{{copy.text06}}{{appConfig.cats[1]}}{{copy.text07}} <text>{{catVisible ? '−' : '＋'}}</text></button>
+  <view wx:if="{{catVisible}}" class="cat-reveal">
+    <view>{{appConfig.catMessage}}</view>
+    <view class="cat-photos">
+      <view wx:for="{{catPhotos}}" wx:key="id" class="cat-photo">
+        <photo-frame src="{{item.thumbnail}}" caption="{{item.caption}}" placeholder="{{item.placeholder}}" ratio="{{item.ratio}}" compact="{{true}}" data-id="{{item.id}}" bind:open="previewCat" />
+        <view class="cat-caption">{{item.caption}}</view>
+      </view>
+    </view>
+  </view>
   <page-footer />
 </view>

@@ -10,3 +10,7 @@
 .nav-row { display: flex; align-items: center; gap: 24rpx; padding: 28rpx 0; border-bottom: 1rpx solid var(--line); }.nav-number { font-size: 23rpx; color: var(--accent); }.nav-copy { flex: 1; }.nav-title { font-size: 37rpx; margin-bottom: 5rpx; }
 .cat-note { margin-top: 36rpx; justify-content: space-between; padding-left: 0; padding-right: 0; font-size: 25rpx; color: var(--muted); }.cat-reveal { font-size: 26rpx; color: var(--accent); padding: 20rpx 0; }
 .entrance { animation: arrival 450ms ease-out; } @keyframes arrival { from { opacity: 0.4; transform: translateY(8rpx); } to { opacity: 1; transform: translateY(0); } }
+
+.cat-photos { display: flex; gap: 20rpx; margin-top: 24rpx; }
+.cat-photo { flex: 1; min-width: 0; }
+.cat-caption { margin-top: 10rpx; font-size: 24rpx; text-align: center; }
