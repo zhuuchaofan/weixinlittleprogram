@@ -1,17 +1,55 @@
 <view class="page {{reduceMotion ? '' : 'entrance'}}">
-  <view class="masthead"><text class="brand serif">{{appConfig.brand}}</text><navigator class="edition" url="/pages/invitation/index">{{copy.invitationEntry}}</navigator></view>
+  <view class="masthead">
+    <text class="brand serif">{{appConfig.names}}</text>
+    <navigator class="edition" url="/pages/invitation/index">{{copy.invitationEntry}}</navigator>
+  </view>
   <view wx:if="{{isMock}}" class="demo">{{copy.text02}}</view>
-  <view class="hero">
+
+  <view wx:if="{{eventStatus.phase !== 'after'}}" class="event-poster">
+    <view class="poster-kicker">{{eventStatus.phase === 'today' ? copy.todayKicker : copy.posterKicker}}</view>
+    <view class="poster-title serif">{{copy.posterTitle}}</view>
+    <view wx:if="{{eventStatus.phase === 'before'}}" class="countdown-block">
+      <view class="countdown-caption">{{copy.beforeKicker}}</view>
+      <view class="countdown-line serif"><text class="countdown-number">{{eventStatus.daysUntil}}</text><text class="countdown-unit">天</text></view>
+    </view>
+    <view class="poster-meta"><text>{{appConfig.dateNote}}</text><text class="poster-dot">·</text><text>{{appConfig.time}}</text></view>
+    <view wx:if="{{appConfig.confirmed && appConfig.location}}" class="arrival-strip" bindtap="map" role="button" hover-class="arrival-strip-active" aria-label="{{appConfig.venue}}，{{copy.mapCta}}">
+      <view class="arrival-venue serif">{{appConfig.venue}}</view>
+      <view class="arrival-action"><text>{{copy.mapCta}}</text><view class="direction-chevron"></view></view>
+    </view>
+    <view wx:else class="arrival-strip arrival-static"><view class="arrival-venue serif">{{appConfig.venue}}</view></view>
+    <button class="primary photo-cta" bindtap="enter">{{copy.photoCta}}</button>
+    <navigator class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
+  </view>
+
+  <view wx:else class="memory-intro">
+    <view class="poster-kicker">{{copy.afterKicker}}</view>
+    <view class="memory-title serif">{{copy.afterTitle}}</view>
+    <view class="memory-lead">{{copy.afterLead}}</view>
+  </view>
+
+  <view class="photo-opening">
+    <view class="kicker">{{eventStatus.phase === 'after' ? copy.afterPhotoKicker : copy.photoKicker}}</view>
     <view wx:if="{{!photoContentReady}}" class="hero-pending" aria-label="照片正在准备"></view>
     <block wx:else>
-      <photo-frame src="{{coverPhoto.thumbnail}}" caption="{{coverPhoto.caption}}" placeholder="{{coverPhoto.placeholder}}" bind:open="preview" />
-      <view class="photo-label">{{copy.text03}}</view>
+      <view class="hero">
+        <photo-frame src="{{coverPhoto.thumbnail}}" caption="{{coverPhoto.caption}}" placeholder="{{coverPhoto.placeholder}}" bind:open="preview" />
+        <view class="photo-label">{{copy.text03}}</view>
+      </view>
     </block>
+    <button wx:if="{{eventStatus.phase === 'after'}}" class="primary photo-cta after-photo-cta" bindtap="enter">{{copy.photoCta}}</button>
+    <navigator wx:if="{{eventStatus.phase === 'after'}}" class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
   </view>
-  <view class="opening"><view class="names">{{appConfig.names}}</view><view class="title preline">{{appConfig.headline}}</view><view class="lead">{{appConfig.introduction}}</view></view>
-  <view class="date-line"><text class="date serif">{{appConfig.date}}</text><text class="small muted">{{appConfig.dateNote}}</text></view>
-  <button class="primary" bindtap="enter">{{copy.text04}} <text class="arrow">↗</text></button>
-  <view class="contents section"><view class="kicker">{{copy.text05}}</view><navigator wx:for="{{navigation}}" wx:key="url" url="{{item.url}}" class="nav-row"><text class="nav-number">{{item.number}}</text><view class="nav-copy"><view class="serif nav-title">{{item.title}}</view><view class="small muted">{{item.description}}</view></view><text>↗</text></navigator></view>
+
+  <view class="secondary-navigation section">
+    <view class="kicker">{{copy.text05}}</view>
+    <navigator wx:for="{{navigation}}" wx:key="url" url="{{item.url}}" class="nav-row">
+      <text class="nav-number">{{item.number}}</text>
+      <view class="nav-copy"><view class="serif nav-title">{{item.title}}</view><view class="small muted">{{item.description}}</view></view>
+      <view class="direction-chevron nav-chevron"></view>
+    </navigator>
+  </view>
+
   <button class="cat-note" bindtap="cat">{{appConfig.cats[0]}}{{copy.text06}}{{appConfig.cats[1]}}{{copy.text07}} <text>{{catVisible ? '−' : '＋'}}</text></button>
   <view wx:if="{{catVisible}}" class="cat-reveal">
     <view>{{appConfig.catMessage}}</view>

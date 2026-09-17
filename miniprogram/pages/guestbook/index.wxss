@@ -1,0 +1,7 @@
+.back-link { display: block; min-height: 76rpx; padding: 6rpx 0 22rpx; color: var(--muted); font-size: 26rpx; }
+.counter { text-align: right; }
+.consent { display: flex; align-items: flex-start; gap: 14rpx; font-size: 26rpx; }
+.consent checkbox { flex-shrink: 0; }
+.privacy-link { display: block; min-height: 88rpx; padding: 20rpx 0 28rpx; color: var(--accent); font-size: 26rpx; text-decoration: underline; }
+.saved-date { margin-bottom: 30rpx; }
+.actions { display: flex; flex-direction: column; gap: 18rpx; }

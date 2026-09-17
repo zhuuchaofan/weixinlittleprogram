@@ -19,7 +19,8 @@ window.wx = {
       return {
         fileList: fileList.map((fileID) => ({
           fileID,
-          tempFileURL: '/assets/placeholder-portrait.png',
+          tempFileURL:
+            'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
         })),
       };
     },

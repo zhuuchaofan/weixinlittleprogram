@@ -5,6 +5,7 @@
     "pages/story/index",
     "pages/gallery/index",
     "pages/rsvp/index",
+    "pages/guestbook/index",
     "pages/admin/index",
     "pages/privacy/index",
     "pages/photos/index"

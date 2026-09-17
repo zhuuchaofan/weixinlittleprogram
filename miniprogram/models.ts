@@ -46,3 +46,23 @@ export interface RsvpService {
   removeMine(): Promise<void>;
   dashboard(cursor?: string): Promise<Dashboard>;
 }
+export interface GuestMessageInput {
+  signature: string;
+  message: string;
+  consent: boolean;
+}
+export interface GuestMessageRecord extends GuestMessageInput {
+  id: string;
+  updatedAt: string;
+}
+export interface GuestMessageDashboard {
+  records: GuestMessageRecord[];
+  summary: { messages: number };
+  nextCursor: string;
+}
+export interface GuestMessageService {
+  getMine(): Promise<GuestMessageRecord | null>;
+  save(input: GuestMessageInput): Promise<GuestMessageRecord>;
+  removeMine(): Promise<void>;
+  dashboard(cursor?: string): Promise<GuestMessageDashboard>;
+}

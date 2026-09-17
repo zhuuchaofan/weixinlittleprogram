@@ -11,7 +11,9 @@ import {
   catPhotos,
 } from '../../services/content';
 import { isMock } from '../../services/rsvp';
+import { getBanquetStatus } from '../../utils/event-phase';
 import { previewPhotos } from '../../utils/preview';
+import { openVenueLocation } from '../../services/venue-location';
 
 let homeRefreshVersion = 0;
 
@@ -53,20 +55,35 @@ Page({
     coverPhoto,
     catPhotos,
     catColumns: createCatColumns(catPhotos),
-    navigation,
+    navigation: navigation.filter(
+      (item) =>
+        item.url === '/pages/invitation/index' ||
+        item.url === '/pages/story/index',
+    ),
     isMock,
     reduceMotion: true,
     catVisible: false,
     photoContentReady: false,
     photoSignature: '',
+    banquetScene: false,
+    eventStatus: getBanquetStatus(appConfig.eventDate),
+  },
+  onLoad(options: Record<string, string | undefined> = {}) {
+    this.setData({ banquetScene: options.scene === 'banquet' });
   },
   async onShow() {
     const reduceMotion = wx.getStorageSync('two-cats:motion') !== 'on';
-    if (this.data.reduceMotion !== reduceMotion) this.setData({ reduceMotion });
+    const eventStatus = getBanquetStatus(appConfig.eventDate);
+    if (
+      this.data.reduceMotion !== reduceMotion ||
+      this.data.eventStatus.phase !== eventStatus.phase ||
+      this.data.eventStatus.daysUntil !== eventStatus.daysUntil
+    )
+      this.setData({ reduceMotion, eventStatus });
+
     const refreshVersion = ++homeRefreshVersion;
     const result = await getPublishedPhotos();
     if (refreshVersion !== homeRefreshVersion) return;
-
     if (result.state === 'unavailable' && this.data.photoContentReady) return;
     const state = homePhotoState(
       result.state === 'published' ? result.photos : null,
@@ -100,6 +117,9 @@ Page({
     if (!selected || !available.includes(selected)) return;
     void previewPhotos(available, available.indexOf(selected));
   },
+  map() {
+    openVenueLocation();
+  },
   enter() {
     wx.navigateTo({ url: '/pages/gallery/index' });
   },
@@ -107,6 +127,6 @@ Page({
     this.setData({ catVisible: !this.data.catVisible });
   },
   onShareAppMessage() {
-    return { title: appConfig.brand, path: '/pages/home/index' };
+    return { title: appConfig.brand, path: '/pages/home/index?scene=banquet' };
   },
 });

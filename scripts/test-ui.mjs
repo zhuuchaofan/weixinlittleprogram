@@ -17,7 +17,7 @@ page.on('dialog', (dialog) => dialog.accept());
 async function visit(name) {
   await page.goto(`${previewUrl}/#${name}`);
   await page.waitForSelector(`body[data-ready="${name}"]`);
-  if (['rsvp', 'admin', 'photos'].includes(name))
+  if (['rsvp', 'guestbook', 'admin', 'photos'].includes(name))
     await page.waitForFunction(
       () => !window.__page.data.loading && !window.__page.data.busy,
     );
@@ -44,6 +44,7 @@ try {
       'story',
       'gallery',
       'rsvp',
+      'guestbook',
       'admin',
       'privacy',
       'photos',
@@ -74,6 +75,34 @@ try {
   }
   await page.setViewportSize({ width: 393, height: 852 });
   await visit('home');
+  await check('首页展览海报与宴后纪念册状态层级', async () => {
+    await page.evaluate(() =>
+      window.__page.setData({
+        eventStatus: { phase: 'before', daysUntil: 11 },
+      }),
+    );
+    assert.ok(await page.locator('.event-poster').isVisible());
+    assert.ok(await page.locator('.arrival-strip').isVisible());
+    assert.equal(await page.locator('.event-poster .primary').count(), 1);
+    assert.doesNotMatch(await page.locator('.event-poster').innerText(), /↗/);
+    await page.evaluate(() =>
+      window.__page.setData({
+        eventStatus: { phase: 'today', daysUntil: 0 },
+      }),
+    );
+    assert.equal(await page.locator('.countdown-block').count(), 0);
+    assert.ok(await page.locator('.arrival-strip').isVisible());
+    await page.evaluate(() =>
+      window.__page.setData({
+        eventStatus: { phase: 'after', daysUntil: 0 },
+      }),
+    );
+    assert.ok(await page.locator('.memory-intro').isVisible());
+    assert.equal(await page.locator('.event-poster').count(), 0);
+    assert.equal(await page.locator('.arrival-strip').count(), 0);
+    assert.equal(await page.locator('.photo-opening .primary').count(), 1);
+    await visit('home');
+  });
   await check('照片组件同源返回不重置，新图预加载成功后才切换', async () => {
     await page.waitForFunction(
       () => document.querySelector('photo-frame')?.__component?.data.loaded,
@@ -90,7 +119,7 @@ try {
           currentSource: component.data.currentSource,
         };
 
-        const replacement = '/assets/placeholder-landscape.png';
+        const replacement = '/test-image-landscape.png';
         component.data.src = replacement;
         await component.stage(replacement, false);
         const waiting = {
@@ -106,7 +135,7 @@ try {
           loaded: component.data.loaded,
         };
 
-        const failingReplacement = '/assets/placeholder-square.png';
+        const failingReplacement = '/test-image-square.png';
         component.data.src = failingReplacement;
         await component.stage(failingReplacement, false);
         component.error();
@@ -129,17 +158,17 @@ try {
     });
     assert.deepEqual(result.waiting, {
       currentSource: result.original,
-      pendingSource: '/assets/placeholder-landscape.png',
+      pendingSource: '/test-image-landscape.png',
       loaded: true,
       failed: false,
     });
     assert.deepEqual(result.switched, {
-      currentSource: '/assets/placeholder-landscape.png',
+      currentSource: '/test-image-landscape.png',
       pendingSource: '',
       loaded: true,
     });
     assert.deepEqual(result.afterFailure, {
-      currentSource: '/assets/placeholder-landscape.png',
+      currentSource: '/test-image-landscape.png',
       pendingSource: '',
       loaded: true,
       failed: false,
@@ -180,7 +209,7 @@ try {
   await check('猫咪彩蛋展开、首页导航进入相册', async () => {
     await page.getByText('球球与布丁，也在等你来。').click();
     assert.ok(await page.locator('.cat-reveal').isVisible());
-    await page.getByRole('button', { name: /翻开我们的纪念册/ }).click();
+    await page.getByRole('button', { name: /去看照片/ }).click();
     await page.waitForSelector('body[data-ready="gallery"]');
   });
   await check('相册切组与大图前后翻页', async () => {
@@ -206,7 +235,28 @@ try {
     await page.locator('.primary').click();
     assert.match(await page.locator('.error').innerText(), /隐私/);
   });
+  await visit('guestbook');
+  await check('私密祝福校验、保存、修改和删除', async () => {
+    await page.locator('.primary').click();
+    assert.match(await page.locator('.error').innerText(), /祝福/);
+    await page.locator('#guest-signature').fill('测试亲友');
+    await page.locator('#guest-message').fill('祝你们一直开心。');
+    await page.locator('input[type=checkbox]').check();
+    await page.locator('.primary').click();
+    await page.waitForFunction(() => window.__page.data.saved);
+    await visit('guestbook');
+    assert.equal(
+      await page.locator('#guest-message').inputValue(),
+      '祝你们一直开心。',
+    );
+    await page
+      .getByRole('button', { name: '删除这句祝福', exact: true })
+      .click();
+    await page.waitForFunction(() => !window.__page.data.existing);
+  });
+  await visit('rsvp');
   await check('人数加减、保存、回读、更新去重与后台汇总', async () => {
+    await page.locator('#guest-name').fill('测试亲友');
     await page.getByLabel('增加一人', { exact: true }).click();
     await page.locator('input[type=checkbox]').check();
     await page.locator('#guest-note').fill('一位素食');
@@ -258,7 +308,12 @@ try {
       window.__page.data.message.includes('已删除'),
     );
     await visit('admin');
-    assert.ok(await page.locator('.empty').isVisible());
+    assert.ok(
+      await page
+        .locator('.empty')
+        .filter({ hasText: '还没有收到登记' })
+        .isVisible(),
+    );
   });
   await check('相册和故事空状态', async () => {
     await visit('gallery');
@@ -288,12 +343,12 @@ try {
       .evaluate(async (host) => {
         const component = host.__component;
         component.receive('');
-        component.data.src = '/assets/missing.png';
+        component.data.src = '/test-missing.png';
         await component.stage(component.data.src, true);
         component.error();
         const failed = component.data.failed;
         component.retry();
-        component.data.src = '/assets/placeholder-portrait.png';
+        component.data.src = '/test-image-portrait.png';
         await component.stage(component.data.src, true);
         component.load();
         return {

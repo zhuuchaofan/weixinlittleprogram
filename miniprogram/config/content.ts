@@ -4,12 +4,13 @@ import type { Album, Photo, StoryItem } from '../models';
 export const appConfig = {
   brand: '欢迎参加我们的答谢宴',
   subtitle: '记录两个人、两只猫和许多好日子的纪念册。',
-  names: '朱超凡 & 高佳益',
+  names: '朱超凡&高佳益',
   headline: '把平凡的日子\n过成我们的故事。',
   introduction: '一屋，两人，三餐，四季。\n还有球球和布丁，和想见面的你。',
   invitation:
     '我们定于 2026 年 9 月 28 日举办结婚答谢宴，\n诚挚邀请大家前来相聚。',
   date: '2026.09.28',
+  eventDate: '2026-09-28',
   dateNote: '2026 年 9 月 28 日 · 结婚答谢宴',
   confirmed: true,
   time: '11:58',
@@ -32,10 +33,10 @@ export const appConfig = {
   // 提审前替换为实际可用的微信号；不要在这里填写密码、身份证或其他敏感信息。
   privacyContact: {
     channel: '微信号',
-    account: 'zhuuchoafan',
+    account: 'zhuochaofan',
   },
   retention:
-    '这份回复只为安排这次相聚而保留。我们会在宴会结束后 90 天内手动删除到场登记，系统不会自动清理。你不必等到那时，随时都可以点击下方按钮删除自己的回复。',
+    '这份回复只为安排这次相聚而保留。我们会在宴会结束后 90 天内手动删除到场登记和私密祝福，系统不会自动清理。你不必等到那时，随时都可以删除自己的回复或祝福。',
 };
 
 const photo = (
