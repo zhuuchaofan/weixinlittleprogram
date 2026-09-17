@@ -1,9 +1,9 @@
 <view class="footer">
   <view class="signature">{{brand}}</view>
   <view class="cats">{{cats}}</view>
-  <view class="links">
+  <view class="links" style="grid-template-columns: repeat({{isAdmin ? 3 : 2}}, minmax(0, 1fr));">
     <button bindtap="home">{{copy.text01}}</button>
     <navigator url="/pages/privacy/index">{{copy.text02}}</navigator>
-    <navigator url="/pages/admin/index">{{copy.text03}}</navigator>
+    <navigator wx:if="{{isAdmin}}" url="/pages/admin/index">{{copy.text03}}</navigator>
   </view>
 </view>

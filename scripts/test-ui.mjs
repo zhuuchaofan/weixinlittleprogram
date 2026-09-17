@@ -17,8 +17,10 @@ page.on('dialog', (dialog) => dialog.accept());
 async function visit(name) {
   await page.goto(`${previewUrl}/#${name}`);
   await page.waitForSelector(`body[data-ready="${name}"]`);
-  if (['rsvp', 'admin'].includes(name))
-    await page.waitForFunction(() => !window.__page.data.loading);
+  if (['rsvp', 'admin', 'photos'].includes(name))
+    await page.waitForFunction(
+      () => !window.__page.data.loading && !window.__page.data.busy,
+    );
 }
 async function check(name, action) {
   await action();
@@ -42,6 +44,7 @@ try {
       'rsvp',
       'admin',
       'privacy',
+      'photos',
     ]) {
       await visit(name);
       await check(`${width}px / ${name} 横向无溢出、可滚动到底`, async () => {
@@ -238,6 +241,51 @@ try {
       path: 'artifacts/ui/dark-reduced-motion.png',
       fullPage: true,
     });
+  });
+  await check('照片草稿编辑、复用、排序、发布及首页相册读取', async () => {
+    await visit('photos');
+    assert.equal(
+      await page.evaluate(() => window.__page.data.authorized),
+      true,
+    );
+    await page.evaluate(async () => {
+      const p = window.__page;
+      p.caption({
+        currentTarget: { dataset: { index: 0 } },
+        detail: { value: '测试照片说明' },
+      });
+      p.duplicate({ currentTarget: { dataset: { index: 0 } } });
+      p.slot({
+        currentTarget: { dataset: { index: p.data.photos.length - 1 } },
+        detail: { value: '3' },
+      });
+      p.move({ currentTarget: { dataset: { index: 1, delta: -1 } } });
+      await p.save();
+    });
+    await visit('photos');
+    assert.equal(
+      await page.evaluate(() => window.__page.data.photos.at(-1).slot),
+      'qiuqiu',
+    );
+    await page.evaluate(() => window.__page.persist(true));
+    await visit('home');
+    await page.waitForFunction(() =>
+      window.__page.data.catPhotos.some((p) => p.slot === 'qiuqiu'),
+    );
+    await visit('gallery');
+    await page.waitForFunction(() =>
+      window.__page.data.albums[0].photos.some(
+        (p) => p.caption === '测试照片说明',
+      ),
+    );
+    await visit('photos');
+    await page.evaluate(async () => {
+      window.__page.setData({ photos: [] });
+      await window.__page.persist(true);
+    });
+    await visit('gallery');
+    await page.waitForFunction(() => window.__page.data.total === 0);
+    assert.ok(await page.locator('.empty').isVisible());
   });
   assert.deepEqual(errors, []);
 } finally {

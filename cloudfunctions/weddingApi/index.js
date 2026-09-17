@@ -40,7 +40,7 @@ const repository = {
     };
   },
 };
-exports.main = createHandler({
+const handleRsvp = createHandler({
   repository,
   getOpenId: () => cloud.getWXContext().OPENID,
   getAdmins: () =>
@@ -49,3 +49,16 @@ exports.main = createHandler({
       .map((id) => id.trim())
       .filter(Boolean),
 });
+
+const { createPhotoHandler } = require('./photos');
+const handlePhotos = createPhotoHandler({
+  cloud,
+  db,
+  getAdmins: () =>
+    (process.env.ADMIN_OPENIDS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+});
+exports.main = async (event) =>
+  (await handlePhotos(event)) || (await handleRsvp(event));

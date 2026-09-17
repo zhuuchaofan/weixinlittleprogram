@@ -1,3 +1,4 @@
+import { getPublishedPhotos } from '../../services/photos';
 import { uiCopy } from '../../config/ui-copy';
 import {
   appConfig,
@@ -18,19 +19,32 @@ Page({
     reduceMotion: true,
     catVisible: false,
   },
-  onShow() {
+  async onShow() {
     this.setData({
       reduceMotion: wx.getStorageSync('two-cats:motion') !== 'on',
     });
+    const photos = await getPublishedPhotos();
+    if (photos !== null)
+      this.setData({
+        coverPhoto: photos.find((p) => p.slot === 'cover') || {
+          ...coverPhoto,
+          thumbnail: '',
+          original: '',
+          placeholder: true,
+        },
+        catPhotos: photos.filter(
+          (p) => p.slot === 'qiuqiu' || p.slot === 'buding',
+        ),
+      });
   },
   preview() {
-    previewPhotos([coverPhoto], 0);
+    previewPhotos([this.data.coverPhoto], 0);
   },
   previewCat(event: WechatMiniprogram.CustomEvent) {
-    const selected = catPhotos.find(
+    const selected = this.data.catPhotos.find(
       (photo) => photo.id === event.currentTarget.dataset.id,
     );
-    const available = catPhotos.filter(
+    const available = this.data.catPhotos.filter(
       (photo) => !photo.placeholder && !!(photo.original || photo.thumbnail),
     );
     if (!selected || !available.includes(selected)) return;

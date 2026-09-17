@@ -6,7 +6,8 @@
     "pages/gallery/index",
     "pages/rsvp/index",
     "pages/admin/index",
-    "pages/privacy/index"
+    "pages/privacy/index",
+    "pages/photos/index"
   ],
   "window": {
     "navigationBarTitleText": "两猫一屋",

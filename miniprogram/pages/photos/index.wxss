@@ -1,0 +1,33 @@
+.photo-editor { --editor-surface: #fcf9f4; }
+.back-link { display: inline-block; color: var(--muted); font-size: 25rpx; padding: 12rpx 0 28rpx; }
+.editor-heading { padding: 10rpx 0 32rpx; }
+.editor-heading .title { margin: 14rpx 0 20rpx; }
+.save-bar { position: sticky; top: 0; z-index: 5; display: flex; gap: 16rpx; padding: 20rpx 0; background: var(--paper); border-bottom: 1rpx solid var(--line); }
+.save-bar button { flex: 1; min-width: 0; }
+.editor-guide { margin: 22rpx 0 32rpx; color: var(--muted); font-size: 24rpx; line-height: 1.8; }
+.upload-button { display: flex; justify-content: flex-start; gap: 20rpx; padding: 28rpx 24rpx; border: 1rpx dashed var(--line); background: var(--editor-surface); text-align: left; }
+.upload-plus { color: var(--accent); font-size: 44rpx; font-weight: 300; }
+.upload-copy { flex: 1; min-width: 0; }
+.upload-copy .small { margin-top: 8rpx; font-size: 23rpx; }
+.upload-arrow { color: var(--accent); }
+.collection-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16rpx; margin: 56rpx 0 8rpx; }
+.collection-heading .section-title { margin: 0; }
+.photo-entry { border-top: 1rpx solid var(--line); margin-bottom: 44rpx; }
+.entry-heading { display: flex; align-items: baseline; gap: 20rpx; padding: 20rpx 0; }
+.entry-number { color: var(--accent); font-size: 40rpx; line-height: 1.2; }
+.entry-slot { flex: 1; font-size: 27rpx; }
+.entry-heading .small { font-size: 22rpx; }
+.editor-photo { padding: 10rpx; background: var(--editor-surface); }
+.entry-fields { margin-top: 24rpx; }
+.field-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12rpx; font-size: 25rpx; }
+.entry-fields input { font-size: 28rpx; background: var(--editor-surface); padding: 18rpx 22rpx; }
+.input-placeholder { color: var(--muted); }
+.placement { display: flex; justify-content: space-between; align-items: center; min-height: 100rpx; gap: 20rpx; border-bottom: 1rpx solid var(--line); font-size: 26rpx; }
+.placement-value { color: var(--accent); }
+.chevron { padding-left: 20rpx; }
+.entry-tools { display: flex; padding-top: 10rpx; }
+.entry-tools button { flex: 1; min-width: 0; padding: 22rpx 4rpx; font-size: 25rpx; min-height: 96rpx; }
+.entry-tools button[disabled] { background: transparent; opacity: .55; }
+.entry-tools .remove-button { color: var(--accent); }
+.empty-title { color: var(--ink); font-size: 34rpx; margin-bottom: 18rpx; }
+.closing-note { padding: 12rpx 0 24rpx; color: var(--muted); font-size: 24rpx; line-height: 1.9; text-align: center; }

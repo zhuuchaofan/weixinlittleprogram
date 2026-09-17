@@ -1,3 +1,4 @@
+import { getPublishedPhotos } from '../../services/photos';
 import { uiCopy } from '../../config/ui-copy';
 import { appConfig, albums } from '../../services/content';
 import { previewPhotos } from '../../utils/preview';
@@ -18,9 +19,21 @@ Page({
     columns: columns(albums[0]?.photos || []),
     total: albums[0]?.photos.length || 0,
   },
+  async onShow() {
+    const photos = await getPublishedPhotos();
+    if (photos !== null) {
+      const items = photos.filter((p) => p.slot === 'album');
+      this.setData({
+        albums: [{ ...albums[0], photos: items }],
+        active: 0,
+        columns: columns(items),
+        total: items.length,
+      });
+    }
+  },
   select(event: WechatMiniprogram.TouchEvent) {
     const active = Number(event.currentTarget.dataset.index);
-    const album = albums[active];
+    const album = this.data.albums[active];
     if (album)
       this.setData({
         active,
@@ -30,7 +43,7 @@ Page({
       });
   },
   preview(event: WechatMiniprogram.CustomEvent) {
-    const album = albums[this.data.active];
+    const album = this.data.albums[this.data.active];
     if (!album) return;
     const index = album.photos.findIndex(
       (p) => p.id === event.currentTarget.dataset.id,
