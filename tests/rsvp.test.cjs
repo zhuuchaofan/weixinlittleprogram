@@ -92,17 +92,17 @@ test('云图 file ID 在显示前换为短期 HTTPS 地址并缓存，普通本�
     assert.equal(calls, 0);
     assert.equal(
       await resolvePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg'),
-      'https://temporary.example/photo.jpg',
+      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080',
     );
     assert.equal(
       await resolvePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg'),
-      'https://temporary.example/photo.jpg',
+      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080',
     );
     assert.equal(calls, 1);
     invalidatePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg');
     assert.equal(
       await resolvePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg'),
-      'https://temporary.example/photo.jpg',
+      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080',
     );
     assert.equal(calls, 2);
   } finally {
@@ -450,4 +450,79 @@ test('照片选取先经过微信原生隐私授权，拒绝或旧版本不继�
   } finally {
     delete global.wx;
   }
+});
+
+test('缩略图追加实时处理参数，原图预览保持原始临时链接，并按 50 张分批预热', async () => {
+  const { localConfig } = require('../miniprogram/config/local.ts');
+  const {
+    clearCloudFileUrlCache,
+    prewarmCloudFileUrls,
+    resolveCloudFileUrl,
+  } = require('../miniprogram/services/cloud-file-url.ts');
+  const previousEnv = localConfig.cloudEnvId;
+  const batches = [];
+  global.wx = {
+    cloud: {
+      init() {},
+      async getTempFileURL({ fileList }) {
+        batches.push(fileList);
+        return {
+          fileList: fileList.map((fileID) => ({
+            fileID,
+            tempFileURL: `https://temporary.example/${fileID.slice(-4)}.jpg`,
+          })),
+        };
+      },
+    },
+  };
+  try {
+    localConfig.cloudEnvId = 'test-env';
+    clearCloudFileUrlCache();
+    const files = Array.from(
+      { length: 60 },
+      (_, index) => `cloud://test-env.bucket/wedding/${index}.jpg`,
+    );
+    await prewarmCloudFileUrls(files);
+    assert.deepEqual(
+      batches.map((batch) => batch.length),
+      [50, 10],
+    );
+    assert.match(
+      await resolveCloudFileUrl(files[0], 'thumbnail'),
+      /imageMogr2\/thumbnail\/1080x1080$/,
+    );
+    assert.doesNotMatch(
+      await resolveCloudFileUrl(files[0], 'original'),
+      /imageMogr2/,
+    );
+  } finally {
+    clearCloudFileUrlCache();
+    localConfig.cloudEnvId = previousEnv;
+    delete global.wx;
+  }
+});
+
+test('云函数在收集关闭后拒绝新增或修改，但仍允许读取和删除本人登记', async () => {
+  const rows = new Map();
+  const handler = createHandler({
+    repository: {
+      get: async (id) => rows.get(id) || null,
+      put: async (id, data) => rows.set(id, { _id: id, ...data }),
+      remove: async (id) => rows.delete(id),
+      list: async () => [],
+      summary: async () => ({
+        responses: 0,
+        attending: 0,
+        guests: 0,
+        declined: 0,
+      }),
+    },
+    getOpenId: () => 'guest-a',
+    getAdmins: () => [],
+    canCollect: () => false,
+  });
+  const denied = await handler({ action: 'save', payload: valid });
+  assert.equal(denied.code, 'COLLECTION_CLOSED');
+  assert.equal((await handler({ action: 'getMine' })).ok, true);
+  assert.equal((await handler({ action: 'removeMine' })).ok, true);
 });

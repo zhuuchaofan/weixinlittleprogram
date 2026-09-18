@@ -1,1 +1,6 @@
-{ "component": true }
+{
+  "component": true,
+  "usingComponents": {
+    "music-control": "/components/music-control/index"
+  }
+}

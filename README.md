@@ -1,89 +1,53 @@
 # 两猫一屋
 
-两个人、球球、布丁，和许多好日子的原生微信纪念册。
+朱超凡&高佳益的微信答谢宴纪念册。它向亲友提供电子请柬、照片册、故事、到场登记和仅主人可见的文字祝福；照片由主人在后台管理，数据通过 CloudBase 云函数处理。
 
-**首版 mock 已实现，可直接导入微信开发者工具。** 没有云环境也能浏览全部页面、填写和修改本机登记、查看本机管理员演示。真实 CloudBase 连接、双账号和真机验收尚未执行。
+当前共有 9 个页面：首页、电子请柬、故事、照片册、到场登记、私密祝福、主人工作台、照片管理、隐私说明。没有支付、广告、公开宾客名单或公开祝福墙。
 
-## 打开项目
+## 当前状态
 
-1. 在微信开发者工具中打开本目录 `D:\chaofan\weixinlittleprogram`，不是其中的 `miniprogram` 子目录。
-2. 当前已有的 `project.config.json` / `project.private.config.json` 已保留；只补充源码目录、云函数目录和 TypeScript 编译插件。已有 AppID 未改写。
-3. 点「编译」，入口为 `pages/home/index`。本项目不需要「构建 npm」：前端无运行时 npm 依赖。
-4. 如果从干净副本开始，先在终端运行：
+- 照片与音乐均使用 CloudBase File ID，不放进小程序代码包。
+- 照片列表使用最大边长 1080px 的临时缩略图链接；点开大图仍使用原图链接。
+- 管理员入口只作为界面展示缓存 5 分钟；云函数每次管理操作均按真实 OpenID 鉴权。
+- 背景音乐当前**关闭**，`miniprogram/config/music.ts` 没有 File ID。仅可在替换为自有或已获公开播放授权的音频后启用。
+- 2026 年 9 月 29 日起停止新增或修改登记、祝福；本人仍可删除，主人仍可读取和清理至 2026 年 12 月 27 日。
+
+真实 CloudBase 规则、云函数部署、双账号隔离和 iPhone/安卓验收仍需在你的环境完成，不能由本地代码证明。
+
+## 使用
+
+1. 在微信开发者工具打开 `D:\chaofan\weixinlittleprogram`，不要只打开 `miniprogram` 子目录。
+2. 保留本地的 `project.config.json` 与 `project.private.config.json`，在 `miniprogram/config/local.ts` 配置环境 ID。
+3. 如为干净副本，运行：
 
 ```powershell
 npm ci
 npm run setup
 ```
 
-`setup` 仅创建缺失的本地配置，不覆盖已有值。默认使用 `touristappid` 占位；有自己的 AppID 时，仅在本地开发者工具填写。游客模式的分享、云开发和真机能力受限，以工具提示为准。
+4. 编译入口为 `pages/home/index`。前端没有运行时 npm 依赖，无需“构建 npm”。
 
-## 已实现
-
-- 首页：照片纸边、电影章节式目录、两猫署名和彩蛋、默认减少动效。
-- 电子请柬：集中配置的日期、场地、署名、温馨提示；已确认坐标才允许地图导航；可复制地址。
-- 故事：配置驱动的时间线与多张照片。
-- 相册：相识 / 旅行 / 婚礼分组，双列错落排版，原生 `wx.previewImage` 大图左右切换。
-- 登记：称呼、是否到场、总人数（含本人 1–10 人）、备注、隐私同意；读回、更新、删除、失败重试。
-- 管理页：总回复、到场人数和明细；mock 只显示本机，cloud 由后端白名单鉴权，分页读取。
-- 隐私：最小采集、删除自己的登记、保存期限与联系方式说明。
-- 图片：明显标注的占位资源；失败状态和重试；真实照片默认完整显示，不自动裁人脸。
-
-所有示例信息均可替换。`2026.09.27` 与新人姓名取自原需求草案，日期仍标为待主人确认；没有编造酒店、经纬度、父母姓名或真实故事。
-
-## 改内容和继续接云端
-
-- [内容替换指南](docs/CONTENT-GUIDE.md)
-- [主人下一步操作](docs/NEXT-FOR-OWNER.md)
-- [CloudBase 部署与安全边界](docs/DEPLOYMENT.md)
-- [自测清单与本次证据](docs/TEST-CASES.md)
-- [视觉与实现说明](docs/DESIGN.md)
-
-## 验证命令
+## 常用命令
 
 ```powershell
-npm run check          # TypeScript + ESLint + 数据/权限测试
-npm run format:check   # TS / JS / JSON / Markdown 等格式
-npm run check:native   # 使用本机微信工具附带 WXML/WXSS 编译器
-npm run preview        # 127.0.0.1:4173，本地模板适配预览
-# 保持上面的服务运行，在另一终端：
-npm run test:ui        # Edge / Playwright 多尺寸与交互测试
+npm run check          # TypeScript、ESLint、自动测试
+npm run format:check   # 格式检查
+npm run check:native   # 本机微信 WXML/WXSS 编译器检查
+npm run preview        # 本地辅助预览，仅监听 127.0.0.1
+npm run test:ui        # 在 preview 运行时执行多尺寸辅助回归
 ```
 
-浏览器辅助预览直接读取实际 WXML、WXSS 和页面 TypeScript，**不是微信基础库**，不替代开发者工具或真机。它只监听本机，不包含在小程序包内。默认 Edge 路径、微信编译器路径可用 `BROWSER_PATH`、`WECHAT_COMPILER_DIR` 环境变量覆盖。WXML/WXSS 使用原生编译器验证；Prettier 不改写它们。
+浏览器辅助预览直接读取项目 WXML/WXSS/TS，但不是微信基础库，也不能替代开发者工具和真机验收。
 
-本次通过：TypeScript、ESLint、数据/权限测试、原生模板/样式编译以及 320 / 360 / 393 / 430 / 1280px 模板布局检查。证据和待验项见自测文档。开发者工具自动化 CLI 因本机配置目录缺失未能连接，未声称已完成原生模拟器逐页截图。
+## 文档
 
-## 文件结构
-
-```text
-miniprogram/
-  app.ts / app.json / app.wxss
-  config/content.ts       婚宴、故事、照片、品牌
-  config/ui-copy.ts       所有页面文案、隐私正文、提示语
-  config/local.ts         本地模式和环境 ID，不进版本库
-  services/              内容入口、RSVP 接口、mock/cloud 实现
-  components/            图片框、页脚
-  pages/                 七个原生页面
-  assets/                三张明确标注的 PNG 占位图
-cloudfunctions/
-  weddingApi/            save/getMine/removeMine/dashboard 云函数
-  database.rules.json    rsvps 客户端禁止读写的规则模板
-docs/                    交接与自测
-scripts/                 本地检查与辅助预览，不会打包至小程序
-tests/                   数据与权限回归
-```
+- [内容维护](docs/CONTENT-GUIDE.md)
+- [CloudBase 部署与收束](docs/DEPLOYMENT.md)
+- [主人待办](docs/NEXT-FOR-OWNER.md)
+- [自测与真实验收](docs/TEST-CASES.md)
+- [照片管理](docs/PHOTO-MANAGEMENT.md)
+- [提审前核验](docs/REVIEW-READINESS.md)
 
 ## 边界
 
-不索取或使用 AppSecret、微信密码、身份证、支付信息；不操作公众平台，不执行备案、认证、审核或发布。没有支付、广告、公开宾客名单和公开祝福墙。数据库客户端全部禁止读写，由云函数验证实际 OpenID。管理员名单只放服务端环境变量；不能放入公开内容配置。云端失败不会回退成本地保存。
-
-mock 是本机交互演示，不能用来收集真实宾客回复。切换云端不会迁移 mock 数据。照片展示不是访问控制；上线前只放已获得展示同意的素材。
-
-## 主人照片管理（2026-09-17）
-
-已添加仅管理员可见的主人入口、手机上传、用途/说明/顺序调整、保存草稿和更新展示。部署配置与验收请见 [照片管理指南](docs/PHOTO-MANAGEMENT.md)。新建 photo_content 并更新 weddingApi 后再真机验证。
-
-## 答谢宴现场版（2026-09-17）
-
-首页现在按中国本地日期显示倒计时、当天欢迎或宴后致谢；主按钮始终进入照片册。宾客可写一条仅主人可见的文字祝福（可改、可删），不提供公开祝福墙或宾客上传照片。部署前须创建 guest_messages 并重新部署 weddingApi，详见 [部署说明](docs/DEPLOYMENT.md) 与 [主人下一步](docs/NEXT-FOR-OWNER.md)。
+数据库集合禁止客户端直接读写；管理员白名单仅保存在云函数 `ADMIN_OPENIDS`，不得放入前端。访客数据不导出；照片展示前须取得当事人同意。不要在内容配置、云存储文件名、祝福或备注中写入密码、OpenID、身份证、支付信息、手机号或健康信息。

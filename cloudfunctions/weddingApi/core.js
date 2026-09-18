@@ -53,6 +53,7 @@ function createHandler({
   repository,
   getOpenId,
   getAdmins,
+  canCollect = () => true,
   now = () => new Date().toISOString(),
 }) {
   return async (event) => {
@@ -69,6 +70,11 @@ function createHandler({
       if (action === 'getMine')
         return { ok: true, data: publicRecord(await repository.get(id)) };
       if (action === 'save') {
+        if (!canCollect())
+          throw new ApiError(
+            'COLLECTION_CLOSED',
+            '收集已于答谢宴结束后关闭，感谢你的心意。',
+          );
         const fields = validate(payload);
         const record = { ...fields, openid, updatedAt: now() };
         await repository.put(id, record);

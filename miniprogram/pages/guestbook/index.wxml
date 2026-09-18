@@ -6,7 +6,8 @@
   <view wx:if="{{isMock}}" class="notice">{{copy.text04}}</view>
   <view wx:if="{{loading}}" class="status">{{copy.text05}}</view>
   <view wx:if="{{error}}" class="notice error" role="alert">{{error}}<button wx:if="{{loadFailed}}" class="text-button" bindtap="load">{{copy.text06}}</button></view>
-  <view wx:if="{{!loading && !loadFailed}}" class="section">
+  <view wx:if="{{!loading && !loadFailed && collectionClosed}}" class="section"><view class="notice">{{copy.collectionClosed}}</view><view wx:if="{{existing}}" class="small muted saved-date">{{copy.text08}}{{updatedAt}}</view><button wx:if="{{existing}}" class="secondary" bindtap="remove" loading="{{deleting}}" disabled="{{deleting}}">{{copy.text22}}</button></view>
+  <view wx:if="{{!loading && !loadFailed && !collectionClosed}}" class="section">
     <view wx:if="{{existing}}" class="small muted saved-date">{{copy.text07}}<view>{{copy.text08}}{{updatedAt}}</view></view>
     <view class="field"><label class="field-label" for="guest-signature">{{copy.text09}} <text class="small muted">{{copy.text10}}</text></label><input id="guest-signature" value="{{signature}}" bindinput="signatureInput" maxlength="30" placeholder="{{copy.text11}}" disabled="{{saving || deleting}}" /></view>
     <view class="field"><label class="field-label" for="guest-message">{{copy.text12}} <text class="small muted">{{copy.text13}}</text></label><textarea id="guest-message" value="{{message}}" bindinput="messageInput" maxlength="120" placeholder="{{copy.text14}}" disabled="{{saving || deleting}}" /><view class="small muted counter">{{message.length}} / 120</view></view>

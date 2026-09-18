@@ -31,3 +31,25 @@ test('答谢宴状态按中国本地日期切换，跨年时也用日历日计�
     { phase: 'before', daysUntil: 1 },
   );
 });
+
+test('收集截止使用中国日历日，跨年边界也正确切换', () => {
+  const {
+    isCollectionClosed,
+  } = require('../miniprogram/utils/collection-phase.ts');
+  assert.equal(
+    isCollectionClosed('2026-09-29', new Date('2026-09-28T15:59:59.000Z')),
+    false,
+  );
+  assert.equal(
+    isCollectionClosed('2026-09-29', new Date('2026-09-28T16:00:00.000Z')),
+    true,
+  );
+  assert.equal(
+    isCollectionClosed('2027-01-01', new Date('2026-12-31T15:59:59.000Z')),
+    false,
+  );
+  assert.equal(
+    isCollectionClosed('2027-01-01', new Date('2026-12-31T16:00:00.000Z')),
+    true,
+  );
+});

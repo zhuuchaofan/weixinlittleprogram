@@ -1,37 +1,30 @@
-import { initializeCloud } from './cloud';
+import {
+  clearCloudFileUrlCache,
+  invalidateCloudFileUrl,
+  prewarmCloudFileUrls,
+  resolveCloudFileUrl,
+  type CloudFileRendition,
+} from './cloud-file-url';
 
-const cloudFilePrefix = 'cloud://';
-const urlCache = new Map<string, Promise<string>>();
+/** 将云存储 File ID 转成当前会话的展示链接；缩略图自动使用低流量实时处理。 */
+export function resolvePhotoUrl(
+  source: string,
+  rendition: CloudFileRendition = 'thumbnail',
+): Promise<string> {
+  return resolveCloudFileUrl(source, rendition);
+}
 
-/** 将云存储 file ID 转成当次会话可展示的 HTTPS 地址；普通本地/HTTPS 图片原样返回。 */
-export async function resolvePhotoUrl(source: string): Promise<string> {
-  if (!source || !source.startsWith(cloudFilePrefix)) return source;
-
-  const cached = urlCache.get(source);
-  if (cached) return await cached;
-
-  const resolving = (async () => {
-    initializeCloud();
-    const result = await wx.cloud.getTempFileURL({ fileList: [source] });
-    const item = result.fileList[0];
-    if (!item?.tempFileURL) throw new Error('云端照片链接暂时不可用');
-    return item.tempFileURL;
-  })();
-
-  urlCache.set(source, resolving);
-  try {
-    return await resolving;
-  } catch (error) {
-    urlCache.delete(source);
-    throw error;
-  }
+export function prewarmPhotoUrls(
+  sources: ReadonlyArray<string>,
+): Promise<void> {
+  return prewarmCloudFileUrls(sources, 'thumbnail');
 }
 
 export function clearPhotoUrlCache(): void {
-  urlCache.clear();
+  clearCloudFileUrlCache();
 }
 
-/** 仅在用户主动重试单张云图时丢弃它的临时地址。 */
+/** 仅在用户主动重试单张云图时丢弃该图的全部临时链接变体。 */
 export function invalidatePhotoUrl(source: string): void {
-  if (source.startsWith(cloudFilePrefix)) urlCache.delete(source);
+  invalidateCloudFileUrl(source);
 }

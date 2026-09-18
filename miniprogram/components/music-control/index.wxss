@@ -1,0 +1,49 @@
+button.music-control {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 76rpx !important;
+  min-width: 76rpx !important;
+  max-width: 76rpx !important;
+  height: 76rpx !important;
+  min-height: 76rpx !important;
+  max-height: 76rpx !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--accent, #783e3c);
+  border: 1rpx solid var(--line, #d9ccbb);
+  border-radius: 50% !important;
+  background: rgba(255, 250, 242, .96);
+  box-shadow: 0 8rpx 22rpx rgba(56, 47, 41, .14);
+  line-height: 1;
+}
+button.music-control::after { border: 0; }
+button.music-control.floating {
+  position: fixed;
+  right: 28rpx;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 80;
+}
+button.music-control.masthead {
+  width: 62rpx !important;
+  min-width: 62rpx !important;
+  max-width: 62rpx !important;
+  height: 62rpx !important;
+  min-height: 62rpx !important;
+  max-height: 62rpx !important;
+  background: transparent;
+  box-shadow: none;
+}
+.disc { position: relative; display: flex; align-items: center; justify-content: center; width: 34rpx; height: 34rpx; border: 2rpx solid currentColor; border-radius: 50%; }
+.disc-ring { position: absolute; inset: 6rpx; border: 1rpx solid currentColor; border-radius: 50%; opacity: .72; }
+.state-mark { position: relative; z-index: 1; }
+.play-mark { width: 0; height: 0; margin-left: 3rpx; border-top: 6rpx solid transparent; border-bottom: 6rpx solid transparent; border-left: 9rpx solid currentColor; }
+.pause-mark { display: flex; gap: 3rpx; }
+.pause-mark view { width: 3rpx; height: 11rpx; border-radius: 2rpx; background: currentColor; }
+.loading-mark { width: 10rpx; height: 10rpx; border: 2rpx solid currentColor; border-right-color: transparent; border-radius: 50%; }
+.is-playing .disc { animation: music-disc 5s linear infinite; }
+.is-playing .pause-mark { animation: counter-rotate 5s linear infinite; }
+.loading-mark { animation: music-disc 900ms linear infinite; }
+.has-error { color: #9a5f48; border-color: #c9a895; }
+@keyframes music-disc { to { transform: rotate(360deg); } }
+@keyframes counter-rotate { to { transform: rotate(-360deg); } }

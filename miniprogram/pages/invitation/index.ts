@@ -1,9 +1,19 @@
 import { uiCopy } from '../../config/ui-copy';
 import { appConfig } from '../../services/content';
 import { openVenueLocation } from '../../services/venue-location';
+import { isCollectionClosed } from '../../utils/collection-phase';
 
 Page({
-  data: { copy: uiCopy.invitation, appConfig },
+  data: {
+    copy: uiCopy.invitation,
+    appConfig,
+    collectionClosed: isCollectionClosed(appConfig.collectionCloseDate),
+  },
+  onShow() {
+    const collectionClosed = isCollectionClosed(appConfig.collectionCloseDate);
+    if (this.data.collectionClosed !== collectionClosed)
+      this.setData({ collectionClosed });
+  },
   map() {
     openVenueLocation();
   },

@@ -35,6 +35,42 @@ window.wx = {
   removeStorageSync(key) {
     localStorage.removeItem(key);
   },
+  setInnerAudioOption({ success }) {
+    success?.();
+  },
+  createInnerAudioContext() {
+    const listeners = {};
+    const fire = (name) => listeners[name]?.();
+    return {
+      src: '',
+      autoplay: false,
+      loop: false,
+      volume: 1,
+      obeyMuteSwitch: true,
+      play() {
+        fire('play');
+      },
+      pause() {
+        fire('pause');
+      },
+      destroy() {},
+      onPlay(callback) {
+        listeners.play = callback;
+      },
+      onPause(callback) {
+        listeners.pause = callback;
+      },
+      onStop(callback) {
+        listeners.stop = callback;
+      },
+      onEnded(callback) {
+        listeners.ended = callback;
+      },
+      onError(callback) {
+        listeners.error = callback;
+      },
+    };
+  },
   nextTick(fn) {
     queueMicrotask(fn);
   },

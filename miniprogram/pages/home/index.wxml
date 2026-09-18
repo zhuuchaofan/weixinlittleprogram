@@ -1,7 +1,7 @@
 <view class="page {{reduceMotion ? '' : 'entrance'}}">
   <view class="masthead">
     <text class="brand serif">{{appConfig.names}}</text>
-    <navigator class="edition" url="/pages/invitation/index">{{copy.invitationEntry}}</navigator>
+    <view class="masthead-actions"><music-control variant="masthead" /><navigator class="edition" url="/pages/invitation/index">{{copy.invitationEntry}}</navigator></view>
   </view>
   <view wx:if="{{isMock}}" class="demo">{{copy.text02}}</view>
 
@@ -19,7 +19,7 @@
     </view>
     <view wx:else class="arrival-strip arrival-static"><view class="arrival-venue serif">{{appConfig.venue}}</view></view>
     <button class="primary photo-cta" bindtap="enter">{{copy.photoCta}}</button>
-    <navigator class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
+    <navigator wx:if="{{!collectionClosed}}" class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
   </view>
 
   <view wx:else class="memory-intro">
@@ -38,7 +38,7 @@
       </view>
     </block>
     <button wx:if="{{eventStatus.phase === 'after'}}" class="primary photo-cta after-photo-cta" bindtap="enter">{{copy.photoCta}}</button>
-    <navigator wx:if="{{eventStatus.phase === 'after'}}" class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
+    <navigator wx:if="{{eventStatus.phase === 'after' && !collectionClosed}}" class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
   </view>
 
   <view class="secondary-navigation section">
@@ -64,5 +64,5 @@
       </view>
     </view>
   </view>
-  <page-footer />
+  <page-footer music-enabled="{{false}}" />
 </view>

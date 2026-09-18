@@ -103,6 +103,33 @@ try {
     assert.equal(await page.locator('.photo-opening .primary').count(), 1);
     await visit('home');
   });
+  await check('收集结束后隐藏入口，旧链接页面不展示可写表单', async () => {
+    await visit('home');
+    await page.evaluate(() =>
+      window.__page.setData({ collectionClosed: true }),
+    );
+    assert.equal(await page.locator('.blessing-cta').count(), 0);
+    await visit('invitation');
+    await page.evaluate(() =>
+      window.__page.setData({ collectionClosed: true }),
+    );
+    assert.equal(await page.locator('a[href="/pages/rsvp/index"]').count(), 0);
+    assert.match(
+      await page.locator('.page').innerText(),
+      /到场登记已于答谢宴结束后关闭/,
+    );
+    await visit('rsvp');
+    await page.evaluate(() =>
+      window.__page.setData({ collectionClosed: true }),
+    );
+    assert.equal(await page.locator('#guest-name').count(), 0);
+    await visit('guestbook');
+    await page.evaluate(() =>
+      window.__page.setData({ collectionClosed: true }),
+    );
+    assert.equal(await page.locator('#guest-message').count(), 0);
+    await visit('home');
+  });
   await check('照片组件同源返回不重置，新图预加载成功后才切换', async () => {
     await page.waitForFunction(
       () => document.querySelector('photo-frame')?.__component?.data.loaded,

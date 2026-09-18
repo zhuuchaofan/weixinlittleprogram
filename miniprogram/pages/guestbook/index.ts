@@ -1,5 +1,7 @@
 import { uiCopy } from '../../config/ui-copy';
+import { appConfig } from '../../services/content';
 import { isGuestbookMock, guestbookService } from '../../services/guestbook';
+import { isCollectionClosed } from '../../utils/collection-phase';
 import { formatUpdatedAt } from '../../utils/date';
 import { friendlyError, validateGuestMessage } from '../../utils/validate';
 
@@ -14,6 +16,7 @@ Page({
   data: {
     copy: uiCopy.guestbook,
     isMock: isGuestbookMock,
+    collectionClosed: isCollectionClosed(appConfig.collectionCloseDate),
     signature: '',
     message: '',
     consent: false,
@@ -28,6 +31,11 @@ Page({
   },
   onLoad() {
     void this.load();
+  },
+  onShow() {
+    const collectionClosed = isCollectionClosed(appConfig.collectionCloseDate);
+    if (this.data.collectionClosed !== collectionClosed)
+      this.setData({ collectionClosed });
   },
   async load() {
     this.setData({ loading: true, loadFailed: false, error: '' });
@@ -69,7 +77,13 @@ Page({
     });
   },
   async submit() {
-    if (this.data.loading || this.data.saving || this.data.loadFailed) return;
+    if (
+      this.data.collectionClosed ||
+      this.data.loading ||
+      this.data.saving ||
+      this.data.loadFailed
+    )
+      return;
     const input = {
       signature: this.data.signature,
       message: this.data.message,

@@ -105,3 +105,17 @@ test('云函数对非管理员拒绝汇总，响应不泄露 OpenID', async () =
   assert.equal(dashboard.data.records[0].message, valid.message);
   assert.ok(!('openid' in dashboard.data.records[0]));
 });
+
+test('收集关闭后仍可删除本人祝福，但不能继续保存', async () => {
+  const repo = repository();
+  const handler = createGuestbookHandler({
+    repository: repo,
+    getOpenId: () => 'guest-a',
+    getAdmins: () => [],
+    canCollect: () => false,
+  });
+  const denied = await handler({ action: 'guestbookSave', payload: valid });
+  assert.equal(denied.code, 'COLLECTION_CLOSED');
+  assert.equal((await handler({ action: 'guestbookGetMine' })).ok, true);
+  assert.equal((await handler({ action: 'guestbookRemoveMine' })).ok, true);
+});

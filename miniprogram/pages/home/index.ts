@@ -12,8 +12,11 @@ import {
 } from '../../services/content';
 import { isMock } from '../../services/rsvp';
 import { getBanquetStatus } from '../../utils/event-phase';
+import { isCollectionClosed } from '../../utils/collection-phase';
 import { previewPhotos } from '../../utils/preview';
+import { prewarmPhotoUrls } from '../../services/photo-url';
 import { openVenueLocation } from '../../services/venue-location';
+import { musicService } from '../../services/music';
 
 let homeRefreshVersion = 0;
 
@@ -67,19 +70,23 @@ Page({
     photoSignature: '',
     banquetScene: false,
     eventStatus: getBanquetStatus(appConfig.eventDate),
+    collectionClosed: isCollectionClosed(appConfig.collectionCloseDate),
   },
   onLoad(options: Record<string, string | undefined> = {}) {
     this.setData({ banquetScene: options.scene === 'banquet' });
   },
   async onShow() {
+    void musicService.autoStart();
     const reduceMotion = wx.getStorageSync('two-cats:motion') !== 'on';
     const eventStatus = getBanquetStatus(appConfig.eventDate);
+    const collectionClosed = isCollectionClosed(appConfig.collectionCloseDate);
     if (
       this.data.reduceMotion !== reduceMotion ||
       this.data.eventStatus.phase !== eventStatus.phase ||
-      this.data.eventStatus.daysUntil !== eventStatus.daysUntil
+      this.data.eventStatus.daysUntil !== eventStatus.daysUntil ||
+      this.data.collectionClosed !== collectionClosed
     )
-      this.setData({ reduceMotion, eventStatus });
+      this.setData({ reduceMotion, eventStatus, collectionClosed });
 
     const refreshVersion = ++homeRefreshVersion;
     const result = await getPublishedPhotos();
@@ -95,7 +102,10 @@ Page({
     if (
       !this.data.photoContentReady ||
       this.data.photoSignature !== photoSignature
-    )
+    ) {
+      void prewarmPhotoUrls(
+        [state.cover, ...state.cats].map((photo) => photo.thumbnail),
+      );
       this.setData({
         coverPhoto: state.cover,
         catPhotos: state.cats,
@@ -103,6 +113,7 @@ Page({
         photoContentReady: true,
         photoSignature,
       });
+    }
   },
   preview() {
     previewPhotos([this.data.coverPhoto], 0);

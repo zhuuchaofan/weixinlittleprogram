@@ -1,5 +1,6 @@
 .page { --poster-title-size: 58rpx; --poster-number-size: 82rpx; --arrival-gap: 24rpx; --hero-min-height: 450rpx; }
 .masthead { display: flex; align-items: center; justify-content: space-between; gap: 24rpx; padding-bottom: 28rpx; border-bottom: 1rpx solid var(--line); }
+.masthead-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10rpx; }
 .brand { font-size: 38rpx; letter-spacing: 4rpx; }
 .edition { display: flex; align-items: center; justify-content: flex-end; min-width: 112rpx; min-height: 72rpx; color: var(--accent); font-size: 25rpx; letter-spacing: 1rpx; }
 .demo { margin-top: 24rpx; }

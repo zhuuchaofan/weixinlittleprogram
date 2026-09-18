@@ -1,3 +1,4 @@
+<music-control wx:if="{{musicEnabled}}" variant="floating" />
 <view class="footer">
   <view class="signature">{{brand}}</view>
   <view class="cats">{{cats}}</view>

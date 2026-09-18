@@ -5,6 +5,7 @@ import {
 import { uiCopy } from '../../config/ui-copy';
 import { appConfig, albums } from '../../services/content';
 import { previewPhotos } from '../../utils/preview';
+import { prewarmPhotoUrls } from '../../services/photo-url';
 import type { Photo } from '../../models';
 
 let galleryRefreshVersion = 0;
@@ -52,7 +53,10 @@ Page({
     if (
       !this.data.photoContentReady ||
       this.data.photoSignature !== photoSignature
-    )
+    ) {
+      void prewarmPhotoUrls(
+        state.albums[0].photos.map((photo) => photo.thumbnail),
+      );
       this.setData({
         albums: state.albums,
         active: 0,
@@ -62,6 +66,7 @@ Page({
         photoContentReady: true,
         photoSignature,
       });
+    }
   },
   select(event: WechatMiniprogram.TouchEvent) {
     const active = Number(event.currentTarget.dataset.index);

@@ -10,6 +10,15 @@ export class CloudRequestError extends Error {
     super(message);
   }
 }
+export class CloudActionError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+  ) {
+    super(message);
+  }
+}
+
 export function cloudDiagnostic(
   error: unknown,
   action: string,
@@ -102,6 +111,9 @@ export async function callCloud<T>(
     message?: string;
   };
   if (!result || result.ok !== true)
-    throw new Error(result?.message || uiCopy.cloud.text04);
+    throw new CloudActionError(
+      result?.message || uiCopy.cloud.text04,
+      result?.code,
+    );
   return result.data;
 }

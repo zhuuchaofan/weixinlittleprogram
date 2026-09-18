@@ -17,7 +17,7 @@ export async function previewPhotos(
   try {
     urls = await Promise.all(
       available.map((photo) =>
-        resolvePhotoUrl(photo.original || photo.thumbnail),
+        resolvePhotoUrl(photo.original || photo.thumbnail, 'original'),
       ),
     );
   } catch {

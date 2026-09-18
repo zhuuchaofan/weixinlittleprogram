@@ -1,11 +1,15 @@
 import { formatUpdatedAt } from '../../utils/date';
 import { uiCopy } from '../../config/ui-copy';
+import { appConfig } from '../../services/content';
 import { rsvpService, isMock, getRsvpRevision } from '../../services/rsvp';
+import { isCollectionClosed } from '../../utils/collection-phase';
 import { friendlyError, validateRsvp } from '../../utils/validate';
+
 Page({
   data: {
     copy: uiCopy.rsvp,
     isMock,
+    collectionClosed: isCollectionClosed(appConfig.collectionCloseDate),
     guestName: '',
     attending: true,
     partySize: 1,
@@ -25,6 +29,9 @@ Page({
     void this.load();
   },
   onShow() {
+    const collectionClosed = isCollectionClosed(appConfig.collectionCloseDate);
+    if (this.data.collectionClosed !== collectionClosed)
+      this.setData({ collectionClosed });
     if (this.seenRevision !== getRsvpRevision()) void this.load();
   },
   async load() {
@@ -92,7 +99,13 @@ Page({
     });
   },
   async submit() {
-    if (this.data.saving || this.data.loading || this.data.loadFailed) return;
+    if (
+      this.data.collectionClosed ||
+      this.data.saving ||
+      this.data.loading ||
+      this.data.loadFailed
+    )
+      return;
     const input = {
       guestName: this.data.guestName,
       attending: this.data.attending,

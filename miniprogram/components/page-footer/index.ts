@@ -2,6 +2,9 @@ import { uiCopy } from '../../config/ui-copy';
 import { appConfig } from '../../services/content';
 import { checkAdmin } from '../../services/access';
 Component({
+  properties: {
+    musicEnabled: { type: Boolean, value: true },
+  },
   lifetimes: {
     attached() {
       void this.refreshAccess();

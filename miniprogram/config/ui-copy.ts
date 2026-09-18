@@ -19,6 +19,7 @@ export const uiCopy = {
     photoCta: '去看照片',
     mapCta: '导航',
     blessingCta: '留一句祝福',
+    collectionClosed: '留言收集已结束',
     photoKicker: '第一张展品 / OUR EVERYDAY FILM',
     afterPhotoKicker: '这一页，留给相聚',
   },
@@ -34,6 +35,7 @@ export const uiCopy = {
     text08: '复制地址',
     text09: '来之前，想告诉你',
     text10: '回复这封邀请 ↗',
+    collectionClosed: '到场登记已于答谢宴结束后关闭。',
     text11: '地点待主人确认，暂不能导航',
     text12: '地图未打开，可复制地址重试',
     text13: '复制失败，请重试',
@@ -93,6 +95,7 @@ export const uiCopy = {
     text33: '需要删除？可前往隐私说明页操作。',
     text34: '已保存到本机',
     text35: '登记已更新',
+    collectionClosed: '到场登记已结束。已有登记仍可前往隐私说明页删除。',
   },
   guestbook: {
     text01: '留一句祝福',
@@ -123,6 +126,7 @@ export const uiCopy = {
     text26: '这句祝福已删除。',
     storageError: '本机存储失败，请腾出空间后重试。',
     deployRequired: '云端尚未更新祝福功能。请主人部署最新 weddingApi 后重试。',
+    collectionClosed: '祝福收集已结束。已有祝福仍可在这里删除。',
   },
   mockGuestbook: {
     text01: '本机演示祝福数据已损坏，可清除后重试。',

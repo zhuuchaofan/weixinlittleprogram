@@ -1,0 +1,16 @@
+<button
+  wx:if="{{visible}}"
+  class="music-control {{variant}} {{playing && !reduceMotion ? 'is-playing' : ''}} {{status === 'error' ? 'has-error' : ''}}"
+  bindtap="toggle"
+  loading="{{loading}}"
+  aria-label="{{label}}"
+>
+  <view class="disc">
+    <view class="disc-ring"></view>
+    <view wx:if="{{playing}}" class="state-mark pause-mark">
+      <view></view><view></view>
+    </view>
+    <view wx:elif="{{loading}}" class="state-mark loading-mark"></view>
+    <view wx:else class="state-mark play-mark"></view>
+  </view>
+</button>

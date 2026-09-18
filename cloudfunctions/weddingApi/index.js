@@ -12,6 +12,10 @@ function admins() {
     .map((id) => id.trim())
     .filter(Boolean);
 }
+function canCollect() {
+  const closesAt = Date.parse(process.env.COLLECTION_CLOSES_AT || '');
+  return !Number.isFinite(closesAt) || Date.now() < closesAt;
+}
 function createIdentityRepository(collectionName) {
   const collection = db.collection(collectionName);
   return {
@@ -71,11 +75,13 @@ const handleRsvp = createHandler({
   repository: rsvpRepository,
   getOpenId,
   getAdmins: admins,
+  canCollect,
 });
 const handleGuestbook = createGuestbookHandler({
   repository: guestbookRepository,
   getOpenId,
   getAdmins: admins,
+  canCollect,
 });
 const handlePhotos = createPhotoHandler({ cloud, db, getAdmins: admins });
 

@@ -41,6 +41,7 @@ function createGuestbookHandler({
   repository,
   getOpenId,
   getAdmins,
+  canCollect = () => true,
   now = () => new Date().toISOString(),
 }) {
   return async (event) => {
@@ -65,6 +66,11 @@ function createGuestbookHandler({
       if (action === 'guestbookGetMine')
         return { ok: true, data: publicRecord(await repository.get(id)) };
       if (action === 'guestbookSave') {
+        if (!canCollect())
+          throw new GuestbookError(
+            'COLLECTION_CLOSED',
+            '收集已于答谢宴结束后关闭，感谢你的心意。',
+          );
         const fields = validateGuestMessage(event.payload);
         const record = { ...fields, openid, updatedAt: now() };
         await repository.put(id, record);

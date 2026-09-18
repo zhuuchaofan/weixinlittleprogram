@@ -2,7 +2,8 @@
   <view wx:if="{{isMock}}" class="notice">{{copy.text05}}</view>
   <view wx:if="{{loading}}" class="status">{{copy.text06}}</view>
   <view wx:if="{{error}}" class="notice error" role="alert">{{error}}<button wx:if="{{loadFailed}}" class="text-button" bindtap="load">{{copy.text07}}</button></view>
-  <view wx:if="{{!loading && !loadFailed}}" class="section">
+  <view wx:if="{{!loading && !loadFailed && collectionClosed}}" class="section"><view class="notice">{{copy.collectionClosed}}</view><navigator url="/pages/privacy/index" class="privacy-link">{{copy.text25}}</navigator></view>
+  <view wx:if="{{!loading && !loadFailed && !collectionClosed}}" class="section">
     <view wx:if="{{existing}}" class="small muted saved-date">{{copy.text08}}<view>{{copy.text09}}{{updatedAt}}</view></view>
     <view class="field"><label class="field-label" for="guest-name">{{copy.text10}} <text class="small muted">{{copy.text11}}</text></label><input id="guest-name" value="{{guestName}}" bindinput="nameInput" maxlength="30" placeholder="{{copy.text12}}" disabled="{{saving}}" /></view>
     <view class="field"><view class="field-label">{{copy.text13}}</view><view class="attendance"><button class="secondary {{attending ? 'chosen' : ''}}" data-value="yes" bindtap="attend" disabled="{{saving}}">{{copy.text14}}</button><button class="secondary {{!attending ? 'chosen' : ''}}" data-value="no" bindtap="attend" disabled="{{saving}}">{{copy.text15}}</button></view></view>
