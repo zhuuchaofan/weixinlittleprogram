@@ -8,7 +8,13 @@ const root = resolve('miniprogram');
 const pages = (await readdir(resolve(root, 'pages'))).filter((s) =>
   /^[a-z-]+$/.test(s),
 );
-const components = ['photo-frame', 'page-footer', 'music-control'];
+const components = [
+  'photo-frame',
+  'page-footer',
+  'music-control',
+  'page-back-link',
+  'editor-action-bar',
+];
 const css = (source) =>
   source
     .replace(/(-?[\d.]+)rpx/g, 'calc($1 * var(--rpx))')

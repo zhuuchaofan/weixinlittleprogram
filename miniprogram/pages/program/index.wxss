@@ -1,1 +1,24 @@
-.editor-heading { margin: 28rpx 0 34rpx; }.lead { color: var(--muted); }.save-state { margin-bottom: 14rpx; color: var(--muted); font-size: 24rpx; }.save-bar { position: sticky; z-index: 4; top: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 18rpx; padding: 16rpx 0; background: var(--paper); border-bottom: 1rpx solid var(--line); }.editor-guide { padding: 24rpx 0; color: var(--muted); font-size: 24rpx; line-height: 1.7; }.form-section { border-top: 1rpx solid var(--line); }.field-title { margin: 22rpx 0 10rpx; font-size: 27rpx; }.section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18rpx; margin-top: 46rpx; padding-bottom: 18rpx; border-bottom: 1rpx solid var(--line); }.section-title { font-size: 37rpx; }.program-entry, .booth-editor { padding: 26rpx 0; border-bottom: 1rpx solid var(--line); }.entry-heading { display: flex; align-items: center; gap: 16rpx; margin-bottom: 16rpx; }.entry-number { color: var(--accent); font-size: 27rpx; }.entry-title { flex: 1; color: var(--muted); font-size: 23rpx; }.time-row { margin-top: 14rpx; }.entry-tools { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 16rpx; }.entry-tools button { min-width: 130rpx; margin: 0; padding: 12rpx 18rpx; font-size: 23rpx; }.remove-button { color: var(--accent); }.add-item { width: 100%; margin-top: 24rpx; }.restore-button { display: block; margin: 44rpx auto 18rpx; color: var(--accent); }
+.editor-heading { margin: 28rpx 0 34rpx; }
+.save-state { margin-bottom: 14rpx; color: var(--muted); font-size: 24rpx; }
+.editor-guide { padding: 24rpx 0; color: var(--muted); font-size: 24rpx; line-height: 1.7; }
+.form-section { border-top: 1rpx solid var(--line); }
+.field-title { margin: 22rpx 0 10rpx; font-size: 27rpx; }
+.section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18rpx; margin-top: 46rpx; padding-bottom: 18rpx; border-bottom: 1rpx solid var(--line); }
+.section-heading > view { min-width: 0; }
+.section-title { font-size: 37rpx; margin-bottom: 10rpx; }
+.program-entry, .booth-editor { padding: 26rpx 0; border-bottom: 1rpx solid var(--line); }
+.entry-heading { display: flex; align-items: center; gap: 16rpx; margin-bottom: 18rpx; }
+.entry-heading > switch { flex-shrink: 0; margin-left: auto; }
+.entry-number { color: var(--accent); font-size: 27rpx; }
+.entry-title { flex: 1; min-width: 0; color: var(--muted); font-size: 23rpx; }
+.time-row { margin-top: 16rpx; }
+.program-entry > textarea, .booth-editor > input + input, .booth-editor > textarea { margin-top: 16rpx; }
+.program-editor input, .program-editor textarea { display: block; width: 100%; min-width: 0; box-sizing: border-box; }
+.program-editor textarea { height: 150rpx; }
+.entry-tools { display: flex; flex-wrap: nowrap; width: 100%; margin-top: 18rpx; }
+.entry-tools > button { flex: 1 1 0%; width: 0; min-width: 0; min-height: 76rpx; margin: 0; padding: 12rpx 4rpx; font-size: 24rpx; line-height: 1.4; border: 1rpx solid var(--line); background: #fbf7f0; box-sizing: border-box; }
+.entry-tools > button + button { margin-left: 12rpx; }
+.entry-tools > button[disabled] { background: #eee7de; color: #8a8176; }
+.remove-button { color: var(--accent); }
+.add-item { width: 100%; margin-top: 24rpx; }
+.restore-button { display: block; margin: 44rpx auto 18rpx; color: var(--accent); }

@@ -1,11 +1,11 @@
 <view class="page program-editor">
-  <button class="back-link" bindtap="back" disabled="{{loading}}">‹ 返回主人工作台</button>
+  <page-back-link label="返回主人工作台" disabled="{{loading}}" bind:back="back" />
   <view class="editor-heading"><view class="kicker">把相聚安排好</view><view class="title">当天流程</view><view class="lead">草稿只给主人看见；更新展示后，亲友会在答谢宴当天首页看到。</view></view>
   <view wx:if="{{error}}" class="notice error" role="alert">{{error}}<button class="text-button" bindtap="load" disabled="{{loading}}">重新读取</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
   <view wx:if="{{loading}}" class="status">正在处理，请稍候…</view>
   <view wx:if="{{authorized}}">
-    <view class="save-state">{{saveState}}</view><view class="save-bar"><button class="secondary" bindtap="save" disabled="{{loading}}">保存草稿</button><button class="primary" bindtap="publish" disabled="{{loading}}">更新展示</button></view>
+    <view class="save-state">{{saveState}}</view><editor-action-bar disabled="{{loading}}" bind:save="save" bind:publish="publish" />
     <view class="editor-guide">流程只在 9 月 28 日当天显示。现场临时调整后，请先保存草稿，再更新展示。</view>
     <view class="section form-section"><view class="field-title">流程标题</view><input value="{{program.title}}" maxlength="40" data-field="title" bindinput="updateMeta" placeholder="例如：今日流程" disabled="{{loading}}"/><view class="field-title">给宾客的一句话</view><textarea value="{{program.lead}}" maxlength="120" data-field="lead" bindinput="updateMeta" placeholder="以现场安排为准" disabled="{{loading}}"/>
     </view>

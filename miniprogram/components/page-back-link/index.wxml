@@ -1,0 +1,1 @@
+<button class="page-back-link" bindtap="back" disabled="{{disabled}}" aria-label="{{label}}"><view class="page-back-link-arrow" aria-hidden="true"></view><text>{{label}}</text></button>

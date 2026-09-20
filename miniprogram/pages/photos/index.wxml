@@ -1,5 +1,5 @@
 <view class="page photo-editor">
-  <button class="back-link" bindtap="back" disabled="{{busy}}">‹ 返回主人工作台</button>
+  <page-back-link label="返回主人工作台" disabled="{{busy}}" bind:back="back" />
   <view class="editor-heading"><view class="kicker">把回忆安放好</view><view class="title">照片管理</view><view class="lead preline">一张照片，一段日常。
 让亲友看见我们喜欢的模样。</view></view>
   <view wx:if="{{error}}" class="notice error" role="alert">{{error}}<button wx:if="{{loadFailed}}" class="text-button" bindtap="load" disabled="{{busy}}">重新读取</button></view>
@@ -7,7 +7,7 @@
   <view wx:if="{{message}}" class="notice" aria-live="polite">{{message}}</view>
   <view wx:if="{{busy}}" class="status">正在处理，请稍候…</view>
   <view wx:if="{{authorized && !loadFailed}}">
-    <view class="save-state" aria-live="polite">{{saveState}}</view><view class="save-bar"><button class="secondary" bindtap="save" disabled="{{busy}}">保存草稿</button><button class="primary" bindtap="publish" disabled="{{busy}}">更新展示 ↗</button></view>
+    <view class="save-state" aria-live="polite">{{saveState}}</view><editor-action-bar publish-label="更新展示" disabled="{{busy}}" bind:save="save" bind:publish="publish" />
     <view class="editor-guide preline">草稿留给自己，更新展示后亲友才会看到。
 离开前，记得保存这次整理。</view>
     <button class="upload-button" bindtap="add" disabled="{{busy || photos.length >= 60}}"><text class="upload-plus">＋</text><view class="upload-copy"><view>从手机添加照片</view><view class="small muted">选一张喜欢的，放进我们的纪念册</view></view><text class="upload-arrow">↗</text></button>

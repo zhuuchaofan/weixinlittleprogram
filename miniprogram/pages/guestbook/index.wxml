@@ -1,5 +1,5 @@
 <view class="page">
-  <button class="back-link" bindtap="back">‹ 返回纪念册</button>
+  <page-back-link label="返回纪念册" bind:back="back" />
   <view class="kicker">{{copy.text01}}</view>
   <view class="title">{{copy.text02}}</view>
   <view class="lead">{{copy.text03}}</view>

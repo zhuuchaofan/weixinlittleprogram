@@ -1,7 +1,10 @@
 import type { EventProgram, EventProgramItem } from '../../models';
 import { checkAdmin } from '../../services/access';
 import { eventProgramService } from '../../services/event-program';
-import { returnTo } from '../../utils/navigation';
+import {
+  leaveEditor,
+  setEditorUnloadWarning,
+} from '../../utils/editor-navigation';
 
 function copyProgram(program: EventProgram): EventProgram {
   return JSON.parse(JSON.stringify(program)) as EventProgram;
@@ -22,18 +25,13 @@ Page({
     void this.load();
   },
   async back() {
-    if (this.data.loading) return;
-    if (this.data.dirty) {
-      const result = await wx.showModal({
-        title: '放弃未保存的修改？',
-        content: '当天流程尚未保存，返回会丢失这次修改。',
-        confirmText: '放弃修改',
-        cancelText: '继续编辑',
-      });
-      if (!result.confirm) return;
-    }
-    wx.disableAlertBeforeUnload?.();
-    returnTo('/pages/admin/index');
+    await leaveEditor({
+      busy: this.data.loading,
+      dirty: this.data.dirty,
+      fallback: '/pages/admin/index',
+      content: '当天流程尚未保存，返回会丢失这次修改。',
+      cancelText: '继续编辑',
+    });
   },
   markDirty() {
     const dirty = JSON.stringify(this.data.program) !== this.savedSnapshot;
@@ -43,11 +41,7 @@ Page({
         ? '有未保存的修改'
         : '草稿已保存；亲友看到的是上次发布的内容',
     });
-    if (dirty)
-      wx.enableAlertBeforeUnload?.({
-        message: '当天流程尚未保存，返回会丢失这次修改。',
-      });
-    else wx.disableAlertBeforeUnload?.();
+    setEditorUnloadWarning(dirty, '当天流程尚未保存，返回会丢失这次修改。');
   },
   markSaved(published = false) {
     this.savedSnapshot = JSON.stringify(this.data.program);
@@ -55,7 +49,7 @@ Page({
       dirty: false,
       saveState: published ? '展示已更新' : '草稿已保存，需更新展示才会发布',
     });
-    wx.disableAlertBeforeUnload?.();
+    setEditorUnloadWarning(false, '');
   },
   async load() {
     if (this.data.loading) return;

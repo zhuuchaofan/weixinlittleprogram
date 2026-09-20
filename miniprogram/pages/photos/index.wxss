@@ -1,9 +1,7 @@
 .photo-editor { --editor-surface: #fcf9f4; }
-.back-link { display: inline-block; color: var(--muted); font-size: 25rpx; padding: 12rpx 0 28rpx; }
+
 .editor-heading { padding: 10rpx 0 32rpx; }
 .editor-heading .title { margin: 14rpx 0 20rpx; }
-.save-bar { position: sticky; top: 0; z-index: 5; display: flex; gap: 16rpx; padding: 20rpx 0; background: var(--paper); border-bottom: 1rpx solid var(--line); }
-.save-bar button { flex: 1; min-width: 0; }
 .editor-guide { margin: 22rpx 0 32rpx; color: var(--muted); font-size: 24rpx; line-height: 1.8; }
 .upload-button { display: flex; justify-content: flex-start; gap: 20rpx; padding: 28rpx 24rpx; border: 1rpx dashed var(--line); background: var(--editor-surface); text-align: left; }
 .upload-plus { color: var(--accent); font-size: 44rpx; font-weight: 300; }
@@ -42,7 +40,6 @@
 .cleanup-result { margin-top: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--line); color: var(--muted); font-size: 24rpx; line-height: 1.7; }
 .cleanup-result .remove-button { width: 100%; margin-top: 18rpx; color: #fff; background: var(--accent); }
 
-.back-link { width: auto; justify-content: flex-start; text-align: left; }
 .save-state { color: var(--accent); font-size: 28rpx; padding: 14rpx 0; }
 .editor-photo { width: 180rpx; float: left; margin: 0 24rpx 18rpx 0; }
 .edit-toggle { width: auto; min-height: 92rpx; font-size: 26rpx; }

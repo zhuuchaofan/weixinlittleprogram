@@ -1,4 +1,7 @@
-import { returnTo } from '../../utils/navigation';
+import {
+  leaveEditor,
+  setEditorUnloadWarning,
+} from '../../utils/editor-navigation';
 import { preparePhotoUpload } from '../../services/photo-upload';
 import { localConfig } from '../../config/local';
 import { checkAdmin } from '../../services/access';
@@ -44,18 +47,13 @@ Page({
     void this.load();
   },
   async back() {
-    if (this.data.busy) return;
-    if (this.data.dirty) {
-      const result = await wx.showModal({
-        title: '放弃未保存的修改？',
-        content: '照片说明、用途和排序尚未保存。留在这里可继续保存。',
-        confirmText: '放弃修改',
-        cancelText: '继续整理',
-      });
-      if (!result.confirm) return;
-    }
-    wx.disableAlertBeforeUnload?.();
-    returnTo('/pages/admin/index');
+    await leaveEditor({
+      busy: this.data.busy,
+      dirty: this.data.dirty,
+      fallback: '/pages/admin/index',
+      content: '照片说明、用途和排序尚未保存。留在这里可继续保存。',
+      cancelText: '继续整理',
+    });
   },
   markDirty() {
     const dirty = JSON.stringify(this.data.photos) !== this.savedSnapshot;
@@ -65,11 +63,7 @@ Page({
         ? '有未保存的修改'
         : '草稿已保存；发布状态以上次更新为准',
     });
-    if (dirty)
-      wx.enableAlertBeforeUnload?.({
-        message: '照片安排尚未保存，返回会丢失这次修改。',
-      });
-    else wx.disableAlertBeforeUnload?.();
+    setEditorUnloadWarning(dirty, '照片安排尚未保存，返回会丢失这次修改。');
   },
   markSaved(published = false) {
     this.savedSnapshot = JSON.stringify(this.data.photos);
@@ -77,7 +71,7 @@ Page({
       dirty: false,
       saveState: published ? '展示已更新' : '草稿已保存，需更新展示才会发布',
     });
-    wx.disableAlertBeforeUnload?.();
+    setEditorUnloadWarning(false, '');
   },
   toggleEdit(e: WechatMiniprogram.TouchEvent) {
     const id = String(e.currentTarget.dataset.id);

@@ -1,0 +1,1 @@
+<view class="editor-action-bar"><button class="secondary" bindtap="save" disabled="{{disabled}}">{{saveLabel}}</button><button class="primary" bindtap="publish" disabled="{{disabled}}">{{publishLabel}}</button></view>

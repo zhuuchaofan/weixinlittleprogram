@@ -1,4 +1,3 @@
-.back-link { display: block; min-height: 76rpx; padding: 6rpx 0 22rpx; color: var(--muted); font-size: 26rpx; }
 .counter { text-align: right; }
 .consent { display: flex; align-items: flex-start; gap: 14rpx; font-size: 26rpx; }
 .consent checkbox { flex-shrink: 0; }
@@ -6,5 +5,4 @@
 .saved-date { margin-bottom: 30rpx; }
 .actions { display: flex; flex-direction: column; gap: 18rpx; }
 
-.back-link { width: auto; text-align: left; justify-content: flex-start; }
 .consent { font-size: max(26rpx, 14px); }
