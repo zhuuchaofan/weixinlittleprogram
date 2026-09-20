@@ -2,6 +2,7 @@ const cloud = require('wx-server-sdk');
 const { createHandler } = require('./core');
 const { createGuestbookHandler } = require('./guestbook');
 const { createPhotoHandler } = require('./photos');
+const { createEventProgramHandler } = require('./event-program');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -84,8 +85,10 @@ const handleGuestbook = createGuestbookHandler({
   canCollect,
 });
 const handlePhotos = createPhotoHandler({ cloud, db, getAdmins: admins });
+const handleEventProgram = createEventProgramHandler({ db, getAdmins: admins });
 
 exports.main = async (event) =>
   (await handlePhotos(event)) ||
+  (await handleEventProgram({ ...event, userInfo: { openid: getOpenId() } })) ||
   (await handleGuestbook(event)) ||
   (await handleRsvp(event));

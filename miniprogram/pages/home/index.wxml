@@ -18,6 +18,12 @@
       <view class="arrival-action"><text>{{copy.mapCta}}</text><view class="direction-chevron"></view></view>
     </view>
     <view wx:else class="arrival-strip arrival-static"><view class="arrival-venue serif">{{appConfig.venue}}</view></view>
+    <view wx:if="{{eventStatus.phase === 'today' && programReady}}" class="event-program">
+      <view class="program-heading"><view><view class="kicker">现场安排 / TODAY</view><view class="program-title serif">{{eventProgram.title}}</view></view><view class="program-count">{{visibleProgramItems.length}} 项</view></view>
+      <view wx:if="{{eventProgram.lead}}" class="program-lead">{{eventProgram.lead}}</view>
+      <view wx:for="{{visibleProgramItems}}" wx:key="id" class="program-item"><text class="program-number serif">{{index + 1 < 10 ? '0' : ''}}{{index + 1}}</text><view class="program-copy"><view class="program-item-title">{{item.title}}</view><view wx:if="{{item.description}}" class="program-item-description">{{item.description}}</view></view><text wx:if="{{item.time}}" class="program-time">{{item.time}}</text></view>
+      <view wx:if="{{eventProgram.photoBooth.enabled}}" class="photo-booth"><view class="booth-mark">PHOTO</view><view class="booth-copy"><view class="booth-title serif">{{eventProgram.photoBooth.title}}</view><view wx:if="{{eventProgram.photoBooth.description}}" class="booth-description">{{eventProgram.photoBooth.description}}</view></view><text wx:if="{{eventProgram.photoBooth.time}}" class="booth-time">{{eventProgram.photoBooth.time}}</text></view>
+    </view>
     <button class="primary photo-cta" bindtap="enter">{{copy.photoCta}}</button>
     <navigator wx:if="{{!collectionClosed}}" class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
   </view>

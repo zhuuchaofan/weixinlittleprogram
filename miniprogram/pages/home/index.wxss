@@ -51,3 +51,18 @@
 .entrance .event-poster, .entrance .photo-opening { animation: appear 520ms ease both; }
 .entrance .photo-opening { animation-delay: 80ms; }
 @media (max-width: 340px) { .page { --poster-title-size: 50rpx; --poster-number-size: 72rpx; --arrival-gap: 16rpx; } .event-poster { padding-top: 38rpx; } .arrival-venue { font-size: 29rpx; } .nav-title { font-size: 35rpx; } }
+
+.event-program { margin-top: 32rpx; border-top: 1rpx solid var(--line); }
+.program-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; padding: 28rpx 0 20rpx; }
+.program-title { margin-top: 9rpx; font-size: 42rpx; line-height: 1.2; }
+.program-count { padding-bottom: 5rpx; color: var(--muted); font-size: 22rpx; white-space: nowrap; }
+.program-lead { padding: 0 0 22rpx; color: var(--muted); font-size: 25rpx; line-height: 1.65; }
+.program-item { display: grid; grid-template-columns: 50rpx minmax(0, 1fr) auto; column-gap: 16rpx; align-items: start; padding: 20rpx 0; border-top: 1rpx solid var(--line); }
+.program-number { padding-top: 2rpx; color: var(--accent); font-size: 24rpx; }
+.program-item-title { font-size: 29rpx; line-height: 1.45; }
+.program-item-description { margin-top: 5rpx; color: var(--muted); font-size: 22rpx; line-height: 1.55; }
+.program-time, .booth-time { padding-top: 4rpx; color: var(--accent); font-size: 23rpx; white-space: nowrap; }
+.photo-booth { display: grid; grid-template-columns: 76rpx minmax(0, 1fr) auto; column-gap: 16rpx; align-items: start; margin-top: 14rpx; padding: 24rpx 0; border-top: 1rpx solid var(--line); border-bottom: 1rpx solid var(--line); }
+.booth-mark { padding-top: 4rpx; color: var(--accent); font-size: 18rpx; letter-spacing: 1rpx; }
+.booth-title { font-size: 29rpx; line-height: 1.4; }
+.booth-description { margin-top: 5rpx; color: var(--muted); font-size: 22rpx; line-height: 1.55; }

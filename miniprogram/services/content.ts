@@ -6,4 +6,5 @@ export {
   storyItems,
   albums,
   navigation,
+  defaultEventProgram,
 } from '../config/content';

@@ -1,4 +1,4 @@
-import type { Album, Photo, StoryItem } from '../models';
+import type { Album, EventProgram, Photo, StoryItem } from '../models';
 
 // 唯一婚宴内容入口。坐标来自高德地图 POI（GCJ-02）。
 export const appConfig = {
@@ -136,3 +136,33 @@ export const catPhotos: Photo[] = [
     ratio: 'square',
   },
 ];
+
+export const defaultEventProgram: EventProgram = {
+  title: '今日流程',
+  lead: '以现场主持安排为准，和我们一起把这一刻好好记住。',
+  items: [
+    '主持暖场',
+    '嘉宾致辞',
+    '准新娘上场',
+    '准新郎上场',
+    '准新郎致答谢词',
+    '准新人父母上场',
+    '准新人鞠躬感谢双方父母',
+    '准新人家人代表致辞',
+    '一家人致谢来宾，共同举杯',
+    '拍全家福',
+    '礼成',
+  ].map((title, index) => ({
+    id: `program-${index + 1}`,
+    title,
+    time: '',
+    description: '',
+    visible: true,
+  })),
+  photoBooth: {
+    enabled: true,
+    title: '门口 Photo Booth',
+    time: '',
+    description: '宴会开始前及中途欢迎合影。',
+  },
+};

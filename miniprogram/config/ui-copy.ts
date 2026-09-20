@@ -21,6 +21,7 @@ export const uiCopy = {
     blessingCta: '留一句祝福',
     collectionClosed: '留言收集已结束',
     photoKicker: '第一张展品 / OUR EVERYDAY FILM',
+    programEntry: '当天流程',
     afterPhotoKicker: '这一页，留给相聚',
   },
   invitation: {
@@ -160,6 +161,8 @@ export const uiCopy = {
     text24: '可从首页「留一句祝福」写下第一句。',
     text25: '读取更多祝福',
     text26: '未署名',
+    programTitle: '当天流程',
+    programDescription: '安排主持环节与门口 Photo Booth',
   },
   privacy: {
     text01: '你的心意，我们认真珍惜',

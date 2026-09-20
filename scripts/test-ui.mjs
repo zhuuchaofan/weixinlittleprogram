@@ -17,7 +17,7 @@ page.on('dialog', (dialog) => dialog.accept());
 async function visit(name) {
   await page.goto(`${previewUrl}/#${name}`);
   await page.waitForSelector(`body[data-ready="${name}"]`);
-  if (['rsvp', 'guestbook', 'admin', 'photos'].includes(name))
+  if (['rsvp', 'guestbook', 'admin', 'program', 'photos'].includes(name))
     await page.waitForFunction(
       () => !window.__page.data.loading && !window.__page.data.busy,
     );
@@ -46,6 +46,7 @@ try {
       'rsvp',
       'guestbook',
       'admin',
+      'program',
       'privacy',
       'photos',
     ]) {
@@ -101,6 +102,29 @@ try {
     assert.equal(await page.locator('.event-poster').count(), 0);
     assert.equal(await page.locator('.arrival-strip').count(), 0);
     assert.equal(await page.locator('.photo-opening .primary').count(), 1);
+    await visit('home');
+  });
+  await check('首页仅在答谢宴当天展示流程与 Photo Booth', async () => {
+    await visit('home');
+    await page.evaluate(() =>
+      window.__page.setData({
+        eventStatus: { phase: 'today', daysUntil: 0 },
+        programReady: true,
+      }),
+    );
+    assert.ok(await page.locator('.event-program').isVisible());
+    assert.match(await page.locator('.event-program').innerText(), /主持暖场/);
+    assert.match(
+      await page.locator('.event-program').innerText(),
+      /Photo Booth/,
+    );
+    await page.evaluate(() =>
+      window.__page.setData({ eventStatus: { phase: 'after', daysUntil: 0 } }),
+    );
+    assert.equal(await page.locator('.event-program').count(), 0);
+    await visit('program');
+    assert.ok(await page.locator('.program-editor').isVisible());
+    assert.equal(await page.locator('.program-entry').count(), 11);
     await visit('home');
   });
   await check('收集结束后隐藏入口，旧链接页面不展示可写表单', async () => {

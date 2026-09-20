@@ -66,3 +66,25 @@ export interface GuestMessageService {
   removeMine(): Promise<void>;
   dashboard(cursor?: string): Promise<GuestMessageDashboard>;
 }
+
+export interface EventProgramItem {
+  id: string;
+  title: string;
+  time: string;
+  description: string;
+  visible: boolean;
+}
+
+export interface PhotoBoothNotice {
+  enabled: boolean;
+  title: string;
+  time: string;
+  description: string;
+}
+
+export interface EventProgram {
+  title: string;
+  lead: string;
+  items: EventProgramItem[];
+  photoBooth: PhotoBoothNotice;
+}

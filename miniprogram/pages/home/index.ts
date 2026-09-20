@@ -1,4 +1,4 @@
-import type { Photo } from '../../models';
+import type { EventProgram, Photo } from '../../models';
 import {
   getPublishedPhotos,
   photoArrangementSignature,
@@ -9,6 +9,7 @@ import {
   coverPhoto,
   navigation,
   catPhotos,
+  defaultEventProgram,
 } from '../../services/content';
 import { isMock } from '../../services/rsvp';
 import { getBanquetStatus } from '../../utils/event-phase';
@@ -17,8 +18,14 @@ import { previewPhotos } from '../../utils/preview';
 import { prewarmPhotoUrls } from '../../services/photo-url';
 import { openVenueLocation } from '../../services/venue-location';
 import { musicService } from '../../services/music';
+import { eventProgramService } from '../../services/event-program';
 
 let homeRefreshVersion = 0;
+let programRefreshVersion = 0;
+
+function programSignature(program: EventProgram): string {
+  return JSON.stringify(program);
+}
 
 function createCatColumns(
   photos: Photo[],
@@ -71,15 +78,23 @@ Page({
     banquetScene: false,
     eventStatus: getBanquetStatus(appConfig.eventDate),
     collectionClosed: isCollectionClosed(appConfig.collectionCloseDate),
+    eventProgram: defaultEventProgram,
+    visibleProgramItems: defaultEventProgram.items.filter(
+      (item) => item.visible,
+    ),
+    programReady: false,
+    programSignature: '',
   },
   onLoad(options: Record<string, string | undefined> = {}) {
     this.setData({ banquetScene: options.scene === 'banquet' });
   },
   async onShow() {
     void musicService.autoStart();
+    void this.refreshProgram();
     const reduceMotion = wx.getStorageSync('two-cats:motion') !== 'on';
     const eventStatus = getBanquetStatus(appConfig.eventDate);
     const collectionClosed = isCollectionClosed(appConfig.collectionCloseDate);
+    if (eventStatus.phase === 'today') void this.refreshProgram();
     if (
       this.data.reduceMotion !== reduceMotion ||
       this.data.eventStatus.phase !== eventStatus.phase ||
@@ -114,6 +129,24 @@ Page({
         photoSignature,
       });
     }
+  },
+  async refreshProgram() {
+    const refreshVersion = ++programRefreshVersion;
+    let eventProgram = defaultEventProgram;
+    try {
+      eventProgram = await eventProgramService.published();
+    } catch {
+      if (this.data.programReady) eventProgram = this.data.eventProgram;
+    }
+    if (refreshVersion !== programRefreshVersion) return;
+    const signature = programSignature(eventProgram);
+    if (!this.data.programReady || this.data.programSignature !== signature)
+      this.setData({
+        eventProgram,
+        visibleProgramItems: eventProgram.items.filter((item) => item.visible),
+        programReady: true,
+        programSignature: signature,
+      });
   },
   preview() {
     previewPhotos([this.data.coverPhoto], 0);

@@ -8,6 +8,7 @@
     "pages/guestbook/index",
     "pages/admin/index",
     "pages/privacy/index",
+    "pages/program/index",
     "pages/photos/index"
   ],
   "window": {
