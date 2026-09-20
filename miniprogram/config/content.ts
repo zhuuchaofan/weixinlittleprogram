@@ -34,7 +34,7 @@ export const appConfig = {
   // 提审前替换为实际可用的微信号；不要在这里填写密码、身份证或其他敏感信息。
   privacyContact: {
     channel: '微信号',
-    account: 'zhuochaofan',
+    account: 'zhuuchaofan',
   },
   retention:
     '这份回复只为安排这次相聚而保留。2026 年 9 月 29 日起不再接受新增或修改；我们会在宴会结束后 90 天内手动删除到场登记和私密祝福，系统不会自动清理。你不必等到那时，随时都可以删除自己的回复或祝福。',
