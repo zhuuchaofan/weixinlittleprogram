@@ -5,3 +5,6 @@
 .privacy-link { display: block; min-height: 88rpx; padding: 20rpx 0 28rpx; color: var(--accent); font-size: 26rpx; text-decoration: underline; }
 .saved-date { margin-bottom: 30rpx; }
 .actions { display: flex; flex-direction: column; gap: 18rpx; }
+
+.back-link { width: auto; text-align: left; justify-content: flex-start; }
+.consent { font-size: max(26rpx, 14px); }

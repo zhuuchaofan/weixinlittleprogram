@@ -98,7 +98,7 @@ export const navigation = [
     number: '01',
   },
   {
-    title: '我们的故事',
+    title: '我们的这一页',
     description: '从遇见到每一天',
     url: '/pages/story/index',
     number: '02',

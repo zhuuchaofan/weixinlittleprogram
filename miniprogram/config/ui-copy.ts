@@ -42,7 +42,7 @@ export const uiCopy = {
   },
   story: {
     text01: '02 / 日子慢慢，故事长长',
-    text02: '我们的故事',
+    text02: '我们的这一页',
     text03: '故事正在整理，过些日子再来翻一翻。',
     text04: ' · 待替换',
     text05: '去照片册继续翻翻 ↗',
@@ -191,7 +191,7 @@ export const uiCopy = {
     text21:
       '只会删除你自己的登记，删除后无法恢复；仍在收集期内时可以重新填写。',
     text22: '确认删除',
-    text23: '你的登记已删除。想再回复时，随时欢迎。',
+    text23: '你的登记已删除。',
     platformGuide: '查看平台隐私保护指引',
     photosTitle: '照片，让回忆有个家',
     photosBody:

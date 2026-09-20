@@ -41,3 +41,11 @@
 .cleanup-panel textarea { height: 156rpx; margin: 20rpx 0; font-size: 24rpx; background: var(--paper); }
 .cleanup-result { margin-top: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--line); color: var(--muted); font-size: 24rpx; line-height: 1.7; }
 .cleanup-result .remove-button { width: 100%; margin-top: 18rpx; color: #fff; background: var(--accent); }
+
+.back-link { width: auto; justify-content: flex-start; text-align: left; }
+.save-state { color: var(--accent); font-size: 28rpx; padding: 14rpx 0; }
+.editor-photo { width: 180rpx; float: left; margin: 0 24rpx 18rpx 0; }
+.edit-toggle { width: auto; min-height: 92rpx; font-size: 26rpx; }
+.entry-fields { clear: both; }
+.photo-entry { display: flow-root; padding-bottom: 24rpx; margin-bottom: 18rpx; }
+.photo-editor { padding-bottom: 60rpx; }

@@ -1,13 +1,13 @@
 <view class="page photo-editor">
-  <navigator class="back-link" url="/pages/admin/index">‹ 返回主人工作台</navigator>
+  <button class="back-link" bindtap="back" disabled="{{busy}}">‹ 返回主人工作台</button>
   <view class="editor-heading"><view class="kicker">把回忆安放好</view><view class="title">照片管理</view><view class="lead preline">一张照片，一段日常。
 让亲友看见我们喜欢的模样。</view></view>
-  <view wx:if="{{error}}" class="notice error" role="alert">{{error}}</view>
+  <view wx:if="{{error}}" class="notice error" role="alert">{{error}}<button wx:if="{{loadFailed}}" class="text-button" bindtap="load" disabled="{{busy}}">重新读取</button></view>
   <button wx:if="{{diagnostic}}" class="text-button" bindtap="copyDiagnostic">复制上传诊断详情</button>
   <view wx:if="{{message}}" class="notice" aria-live="polite">{{message}}</view>
   <view wx:if="{{busy}}" class="status">正在处理，请稍候…</view>
-  <view wx:if="{{authorized}}">
-    <view class="save-bar"><button class="secondary" bindtap="save" disabled="{{busy}}">保存草稿</button><button class="primary" bindtap="publish" disabled="{{busy}}">更新展示 ↗</button></view>
+  <view wx:if="{{authorized && !loadFailed}}">
+    <view class="save-state" aria-live="polite">{{saveState}}</view><view class="save-bar"><button class="secondary" bindtap="save" disabled="{{busy}}">保存草稿</button><button class="primary" bindtap="publish" disabled="{{busy}}">更新展示 ↗</button></view>
     <view class="editor-guide preline">草稿留给自己，更新展示后亲友才会看到。
 离开前，记得保存这次整理。</view>
     <button class="upload-button" bindtap="add" disabled="{{busy || photos.length >= 60}}"><text class="upload-plus">＋</text><view class="upload-copy"><view>从手机添加照片</view><view class="small muted">选一张喜欢的，放进我们的纪念册</view></view><text class="upload-arrow">↗</text></button>
@@ -16,14 +16,14 @@
     <view wx:if="{{cleanupVisible}}" class="cleanup-panel"><view class="section-title">云端文件清理</view><view class="small muted">仅清理由本小程序上传的 wedding/managed/ JPG 或 PNG。先从草稿和已展示内容移除，再检查是否可删；手动上传的原图请在云开发控制台管理。</view><textarea value="{{cleanupId}}" bindinput="cleanupInput" placeholder="粘贴完整 cloud:// 文件 ID" maxlength="1024" disabled="{{busy}}" aria-label="需要清理的照片文件 ID"/><button class="secondary" bindtap="inspectCleanup" disabled="{{busy}}">检查是否可安全删除</button><view wx:if="{{cleanupInspection}}" class="cleanup-result"><view>草稿引用：{{cleanupInspection.references.draft}} · 已展示引用：{{cleanupInspection.references.published}}</view><button wx:if="{{cleanupInspection.deletable}}" class="remove-button" bindtap="deleteCleanup" disabled="{{busy}}">永久删除云端文件</button></view></view>
     <view class="collection-heading"><text class="section-title">正在整理</text><text class="small muted">{{photos.length}} / 60 个展示位置</text></view>
     <view wx:if="{{!photos.length}}" class="empty"><view class="empty-title serif">留一点位置，给新的回忆</view><view>点击上方添加照片，开始布置吧。</view></view>
-    <view wx:for="{{photos}}" wx:key="id" class="photo-entry">
+    <picker range="{{filterLabels}}" value="{{filterIndex}}" bindchange="filterChange"><view class="placement">按用途查看：{{filterLabels[filterIndex]}}</view></picker><block wx:for="{{photos}}" wx:key="id"><view wx:if="{{filter === 'all' || item.slot === filter}}" class="photo-entry">
       <view class="entry-heading"><text class="entry-number serif">{{index >= 9 ? '' : '0'}}{{index + 1}}</text><text class="entry-slot">{{item.slot === 'album' ? '婚纱照相册' : item.slot === 'cover' ? '首页封面' : item.slot === 'story' ? '故事照片' : item.slot === 'qiuqiu' ? '球球的日常' : '布丁的日常'}}</text><text class="small muted">轻点看大图</text></view>
       <view class="editor-photo"><photo-frame src="{{item.thumbnail}}" caption="{{item.caption}}" ratio="landscape" adaptive="{{false}}" data-index="{{index}}" bind:open="preview"/></view>
-      <view class="entry-fields"><view class="field-title"><text>照片说明</text><text class="small muted">{{item.caption.length}} / 80</text></view><input value="{{item.caption}}" placeholder="给这一刻写一句话…" placeholder-class="input-placeholder" aria-label="照片说明" maxlength="80" data-index="{{index}}" bindinput="caption" disabled="{{busy}}"/>
+      <button class="edit-toggle secondary" data-id="{{item.id}}" bindtap="toggleEdit">{{expandedId === item.id ? '收起编辑' : '编辑说明与用途'}}</button><view wx:if="{{expandedId === item.id}}"><view class="entry-fields"><view class="field-title"><text>照片说明</text><text class="small muted">{{item.caption.length}} / 80</text></view><input value="{{item.caption}}" placeholder="给这一刻写一句话…" placeholder-class="input-placeholder" aria-label="照片说明" maxlength="80" data-index="{{index}}" bindinput="caption" disabled="{{busy}}"/>
       <picker range="{{slots}}" value="{{item.slot === 'album' ? 0 : item.slot === 'cover' ? 1 : item.slot === 'story' ? 2 : item.slot === 'qiuqiu' ? 3 : 4}}" data-index="{{index}}" bindchange="slot" disabled="{{busy}}"><view class="placement"><text class="muted">放在哪里</text><text class="placement-value">{{item.slot === 'album' ? '婚纱照相册' : item.slot === 'cover' ? '首页封面' : item.slot === 'story' ? '故事照片' : item.slot === 'qiuqiu' ? '球球' : '布丁'}}<text class="chevron">⌄</text></text></view></picker></view>
       <view class="entry-tools"><button data-index="{{index}}" data-delta="-1" bindtap="move" disabled="{{busy || index === 0}}" aria-label="前移照片">↑ 前移</button><button data-index="{{index}}" data-delta="1" bindtap="move" disabled="{{busy || index === photos.length - 1}}" aria-label="后移照片">↓ 后移</button><button data-index="{{index}}" bindtap="duplicate" disabled="{{busy || photos.length >= 60}}">复用</button><button class="remove-button" data-index="{{index}}" bindtap="remove" disabled="{{busy}}">移除</button></view><button class="file-id-button" data-index="{{index}}" bindtap="copyFileId" disabled="{{busy}}">复制这张照片的 File ID</button>
-    </view>
+    </view></view></block>
     <view wx:if="{{photos.length}}" class="closing-note preline">同一张照片想放在两处？点击「复用」。
 移除只改变展示，云端照片仍会保留。</view>
-  </view><page-footer/>
-</view>
+  </view>
+<page-footer wx:if="{{!dirty}}" /></view>

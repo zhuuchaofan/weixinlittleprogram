@@ -1,3 +1,4 @@
+import { returnTo } from '../../utils/navigation';
 import { preparePhotoUpload } from '../../services/photo-upload';
 import { localConfig } from '../../config/local';
 import { checkAdmin } from '../../services/access';
@@ -12,6 +13,20 @@ import { previewPhotos } from '../../utils/preview';
 Page({
   data: {
     authorized: false,
+    loadFailed: false,
+    dirty: false,
+    saveState: '草稿读取中…',
+    expandedId: '',
+    filter: 'all',
+    filterLabels: [
+      '全部',
+      '婚纱照相册',
+      '首页封面',
+      '故事照片',
+      '球球',
+      '布丁',
+    ],
+    filterIndex: 0,
     busy: false,
     error: '',
     message: '',
@@ -24,13 +39,67 @@ Page({
     photos: [] as ManagedPhoto[],
     slots: ['婚纱照相册', '首页封面', '故事照片', '球球', '布丁'],
   },
-  async onLoad() {
-    this.setData({ busy: true });
+  savedSnapshot: '',
+  onLoad() {
+    void this.load();
+  },
+  async back() {
+    if (this.data.busy) return;
+    if (this.data.dirty) {
+      const result = await wx.showModal({
+        title: '放弃未保存的修改？',
+        content: '照片说明、用途和排序尚未保存。留在这里可继续保存。',
+        confirmText: '放弃修改',
+        cancelText: '继续整理',
+      });
+      if (!result.confirm) return;
+    }
+    wx.disableAlertBeforeUnload?.();
+    returnTo('/pages/admin/index');
+  },
+  markDirty() {
+    const dirty = JSON.stringify(this.data.photos) !== this.savedSnapshot;
+    this.setData({
+      dirty,
+      saveState: dirty
+        ? '有未保存的修改'
+        : '草稿已保存；发布状态以上次更新为准',
+    });
+    if (dirty)
+      wx.enableAlertBeforeUnload?.({
+        message: '照片安排尚未保存，返回会丢失这次修改。',
+      });
+    else wx.disableAlertBeforeUnload?.();
+  },
+  markSaved(published = false) {
+    this.savedSnapshot = JSON.stringify(this.data.photos);
+    this.setData({
+      dirty: false,
+      saveState: published ? '展示已更新' : '草稿已保存，需更新展示才会发布',
+    });
+    wx.disableAlertBeforeUnload?.();
+  },
+  toggleEdit(e: WechatMiniprogram.TouchEvent) {
+    const id = String(e.currentTarget.dataset.id);
+    this.setData({ expandedId: this.data.expandedId === id ? '' : id });
+  },
+  filterChange(e: WechatMiniprogram.PickerChange) {
+    const index = Number(e.detail.value);
+    this.setData({
+      filterIndex: index,
+      filter: ['all', 'album', 'cover', 'story', 'qiuqiu', 'buding'][index],
+      expandedId: '',
+    });
+  },
+  async load() {
+    this.setData({ busy: true, loadFailed: false, error: '' });
     try {
       if (!(await checkAdmin())) throw new Error('仅主人可以管理照片');
       this.setData({ authorized: true, photos: await photoService.draft() });
+      this.markSaved();
+      this.setData({ saveState: '已读取草稿；亲友看到的是上次发布的内容' });
     } catch (e) {
-      this.setData({ error: (e as Error).message });
+      this.setData({ error: (e as Error).message, loadFailed: true });
     } finally {
       this.setData({ busy: false });
     }
@@ -150,8 +219,10 @@ Page({
     }
   },
   async saveAddedPhoto() {
+    this.markDirty();
     try {
       await photoService.save(this.data.photos);
+      this.markSaved();
       this.setData({
         message:
           '照片已加入并保存草稿。请设置用途，再点“更新展示”，亲友才会看到。',
@@ -176,11 +247,13 @@ Page({
       ],
       message: '已复用这张照片，可为新条目选择其他用途，不会重复上传。',
     });
+    this.markDirty();
   },
   caption(e: WechatMiniprogram.Input) {
     const photos = this.data.photos.slice();
     photos[Number(e.currentTarget.dataset.index)].caption = e.detail.value;
     this.setData({ photos });
+    this.markDirty();
   },
   slot(e: WechatMiniprogram.PickerChange) {
     const photos = this.data.photos.slice();
@@ -194,6 +267,7 @@ Page({
       });
     photos[index].slot = slot;
     this.setData({ photos });
+    this.markDirty();
   },
   move(e: WechatMiniprogram.TouchEvent) {
     const photos = this.data.photos.slice();
@@ -202,18 +276,21 @@ Page({
     if (j < 0 || j >= photos.length) return;
     [photos[i], photos[j]] = [photos[j], photos[i]];
     this.setData({ photos });
+    this.markDirty();
   },
   async remove(e: WechatMiniprogram.TouchEvent) {
     const result = await wx.showModal({
       title: '从草稿移除这张照片？',
       content: '云端文件会保留，更新展示后才影响亲友页面。',
     });
-    if (result.confirm)
+    if (result.confirm) {
       this.setData({
         photos: this.data.photos.filter(
           (_, i) => i !== Number(e.currentTarget.dataset.index),
         ),
       });
+      this.markDirty();
+    }
   },
   preview(e: WechatMiniprogram.CustomEvent) {
     void previewPhotos(this.data.photos, Number(e.currentTarget.dataset.index));
@@ -305,6 +382,7 @@ Page({
       await (publish
         ? photoService.publish(this.data.photos)
         : photoService.save(this.data.photos));
+      this.markSaved(publish);
       this.setData({
         message: publish
           ? '展示已更新，重新进入相关页面即可查看。'

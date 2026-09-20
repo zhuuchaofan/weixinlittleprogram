@@ -239,8 +239,8 @@ try {
     await page.getByRole('button', { name: /去看照片/ }).click();
     await page.waitForSelector('body[data-ready="gallery"]');
   });
-  await check('相册切组与大图前后翻页', async () => {
-    await page.locator('.tab').first().click();
+  await check('单组相册隐藏多余标签、大图前后翻页', async () => {
+    assert.equal(await page.locator('.tab').count(), 0);
     assert.equal(await page.locator('.tile').count(), 8);
     await page
       .locator('photo-frame')
@@ -408,6 +408,87 @@ try {
     );
     await page.screenshot({
       path: 'artifacts/ui/dark-reduced-motion.png',
+      fullPage: true,
+    });
+  });
+  await check('宴后保留登记与祝福正文，隐私页可进入本人内容', async () => {
+    await visit('rsvp');
+    await page.evaluate(() =>
+      window.__page.setData({
+        collectionClosed: true,
+        existing: true,
+        guestName: '只读访客',
+        note: '素食一位',
+        attending: true,
+        partySize: 2,
+      }),
+    );
+    assert.match(
+      await page.locator('.readonly-summary').innerText(),
+      /只读访客/,
+    );
+    assert.equal(await page.locator('input').count(), 0);
+    await visit('guestbook');
+    await page.evaluate(() =>
+      window.__page.setData({
+        collectionClosed: true,
+        existing: true,
+        signature: '朋友',
+        message: '祝你们幸福',
+      }),
+    );
+    assert.match(
+      await page.locator('.readonly-summary').innerText(),
+      /祝你们幸福/,
+    );
+    assert.equal(await page.locator('textarea').count(), 0);
+    await visit('privacy');
+    assert.match(await page.locator('body').innerText(), /查看或删除我的祝福/);
+  });
+  await check('照片折叠筛选、未保存保护与保存后解除提醒', async () => {
+    await visit('photos');
+    assert.equal(await page.locator('.entry-fields').count(), 0);
+    await page.evaluate(() => {
+      const p = window.__page;
+      p.toggleEdit({ currentTarget: { dataset: { id: p.data.photos[0].id } } });
+      window.wx.enableAlertBeforeUnload = () => {
+        window.__unloadGuard = true;
+      };
+      window.wx.disableAlertBeforeUnload = () => {
+        window.__unloadGuard = false;
+      };
+      p.caption({
+        currentTarget: { dataset: { index: 0 } },
+        detail: { value: '未保存说明' },
+      });
+    });
+    assert.equal(await page.locator('.entry-fields').count(), 1);
+    assert.equal(
+      await page.evaluate(
+        () => window.__page.data.dirty && window.__unloadGuard,
+      ),
+      true,
+    );
+    await page.evaluate(async () => {
+      const original = window.wx.showModal;
+      window.wx.showModal = async () => ({ confirm: false });
+      await window.__page.back();
+      window.wx.showModal = original;
+    });
+    assert.equal(await page.evaluate(() => window.__page.data.dirty), true);
+    await page.evaluate(async () => window.__page.save());
+    assert.equal(
+      await page.evaluate(
+        () => window.__page.data.dirty || window.__unloadGuard,
+      ),
+      false,
+    );
+    await page.evaluate(() =>
+      window.__page.filterChange({ detail: { value: '2' } }),
+    );
+    assert.equal(await page.locator('.photo-entry').count(), 1);
+    await page.screenshot({
+      path: 'artifacts/ui/photos-filtered-compact.png',
       fullPage: true,
     });
   });

@@ -1,3 +1,4 @@
+import { returnTo } from '../../utils/navigation';
 import { uiCopy } from '../../config/ui-copy';
 import { appConfig } from '../../services/content';
 import { isGuestbookMock, guestbookService } from '../../services/guestbook';
@@ -28,6 +29,9 @@ Page({
     saved: false,
     updatedAt: '',
     error: '',
+  },
+  back() {
+    returnTo('/pages/home/index');
   },
   onLoad() {
     void this.load();

@@ -77,6 +77,9 @@ window.wx = {
   navigateTo({ url }) {
     location.hash = url.split('/')[2];
   },
+  redirectTo({ url }) {
+    location.hash = url.split('/')[2];
+  },
   reLaunch({ url }) {
     location.hash = url.split('/')[2];
   },

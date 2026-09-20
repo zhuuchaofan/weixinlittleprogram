@@ -7,6 +7,10 @@ Page({
   data: {
     copy: uiCopy.invitation,
     appConfig,
+    venueName: appConfig.venue.split('（')[0],
+    venueBranch: appConfig.venue.includes('（')
+      ? appConfig.venue.split('（')[1].replace('）', '')
+      : '',
     collectionClosed: isCollectionClosed(appConfig.collectionCloseDate),
   },
   onShow() {
