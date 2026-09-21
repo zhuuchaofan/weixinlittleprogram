@@ -62,6 +62,8 @@ test('照片写入、草稿与上传均验证真实管理员，伪造身份无�
     'savePhotoDraft',
     'publishPhotos',
     'uploadPhoto',
+    'prepareVideoUpload',
+    'verifyVideoUpload',
     'inspectManagedPhotoFile',
     'deleteManagedPhotoFile',
   ])
@@ -188,5 +190,134 @@ test('管理员只能检查和删除未被草稿或已发布内容引用的小�
       })
     ).ok,
     false,
+  );
+});
+
+test('签发视频凭据前鉴权、限制元数据、重试使用相同路径并验证真实文件头', async () => {
+  let identity = 'owner';
+  let content = Buffer.from([
+    0, 0, 0, 16, 102, 116, 121, 112, 105, 115, 111, 109, 0, 0, 0, 0,
+  ]);
+  const paths = [];
+  const handle = createPhotoHandler({
+    cloud: {
+      getWXContext: () => ({ OPENID: identity }),
+      downloadFile: async () => ({ fileContent: content }),
+    },
+    db: { collection: () => ({}) },
+    getAdmins: () => ['owner'],
+    storage: {
+      getUploadMetadata: async ({ cloudPath }) => {
+        paths.push(cloudPath);
+        return {
+          data: {
+            fileId: 'cloud://env/' + cloudPath,
+            url: 'https://upload.example',
+            token: 'token',
+            authorization: 'signature',
+            cosFileId: 'cos',
+          },
+        };
+      },
+    },
+  });
+  const payload = {
+    requestId: 'video-12345678',
+    size: 16,
+    duration: 10,
+    width: 100,
+    height: 200,
+  };
+  identity = 'visitor';
+  assert.equal(
+    (await handle({ action: 'prepareVideoUpload', payload })).code,
+    'FORBIDDEN',
+  );
+  assert.equal(paths.length, 0);
+  identity = 'owner';
+  assert.equal(
+    (
+      await handle({
+        action: 'prepareVideoUpload',
+        payload: { ...payload, size: 40 * 1024 * 1024 },
+      })
+    ).ok,
+    false,
+  );
+  const a = await handle({ action: 'prepareVideoUpload', payload });
+  const b = await handle({ action: 'prepareVideoUpload', payload });
+  assert.equal(a.ok, true);
+  assert.equal(a.data.cloudPath, b.data.cloudPath);
+  assert.equal(
+    (await handle({ action: 'verifyVideoUpload', payload })).ok,
+    true,
+  );
+  content = Buffer.alloc(16);
+  assert.equal(
+    (await handle({ action: 'verifyVideoUpload', payload })).ok,
+    false,
+  );
+});
+test('视频元数据保存不丢失，封面和视频均受草稿/发布引用保护', async () => {
+  const f = fixture();
+  const video = {
+    ...managedPhoto,
+    type: 'video',
+    url: 'cloud://env/wedding/managed/v.mp4',
+    original: 'cloud://env/wedding/managed/v.mp4',
+    coverUrl: managedPhoto.thumbnail,
+    duration: 12,
+    width: 1080,
+    height: 1920,
+    size: 1000,
+  };
+  assert.equal(
+    (
+      await f.handle({
+        action: 'publishPhotos',
+        payload: { photos: [photo, video] },
+      })
+    ).ok,
+    true,
+  );
+  assert.equal(f.docs.published.photos[1].type, 'video');
+  assert.equal(f.docs.published.photos[1].duration, 12);
+  for (const fileID of [video.original, video.coverUrl])
+    assert.equal(
+      (
+        await f.handle({
+          action: 'inspectManagedPhotoFile',
+          payload: { fileID },
+        })
+      ).data.deletable,
+      false,
+    );
+  assert.equal(
+    (
+      await f.handle({
+        action: 'savePhotoDraft',
+        payload: { photos: [{ ...video, slot: 'cover' }] },
+      })
+    ).ok,
+    false,
+  );
+  assert.equal(
+    (
+      await f.handle({
+        action: 'savePhotoDraft',
+        payload: { photos: [{ ...video, thumbnail: '', coverUrl: '' }] },
+      })
+    ).ok,
+    true,
+  );
+  await f.handle({ action: 'publishPhotos', payload: { photos: [] } });
+  assert.equal(
+    (
+      await f.handle({
+        action: 'deleteManagedPhotoFile',
+        payload: { fileID: video.original },
+      })
+    ).ok,
+    true,
   );
 });

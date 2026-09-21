@@ -1,4 +1,11 @@
 export interface Photo {
+  type?: 'image' | 'video';
+  url?: string;
+  coverUrl?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  size?: number;
   id: string;
   thumbnail: string;
   original: string;

@@ -23,7 +23,8 @@
     "page-footer": "/components/page-footer/index",
     "music-control": "/components/music-control/index",
     "page-back-link": "/components/page-back-link/index",
-    "editor-action-bar": "/components/editor-action-bar/index"
+    "editor-action-bar": "/components/editor-action-bar/index",
+    "media-video": "/components/media-video/index"
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",

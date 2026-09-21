@@ -1,4 +1,4 @@
-const { randomUUID } = require('node:crypto');
+const { createHash, randomUUID } = require('node:crypto');
 class PhotoInputError extends Error {}
 function validatePhotos(value) {
   if (!Array.isArray(value) || value.length > 60)
@@ -21,11 +21,45 @@ function validatePhotos(value) {
       !p.original.startsWith('cloud://') ||
       p.original.length > 1024 ||
       typeof p.thumbnail !== 'string' ||
-      !p.thumbnail.startsWith('cloud://') ||
+      !(
+        p.thumbnail.startsWith('cloud://') ||
+        (p.type === 'video' && p.thumbnail === '')
+      ) ||
       p.thumbnail.length > 1024
     )
       throw new PhotoInputError('照片信息无效');
+    if (p.type && !['image', 'video'].includes(p.type))
+      throw new PhotoInputError('媒体类型无效');
+    if (
+      p.type === 'video' &&
+      (p.slot !== 'album' ||
+        !Number.isFinite(p.duration) ||
+        p.duration <= 0 ||
+        p.duration > 60 ||
+        !Number.isFinite(p.size) ||
+        p.size <= 0 ||
+        p.size > 30 * 1024 * 1024 ||
+        !Number.isFinite(p.width) ||
+        p.width <= 0 ||
+        !Number.isFinite(p.height) ||
+        p.height <= 0 ||
+        (p.coverUrl &&
+          (typeof p.coverUrl !== 'string' ||
+            !p.coverUrl.startsWith('cloud://') ||
+            p.coverUrl.length > 1024)))
+    )
+      throw new PhotoInputError('视频仅用于相册，需在 60 秒、30 MB 以内');
     return {
+      ...(p.type ? { type: p.type, url: p.original } : {}),
+      ...(p.type === 'video'
+        ? {
+            coverUrl: p.coverUrl || '',
+            duration: p.duration,
+            width: p.width,
+            height: p.height,
+            size: p.size,
+          }
+        : {}),
       id: p.id,
       caption: p.caption,
       slot: p.slot,
@@ -42,22 +76,28 @@ function validateManagedFileID(value) {
   if (
     typeof value !== 'string' ||
     value.length > 1024 ||
-    !/^cloud:\/\/[^/]+\/wedding\/managed\/[a-zA-Z0-9_-]+\.(?:jpg|png)$/.test(
+    !/^cloud:\/\/[^/]+\/wedding\/managed\/[a-zA-Z0-9_-]+\.(?:jpg|png|mp4)$/.test(
       value,
     )
   )
     throw new PhotoInputError(
-      '只能清理由小程序上传的 wedding/managed/ JPG 或 PNG 文件。',
+      '只能清理由小程序上传的 wedding/managed/ JPG、PNG 或 MP4 文件。',
     );
   return value;
 }
 function photoReferenceCount(document, fileID) {
   if (!Array.isArray(document?.photos)) return 0;
   return document.photos.filter(
-    (photo) => photo?.thumbnail === fileID || photo?.original === fileID,
+    (photo) =>
+      photo === fileID ||
+      photo?.imageUrl === fileID ||
+      photo?.thumbnail === fileID ||
+      photo?.original === fileID ||
+      photo?.coverUrl === fileID ||
+      photo?.url === fileID,
   ).length;
 }
-function createPhotoHandler({ cloud, db, getAdmins }) {
+function createPhotoHandler({ cloud, db, getAdmins, storage }) {
   const collection = db.collection('photo_content');
   const get = async (key) =>
     (await collection.where({ _id: key }).limit(1).get()).data[0] || null;
@@ -81,6 +121,8 @@ function createPhotoHandler({ cloud, db, getAdmins }) {
         'savePhotoDraft',
         'publishPhotos',
         'uploadPhoto',
+        'prepareVideoUpload',
+        'verifyVideoUpload',
         'inspectManagedPhotoFile',
         'deleteManagedPhotoFile',
       ].includes(action)
@@ -120,8 +162,73 @@ function createPhotoHandler({ cloud, db, getAdmins }) {
           throw new PhotoInputError(
             '这张照片仍被草稿或已发布内容使用。请先移除展示、保存草稿并更新展示。',
           );
-        await cloud.deleteFile({ fileList: [fileID] });
+        const deleted = await cloud.deleteFile({ fileList: [fileID] });
+        if (
+          deleted?.fileList?.some(
+            (file) => file.status !== 0 && file.status !== undefined,
+          )
+        )
+          throw new PhotoInputError('云端文件未能删除，请稍后重新检查并重试');
         return { ok: true, data: { fileID, deleted: true } };
+      }
+      if (action === 'prepareVideoUpload' || action === 'verifyVideoUpload') {
+        const payload = event.payload || {};
+        if (!/^[a-zA-Z0-9_-]{8,80}$/.test(payload.requestId || ''))
+          throw new PhotoInputError('上传编号无效，请重新选择视频');
+        if (
+          !Number.isFinite(payload.size) ||
+          payload.size <= 0 ||
+          payload.size > 30 * 1024 * 1024 ||
+          !Number.isFinite(payload.duration) ||
+          payload.duration <= 0 ||
+          payload.duration > 60 ||
+          !Number.isFinite(payload.width) ||
+          payload.width <= 0 ||
+          !Number.isFinite(payload.height) ||
+          payload.height <= 0
+        )
+          throw new PhotoInputError('视频需在 60 秒、30 MB 以内，且尺寸有效');
+        const key = createHash('sha256')
+          .update(openid + ':' + payload.requestId)
+          .digest('hex');
+        const cloudPath = 'wedding/managed/' + key + '.mp4';
+        const metadata = await storage.getUploadMetadata({ cloudPath });
+        const m = metadata.data;
+        if (
+          !m?.fileId ||
+          !m.url ||
+          !m.authorization ||
+          !m.token ||
+          !m.cosFileId
+        )
+          throw new Error('无法取得上传凭据');
+        if (action === 'verifyVideoUpload') {
+          const { fileContent } = await cloud.downloadFile({
+            fileID: m.fileId,
+          });
+          // 验证实际上传内容及大小，避免只信任客户端扩展名和大小。
+          if (
+            !Buffer.isBuffer(fileContent) ||
+            fileContent.length !== payload.size ||
+            fileContent.length > 30 * 1024 * 1024 ||
+            fileContent.subarray(4, 8).toString() !== 'ftyp'
+          )
+            throw new PhotoInputError(
+              '视频文件校验失败，请选择有效的 MP4 或 MOV 视频',
+            );
+          return { ok: true, data: { fileID: m.fileId } };
+        }
+        return {
+          ok: true,
+          data: {
+            cloudPath,
+            url: m.url,
+            fileID: m.fileId,
+            authorization: m.authorization,
+            token: m.token,
+            cosFileID: m.cosFileId,
+          },
+        };
       }
       if (action === 'uploadPhoto') {
         const base64 = event.payload?.base64;
@@ -144,7 +251,14 @@ function createPhotoHandler({ cloud, db, getAdmins }) {
         if (!jpg && !png) throw new PhotoInputError('仅支持 JPG 或 PNG 图片');
         const result = await cloud.uploadFile({
           cloudPath:
-            'wedding/managed/' + randomUUID() + (jpg ? '.jpg' : '.png'),
+            'wedding/managed/' +
+            (event.payload?.requestId &&
+            /^[a-zA-Z0-9_-]{8,80}$/.test(event.payload.requestId)
+              ? createHash('sha256')
+                  .update(openid + ':' + event.payload.requestId)
+                  .digest('hex')
+              : randomUUID()) +
+            (jpg ? '.jpg' : '.png'),
           fileContent,
         });
         return { ok: true, data: { fileID: result.fileID } };

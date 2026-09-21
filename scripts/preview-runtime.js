@@ -38,6 +38,23 @@ window.wx = {
   setInnerAudioOption({ success }) {
     success?.();
   },
+  createVideoContext(id, owner) {
+    const video = () => owner?.__shadow?.querySelector('#' + id);
+    return {
+      play() {
+        void video()
+          ?.play()
+          .catch(() => {});
+      },
+      stop() {
+        const el = video();
+        if (el) {
+          el.pause();
+          el.currentTime = 0;
+        }
+      },
+    };
+  },
   createInnerAudioContext() {
     const listeners = {};
     const fire = (name) => listeners[name]?.();
@@ -139,13 +156,14 @@ function instance(def, data, update) {
   const owner = {
     ...def,
     data: clone(data || {}),
-    setData(patch) {
+    setData(patch, callback) {
       Object.assign(this.data, patch);
       update();
+      callback?.();
     },
   };
   for (const [name, method] of Object.entries(def.methods || {}))
-    owner[name] = method;
+    owner[name] = method.bind(owner);
   return owner;
 }
 window.Page = (def) => {
@@ -245,6 +263,7 @@ function renderNode(node, parent, context, owner, path, skipFor = false) {
         if (host.isConnected) renderComponent();
       },
     );
+    component.__shadow = shadow;
     component.triggerEvent = (name) => call(name);
     const renderComponent = () => {
       shadow.innerHTML = `<style>:host {display:block} * {box-sizing:border-box} button {font:inherit;cursor:pointer} ${spec.components[tag].css}</style>`;
@@ -299,6 +318,13 @@ function renderNode(node, parent, context, owner, path, skipFor = false) {
     element.style.width = '24px';
     element.style.height = '24px';
     element.style.flexShrink = '0';
+  }
+  if (tag === 'video') {
+    element.controls = true;
+    element.autoplay = false;
+    element.style.objectFit = 'contain';
+    element.addEventListener('play', () => call('play'));
+    element.addEventListener('error', () => call('error'));
   }
   if (tag === 'image') {
     element.style.objectFit = 'contain';

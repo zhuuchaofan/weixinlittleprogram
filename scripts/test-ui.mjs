@@ -10,9 +10,14 @@ const browser = await chromium.launch({
 mkdirSync('artifacts/ui', { recursive: true });
 const results = [];
 const errors = [];
+const consoleMessages = [];
 const page = await browser.newPage();
 const previewUrl = process.env.PREVIEW_URL || 'http://127.0.0.1:4173';
 page.on('pageerror', (error) => errors.push(error.message));
+page.on('console', (message) => {
+  if (['error', 'warning'].includes(message.type()))
+    consoleMessages.push({ text: message.text(), url: message.location().url });
+});
 page.on('dialog', (dialog) => dialog.accept());
 async function visit(name) {
   await page.goto(`${previewUrl}/#${name}`);
@@ -661,7 +666,7 @@ try {
     const privacy = await page.locator('.page').innerText();
     assert.doesNotMatch(privacy, /演示版本|本机演示|需要我们确认/);
     assert.match(privacy, /90 天内手动删除/);
-    assert.match(privacy, /永久删除小程序上传的照片文件/);
+    assert.match(privacy, /永久删除小程序上传的照片或视频文件/);
     assert.match(privacy, /查看平台隐私保护指引/);
     await page.screenshot({
       path: 'artifacts/ui/privacy-production-copy.png',
@@ -670,7 +675,117 @@ try {
     await visit('story');
     assert.doesNotMatch(await page.locator('.page').innerText(), /排版示例/);
   });
+  await check(
+    '媒体选择队列支持多选预览、移除及视频封面，手机布局无溢出',
+    async () => {
+      const consoleStart = consoleMessages.length;
+      await visit('photos');
+      await page.evaluate(() => {
+        const src =
+          'data:image/svg+xml,' +
+          encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="#d9c6b2"/><circle cx="300" cy="200" r="95" fill="#b58675"/></svg>',
+          );
+        window.wx.requirePrivacyAuthorize = ({ success }) => success();
+        window.wx.chooseMedia = async (options) => {
+          window.__mediaCount = options.count;
+          return {
+            tempFiles: [
+              { tempFilePath: src, size: 100 },
+              { tempFilePath: src, size: 100 },
+            ],
+          };
+        };
+        window.__page.setData({ pending: [], photos: [] });
+      });
+      await page.getByRole('button', { name: /添加照片 一次最多/ }).click();
+      await page.waitForFunction(() => window.__page.data.pending.length === 2);
+      assert.equal(await page.evaluate(() => window.__mediaCount), 9);
+      await page.locator('.pending-image').first().click();
+      assert.equal(await page.getByRole('dialog').count(), 1);
+      await page.getByRole('button', { name: '关闭', exact: true }).click();
+      await page
+        .locator('.pending-entry')
+        .first()
+        .getByRole('button', { name: '移除', exact: true })
+        .click();
+      assert.equal(await page.locator('.pending-entry').count(), 1);
+      await page.evaluate(() => {
+        const pending = window.__page.data.pending;
+        pending.push({
+          ...pending[0],
+          id: 'test-video',
+          type: 'video',
+          path: 'local-video.mp4',
+          coverPath: pending[0].path,
+          width: 1080,
+          height: 1920,
+          duration: 12,
+        });
+        window.__page.setData({ pending });
+      });
+      assert.equal(await page.locator('media-video').count(), 1);
+      assert.equal(await page.locator('video').count(), 0);
+      for (const width of [320, 393, 430]) {
+        await page.setViewportSize({ width, height: 852 });
+        assert.ok(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth + 1,
+          ),
+        );
+      }
+      await page.screenshot({
+        path: 'artifacts/ui/media-pending.png',
+        fullPage: true,
+      });
+      await page.evaluate(() => {
+        const video = window.__page.data.pending[1];
+        localStorage.setItem(
+          'photos:published',
+          JSON.stringify([
+            { id: 'old-image', imageUrl: video.coverPath },
+            {
+              id: 'video',
+              type: 'video',
+              url: 'local-video.mp4',
+              coverUrl: video.coverPath,
+              width: 1080,
+              height: 1920,
+              duration: 12,
+              ratio: 'portrait',
+            },
+          ]),
+        );
+      });
+      await visit('gallery');
+      assert.equal(await page.locator('.tile').count(), 2);
+      assert.equal(await page.locator('media-video').count(), 1);
+      assert.equal(await page.locator('video').count(), 0);
+      await page.screenshot({
+        path: 'artifacts/ui/media-gallery.png',
+        fullPage: true,
+      });
+      assert.deepEqual(consoleMessages.slice(consoleStart), []);
+    },
+  );
   assert.deepEqual(errors, []);
+  // 既有测试手动注入这些缺失资源验证图片失败回退；仍记录原始控制台消息。
+  const expectedMissing = [
+    'favicon.ico',
+    'test-image-landscape.png',
+    'test-image-square.png',
+    'test-missing.png',
+    'test-image-portrait.png',
+  ].map((path) => previewUrl + '/' + path);
+  assert.deepEqual(
+    consoleMessages.filter(
+      (message) =>
+        !(
+          expectedMissing.includes(message.url) && message.text.includes('404')
+        ),
+    ),
+    [],
+  );
 } finally {
   writeFileSync(
     'artifacts/ui/results.json',
@@ -680,6 +795,7 @@ try {
         passed: results.length,
         results,
         pageErrors: errors,
+        consoleMessages,
       },
       null,
       2,

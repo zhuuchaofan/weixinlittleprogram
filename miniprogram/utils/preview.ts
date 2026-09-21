@@ -8,11 +8,17 @@ export async function previewPhotos(
 ): Promise<void> {
   const selected = photos[current];
   // CSS 占位只提示“尚未加入”，不是可放大的图片资源。
-  if (!selected || !(selected.original || selected.thumbnail)) {
+  if (
+    !selected ||
+    selected.type === 'video' ||
+    !(selected.original || selected.thumbnail)
+  ) {
     wx.showToast({ title: uiCopy.photoFrame.previewHint, icon: 'none' });
     return;
   }
-  const available = photos.filter((photo) => photo.original || photo.thumbnail);
+  const available = photos.filter(
+    (photo) => photo.type !== 'video' && (photo.original || photo.thumbnail),
+  );
   let urls: string[];
   try {
     urls = await Promise.all(

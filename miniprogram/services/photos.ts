@@ -1,3 +1,4 @@
+import { normalizeMediaData } from './media';
 import type { Photo } from '../models';
 import { albums, coverPhoto, catPhotos, storyItems } from '../config/content';
 import { localConfig } from '../config/local';
@@ -33,6 +34,13 @@ export function photoArrangementSignature(
       photo.caption,
       photo.placeholder,
       photo.ratio,
+      photo.type,
+      photo.url,
+      photo.coverUrl,
+      photo.duration,
+      photo.width,
+      photo.height,
+      photo.size,
     ]),
   );
 }
@@ -58,7 +66,7 @@ export async function getPublishedPhotos(): Promise<PublishedPhotosResult> {
       const photos = wx.getStorageSync('photos:published') as unknown;
       if (photos === null || photos === undefined) return { state: 'missing' };
       return Array.isArray(photos)
-        ? { state: 'published', photos: photos as ManagedPhoto[] }
+        ? { state: 'published', photos: normalizeMediaData(photos) }
         : { state: 'unavailable' };
     }
     const result = await callCloud<unknown>('getPhotos');
@@ -71,7 +79,7 @@ export async function getPublishedPhotos(): Promise<PublishedPhotosResult> {
       return { state: 'unavailable' };
     return {
       state: 'published',
-      photos: (result as { photos: ManagedPhoto[] }).photos,
+      photos: normalizeMediaData((result as { photos: ManagedPhoto[] }).photos),
     };
   } catch {
     return { state: 'unavailable' };
@@ -80,10 +88,12 @@ export async function getPublishedPhotos(): Promise<PublishedPhotosResult> {
 export const photoService = {
   async draft() {
     if (String(localConfig.mode) === 'mock')
-      return wx.getStorageSync('photos:draft') || initialPhotos();
-    return (
+      return normalizeMediaData(
+        wx.getStorageSync('photos:draft') || initialPhotos(),
+      );
+    return normalizeMediaData(
       (await callCloud<{ photos: ManagedPhoto[] } | null>('getPhotoDraft'))
-        ?.photos ?? initialPhotos()
+        ?.photos ?? initialPhotos(),
     );
   },
   save(photos: ManagedPhoto[]) {

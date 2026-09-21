@@ -443,7 +443,7 @@ test('照片选取先经过微信原生隐私授权，拒绝或旧版本不继�
     global.wx.requirePrivacyAuthorize = ({ fail }) => fail({ errMsg: 'deny' });
     await assert.rejects(
       ensurePhotoSelectionAuthorization(),
-      /未获得照片选择授权/,
+      /未获得照片或视频选择授权/,
     );
     global.wx = {};
     await assert.rejects(ensurePhotoSelectionAuthorization(), /当前微信版本/);

@@ -1,4 +1,6 @@
 const cloud = require('wx-server-sdk');
+const cloudbase = require('@cloudbase/node-sdk');
+const storage = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
 const { createHandler } = require('./core');
 const { createGuestbookHandler } = require('./guestbook');
 const { createPhotoHandler } = require('./photos');
@@ -84,7 +86,12 @@ const handleGuestbook = createGuestbookHandler({
   getAdmins: admins,
   canCollect,
 });
-const handlePhotos = createPhotoHandler({ cloud, db, getAdmins: admins });
+const handlePhotos = createPhotoHandler({
+  storage,
+  cloud,
+  db,
+  getAdmins: admins,
+});
 const handleEventProgram = createEventProgramHandler({ db, getAdmins: admins });
 
 exports.main = async (event) =>

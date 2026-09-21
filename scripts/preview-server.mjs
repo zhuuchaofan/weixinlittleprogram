@@ -10,6 +10,7 @@ const pages = (await readdir(resolve(root, 'pages'))).filter((s) =>
 );
 const components = [
   'photo-frame',
+  'media-video',
   'page-footer',
   'music-control',
   'page-back-link',
