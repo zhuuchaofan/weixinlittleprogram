@@ -1,3 +1,4 @@
+import { getReduceMotion } from '../../services/motion-preference';
 import type { EventProgram, Photo } from '../../models';
 import {
   getPublishedPhotos,
@@ -91,7 +92,7 @@ Page({
   async onShow() {
     void musicService.autoStart();
     void this.refreshProgram();
-    const reduceMotion = wx.getStorageSync('two-cats:motion') !== 'on';
+    const reduceMotion = getReduceMotion();
     const eventStatus = getBanquetStatus(appConfig.eventDate);
     const collectionClosed = isCollectionClosed(appConfig.collectionCloseDate);
     if (eventStatus.phase === 'today') void this.refreshProgram();

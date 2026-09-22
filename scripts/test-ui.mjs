@@ -698,7 +698,7 @@ try {
         };
         window.__page.setData({ pending: [], photos: [] });
       });
-      await page.getByRole('button', { name: /添加照片 一次最多/ }).click();
+      await page.getByRole('button', { name: /添加照片/ }).click();
       await page.waitForFunction(() => window.__page.data.pending.length === 2);
       assert.equal(await page.evaluate(() => window.__mediaCount), 9);
       await page.locator('.pending-image').first().click();

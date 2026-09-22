@@ -1,3 +1,7 @@
+import {
+  getReduceMotion,
+  setReduceMotion,
+} from '../../services/motion-preference';
 import { uiCopy } from '../../config/ui-copy';
 import { appConfig } from '../../services/content';
 import { rsvpService, isMock } from '../../services/rsvp';
@@ -15,12 +19,12 @@ Page({
   },
   onShow() {
     this.setData({
-      reduceMotion: wx.getStorageSync('two-cats:motion') !== 'on',
+      reduceMotion: getReduceMotion(),
     });
   },
   motion(event: WechatMiniprogram.SwitchChange) {
     try {
-      wx.setStorageSync('two-cats:motion', event.detail.value ? 'off' : 'on');
+      setReduceMotion(event.detail.value);
       this.setData({ reduceMotion: event.detail.value });
     } catch {
       this.setData({ error: uiCopy.privacy.text18 });

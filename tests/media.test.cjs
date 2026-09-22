@@ -306,3 +306,58 @@ test('播放器默认不播、显式点击播放、播放互斥、隐藏时停�
   await b.open();
   assert.equal(b.data.failed, false);
 });
+
+test('媒体选择保留 iOS 元数据优先级、失败隔离及原始顺序', async () => {
+  setup();
+  const {
+    prepareSelectedMedia,
+  } = require('../miniprogram/services/media-selection.ts');
+  const calls = [];
+  global.wx.getVideoInfo = async ({ src }) => {
+    calls.push(src);
+    if (src === 'ios') throw new Error('临时文件信息不可读');
+    return { duration: 5, width: 640, height: 480 };
+  };
+  const files = [
+    { tempFilePath: 'ios', size: 100, duration: 10, width: 1080, height: 1920 },
+    { tempFilePath: 'invalid', size: 100, duration: 61 },
+    { tempFilePath: 'fallback', size: 100 },
+    { tempFilePath: 'clipped', size: 100 },
+  ];
+  const original = structuredClone(files);
+  const result = await prepareSelectedMedia(files, 'video', 3);
+  assert.deepEqual(calls, ['ios', 'invalid', 'fallback']);
+  assert.deepEqual(
+    result.chosen.map(({ path, duration, width, height }) => ({
+      path,
+      duration,
+      width,
+      height,
+    })),
+    [
+      { path: 'ios', duration: 10, width: 1080, height: 1920 },
+      { path: 'fallback', duration: 5, width: 640, height: 480 },
+    ],
+  );
+  assert.deepEqual(result.failures, ['请选择 60 秒以内的视频。']);
+  assert.deepEqual(files, original);
+});
+
+test('媒体信息读取期间离页不写入待上传列表或恢复记录', async () => {
+  const f = setup();
+  global.wx.chooseMedia = async () => ({
+    tempFiles: [{ tempFilePath: 'video', size: 100 }],
+  });
+  let complete;
+  global.wx.getVideoInfo = () =>
+    new Promise((resolve) => {
+      complete = resolve;
+    });
+  const selecting = f.page.add(tap({ type: 'video' }));
+  while (!complete) await new Promise((resolve) => setImmediate(resolve));
+  f.page.onUnload();
+  complete({ duration: 5, width: 640, height: 480 });
+  await selecting;
+  assert.deepEqual(f.page.data.pending, []);
+  assert.equal(f.store.size, 0);
+});

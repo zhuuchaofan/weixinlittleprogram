@@ -1,3 +1,4 @@
+import { getReduceMotion } from '../../services/motion-preference';
 import { musicService, type MusicSnapshot } from '../../services/music';
 
 const cleanup = new WeakMap<object, () => void>();
@@ -7,7 +8,7 @@ function componentData(snapshot: MusicSnapshot) {
     status: snapshot.status,
     playing: snapshot.status === 'playing',
     loading: snapshot.status === 'loading',
-    reduceMotion: wx.getStorageSync('two-cats:motion') !== 'on',
+    reduceMotion: getReduceMotion(),
     label:
       snapshot.status === 'playing'
         ? '暂停背景音乐'
@@ -38,7 +39,7 @@ Component({
   pageLifetimes: {
     show() {
       this.setData({
-        reduceMotion: wx.getStorageSync('two-cats:motion') !== 'on',
+        reduceMotion: getReduceMotion(),
       });
     },
   },

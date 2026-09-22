@@ -1,4 +1,4 @@
-import { formatUpdatedAt } from '../../utils/date';
+import { formatRecordDates } from '../../utils/date';
 import { uiCopy } from '../../config/ui-copy';
 import { rsvpService, isMock } from '../../services/rsvp';
 import { guestbookService } from '../../services/guestbook';
@@ -9,19 +9,6 @@ import type {
   GuestMessageRecord,
   RsvpRecord,
 } from '../../models';
-
-function formatRecords(records: RsvpRecord[]): RsvpRecord[] {
-  return records.map((record) => ({
-    ...record,
-    updatedAt: formatUpdatedAt(record.updatedAt),
-  }));
-}
-function formatMessages(records: GuestMessageRecord[]): GuestMessageRecord[] {
-  return records.map((record) => ({
-    ...record,
-    updatedAt: formatUpdatedAt(record.updatedAt),
-  }));
-}
 
 Page({
   data: {
@@ -64,8 +51,8 @@ Page({
       ]);
       this.setData({
         ...rsvp,
-        records: formatRecords(rsvp.records),
-        messages: formatMessages(guestbook.records),
+        records: formatRecordDates(rsvp.records),
+        messages: formatRecordDates(guestbook.records),
         messageSummary: guestbook.summary,
         messageNextCursor: guestbook.nextCursor,
         authorized: true,
@@ -83,7 +70,7 @@ Page({
       const result = await rsvpService.dashboard(this.data.nextCursor);
       this.setData({
         ...result,
-        records: [...this.data.records, ...formatRecords(result.records)],
+        records: [...this.data.records, ...formatRecordDates(result.records)],
       });
     } catch (error) {
       this.setData({
@@ -103,7 +90,7 @@ Page({
         this.data.messageNextCursor,
       );
       this.setData({
-        messages: [...this.data.messages, ...formatMessages(result.records)],
+        messages: [...this.data.messages, ...formatRecordDates(result.records)],
         messageSummary: result.summary,
         messageNextCursor: result.nextCursor,
       });
