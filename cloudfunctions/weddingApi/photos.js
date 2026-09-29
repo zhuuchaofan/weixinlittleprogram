@@ -1,3 +1,4 @@
+const { handleImageUpload, ImageUploadError } = require('./image-upload');
 const { createHash, randomUUID } = require('node:crypto');
 class PhotoInputError extends Error {}
 function validatePhotos(value) {
@@ -76,12 +77,12 @@ function validateManagedFileID(value) {
   if (
     typeof value !== 'string' ||
     value.length > 1024 ||
-    !/^cloud:\/\/[^/]+\/wedding\/managed\/[a-zA-Z0-9_-]+\.(?:jpg|png|mp4)$/.test(
+    !/^cloud:\/\/[^/]+\/wedding\/managed\/[a-zA-Z0-9_-]+\.(?:jpg|png|webp|mp4)$/.test(
       value,
     )
   )
     throw new PhotoInputError(
-      '只能清理由小程序上传的 wedding/managed/ JPG、PNG 或 MP4 文件。',
+      '只能清理由小程序上传的 wedding/managed/ JPG、PNG、WebP 或 MP4 文件。',
     );
   return value;
 }
@@ -121,6 +122,8 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
         'savePhotoDraft',
         'publishPhotos',
         'uploadPhoto',
+        'prepareImageUpload',
+        'verifyImageUpload',
         'prepareVideoUpload',
         'verifyVideoUpload',
         'inspectManagedPhotoFile',
@@ -145,6 +148,15 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
           code: 'FORBIDDEN',
           message: '仅主人可以管理照片。',
         };
+      if (action === 'prepareImageUpload' || action === 'verifyImageUpload') {
+        return await handleImageUpload({
+          action,
+          payload: event.payload || {},
+          openid,
+          storage,
+          cloud,
+        });
+      }
       if (action === 'getPhotoDraft') {
         const draft = (await get('draft')) || (await get('published'));
         return { ok: true, data: draft ? { photos: draft.photos } : null };
@@ -279,7 +291,7 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
         ok: false,
         code: 'PHOTO_ERROR',
         message:
-          error instanceof PhotoInputError
+          error instanceof PhotoInputError || error instanceof ImageUploadError
             ? error.message
             : '照片操作失败，请检查云函数和 photo_content 集合配置后重试',
       };

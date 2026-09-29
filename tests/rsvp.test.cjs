@@ -92,17 +92,17 @@ test('云图 file ID 在显示前换为短期 HTTPS 地址并缓存，普通本�
     assert.equal(calls, 0);
     assert.equal(
       await resolvePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg'),
-      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080',
+      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080/format/webp/quality/85',
     );
     assert.equal(
       await resolvePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg'),
-      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080',
+      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080/format/webp/quality/85',
     );
     assert.equal(calls, 1);
     invalidatePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg');
     assert.equal(
       await resolvePhotoUrl('cloud://test-env.bucket/wedding/cover.jpg'),
-      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080',
+      'https://temporary.example/photo.jpg?imageMogr2/thumbnail/1080x1080/format/webp/quality/85',
     );
     assert.equal(calls, 2);
   } finally {
@@ -489,7 +489,7 @@ test('缩略图追加实时处理参数，原图预览保持原始临时链接�
     );
     assert.match(
       await resolveCloudFileUrl(files[0], 'thumbnail'),
-      /imageMogr2\/thumbnail\/1080x1080$/,
+      /imageMogr2\/thumbnail\/1080x1080\/format\/webp\/quality\/85$/,
     );
     assert.doesNotMatch(
       await resolveCloudFileUrl(files[0], 'original'),

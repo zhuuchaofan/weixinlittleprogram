@@ -1,3 +1,4 @@
+/** @deprecated 旧版 Base64 上传兼容工具；新图片与视频封面使用 image-upload.ts。 */
 // 保守的应用上限，不代表微信所有版本的传输上限。Base64 请求只含 ASCII。
 export const PHOTO_REQUEST_LIMIT = 180000;
 export function photoRequestSize(base64: string): number {

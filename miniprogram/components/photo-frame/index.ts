@@ -1,3 +1,4 @@
+import type { CloudFileRendition } from '../../services/cloud-file-url';
 import { uiCopy } from '../../config/ui-copy';
 import { invalidatePhotoUrl, resolvePhotoUrl } from '../../services/photo-url';
 
@@ -21,6 +22,7 @@ Component({
     pendingSource: '',
     pendingSlot: '' as Slot | '',
     pendingVersion: 0,
+    pendingRendition: 'thumbnail' as CloudFileRendition,
     slotASource: '',
     slotAUrl: '',
     slotBSource: '',
@@ -70,7 +72,11 @@ Component({
       if (source === this.data.pendingSource) return;
       void this.stage(source, false);
     },
-    async stage(source: string, force: boolean) {
+    async stage(
+      source: string,
+      force: boolean,
+      rendition: CloudFileRendition = 'thumbnail',
+    ) {
       if (!source || (!force && source === this.data.currentSource)) return;
 
       const slot: Slot = this.data.activeSlot === 'a' ? 'b' : 'a';
@@ -80,6 +86,7 @@ Component({
         pendingSource: source,
         pendingSlot: slot,
         pendingVersion,
+        pendingRendition: rendition,
         failed: false,
         failureHint: '',
         ...(slot === 'a'
@@ -91,7 +98,7 @@ Component({
       });
 
       try {
-        const url = await resolvePhotoUrl(source);
+        const url = await resolvePhotoUrl(source, rendition);
         if (
           this.data.pendingVersion !== pendingVersion ||
           this.data.pendingSlot !== slot ||
@@ -122,6 +129,7 @@ Component({
       this.promote(slot, event);
     },
     promote(slot: Slot, event?: WechatMiniprogram.BaseEvent) {
+      if (!this.isCurrentImageEvent(slot, event)) return;
       const source =
         slot === 'a' ? this.data.slotASource : this.data.slotBSource;
       if (
@@ -161,11 +169,22 @@ Component({
         resolvedRatio,
       });
     },
-    errorA() {
-      this.failPending('a', this.data.slotASource, 'load');
+    isCurrentImageEvent(
+      slot: Slot,
+      event?: WechatMiniprogram.BaseEvent,
+    ): boolean {
+      const url = event?.currentTarget?.dataset?.url;
+      return (
+        !url || url === (slot === 'a' ? this.data.slotAUrl : this.data.slotBUrl)
+      );
     },
-    errorB() {
-      this.failPending('b', this.data.slotBSource, 'load');
+    errorA(event?: WechatMiniprogram.BaseEvent) {
+      if (this.isCurrentImageEvent('a', event))
+        this.failPending('a', this.data.slotASource, 'load');
+    },
+    errorB(event?: WechatMiniprogram.BaseEvent) {
+      if (this.isCurrentImageEvent('b', event))
+        this.failPending('b', this.data.slotBSource, 'load');
     },
     // 供测试与兼容旧调用使用；仅当前等待中的图片能进入失败状态。
     error(kind: 'link' | 'load' = 'load') {
@@ -183,6 +202,19 @@ Component({
       )
         return;
 
+      // WebP 解码或处理服务不可用时逐级回退；每级只尝试一次。
+      if (
+        kind === 'load' &&
+        source.startsWith('cloud://') &&
+        this.data.pendingRendition !== 'original'
+      ) {
+        const next =
+          this.data.pendingRendition === 'thumbnail'
+            ? 'thumbnail-compatible'
+            : 'original';
+        void this.stage(source, true, next);
+        return;
+      }
       const message =
         kind === 'link' ? uiCopy.photoFrame.text07 : uiCopy.photoFrame.text08;
       if (this.data.currentSource) {

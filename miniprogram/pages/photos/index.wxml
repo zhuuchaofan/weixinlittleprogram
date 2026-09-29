@@ -21,7 +21,7 @@
         <media-video wx:if="{{item.type === 'video'}}" src="{{item.path}}" cover="{{item.coverPath}}" ratio="{{item.width > item.height ? 'landscape' : 'portrait'}}" />
         <image wx:else src="{{item.path}}" mode="aspectFit" class="pending-image" data-index="{{index}}" bindtap="pendingPreview" aria-label="预览待上传照片" />
         <view class="small" aria-live="polite">{{item.message}}</view>
-        <progress wx:if="{{item.type === 'video' && item.status === 'uploading'}}" percent="{{item.progress}}" show-info="{{true}}" activeColor="#783e3c" />
+        <progress wx:if="{{item.status === 'uploading'}}" percent="{{item.progress}}" show-info="{{true}}" activeColor="#783e3c" />
         <view class="entry-tools"><button data-index="{{index}}" bindtap="removePending" disabled="{{busy}}">移除</button>
         <button wx:if="{{item.status === 'failed' || item.status === 'uploaded'}}" data-id="{{item.id}}" bindtap="uploadPending" disabled="{{busy}}">{{item.media ? '重试保存' : '重试上传'}}</button></view>
         <button wx:if="{{item.fileID}}" class="text-button" data-index="{{index}}" bindtap="copyPendingFile">复制媒体文件 ID</button>

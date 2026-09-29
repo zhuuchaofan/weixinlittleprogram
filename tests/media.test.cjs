@@ -37,10 +37,11 @@ function setup() {
       previews++;
     },
     getFileSystemManager: () => ({
+      getFileInfo: (o) => o.success({ size: 100 }),
       readFile: (o) =>
         o.filePath === 'bad'
           ? o.fail({ errMsg: 'network internal trace' })
-          : o.success({ data: '/9j/AA==' }),
+          : o.success({ data: new Uint8Array([255, 216, 255, 0]).buffer }),
       saveFile: (o) => {
         uploadsCount++;
         o.success({ savedFilePath: 'saved/' + o.tempFilePath });
@@ -177,7 +178,9 @@ test('离页时保留已完成文件的恢复记录，暂停剩余项；取消�
   f.page.data.pending = [pending('first'), pending('second')];
   let complete;
   global.wx.getFileSystemManager = () => ({
-    readFile: (o) => o.success({ data: '/9j/AA==' }),
+    getFileInfo: (o) => o.success({ size: 100 }),
+    readFile: (o) =>
+      o.success({ data: new Uint8Array([255, 216, 255, 0]).buffer }),
     saveFile: (o) => {
       complete = () => o.success({ savedFilePath: 'saved/first' });
     },

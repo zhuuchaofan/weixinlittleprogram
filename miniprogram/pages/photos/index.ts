@@ -352,7 +352,7 @@ Page({
         count: type === 'video' ? 1 : Math.min(9, remaining),
         mediaType: [type],
         sourceType: ['album'],
-        sizeType: ['compressed'],
+        sizeType: type === 'image' ? ['original'] : ['compressed'],
         maxDuration: 60,
       });
       const { chosen, failures } = await prepareSelectedMedia(

@@ -768,6 +768,98 @@ try {
       assert.deepEqual(consoleMessages.slice(consoleStart), []);
     },
   );
+  await check('真实 WebP 解码、PNG 回退与原文件回退保持照片比例', async () => {
+    await visit('home');
+    const images = await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ead8c1';
+      ctx.fillRect(0, 0, 600, 400);
+      ctx.fillStyle = '#783e3c';
+      ctx.fillRect(100, 100, 400, 200);
+      return {
+        webp: canvas.toDataURL('image/webp'),
+        png: canvas.toDataURL('image/png'),
+      };
+    });
+    assert.match(images.webp, /^data:image\/webp;base64,/);
+    const attempts = [];
+    await page.route('**/pipeline-image?**', async (route) => {
+      const url = new URL(route.request().url());
+      attempts.push(url.search);
+      const file = url.searchParams.get('file');
+      const isWebp = url.search.includes('/format/webp');
+      const processed = url.search.includes('imageMogr2');
+      if (
+        (file.includes('png-fallback') && isWebp) ||
+        (file.includes('original-fallback') && processed)
+      ) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'image/webp',
+          body: 'invalid-image',
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: isWebp ? 'image/webp' : 'image/png',
+        body: Buffer.from(
+          (isWebp ? images.webp : images.png).split(',')[1],
+          'base64',
+        ),
+      });
+    });
+    try {
+      await page.evaluate(() => {
+        window.wx.cloud.getTempFileURL = async ({ fileList }) => ({
+          fileList: fileList.map((fileID) => ({
+            fileID,
+            tempFileURL:
+              location.origin +
+              '/pipeline-image?file=' +
+              encodeURIComponent(fileID),
+          })),
+        });
+      });
+      for (const [name, rendition, requests] of [
+        ['webp-ok', 'thumbnail', 1],
+        ['png-fallback', 'thumbnail-compatible', 2],
+        ['original-fallback', 'original', 3],
+      ]) {
+        const before = attempts.length;
+        const source = 'cloud://preview/' + name + '.jpg';
+        await page.locator('photo-frame').first().scrollIntoViewIfNeeded();
+        await page
+          .locator('photo-frame')
+          .first()
+          .evaluate(async (host, src) => {
+            const c = host.__component;
+            c.setData({ src, placeholder: false });
+            await c.stage(src, true);
+          }, source);
+        await page.waitForFunction((src) => {
+          const c = document.querySelector('photo-frame').__component;
+          return c.data.loaded && c.data.currentSource === src;
+        }, source);
+        const state = await page
+          .locator('photo-frame')
+          .first()
+          .evaluate((host) => host.__component.data);
+        assert.equal(state.pendingRendition, rendition);
+        assert.equal(state.resolvedRatio, 'landscape');
+        assert.equal(attempts.length - before, requests);
+      }
+      await page.screenshot({
+        path: 'artifacts/ui/image-pipeline.png',
+        fullPage: true,
+      });
+    } finally {
+      await page.unroute('**/pipeline-image?**');
+    }
+  });
   assert.deepEqual(errors, []);
   // 既有测试手动注入这些缺失资源验证图片失败回退；仍记录原始控制台消息。
   const expectedMissing = [

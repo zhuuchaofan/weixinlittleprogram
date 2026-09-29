@@ -1,6 +1,10 @@
 import { localConfig } from '../config/local';
 import { callCloud } from './cloud';
-import { preparePhotoUpload } from './photo-upload';
+import {
+  inspectImage,
+  uploadOriginalImage,
+  type ImageUploadState,
+} from './image-upload';
 import { validateVideo } from './media';
 import type { ManagedPhoto } from './photos';
 
@@ -18,6 +22,8 @@ export interface PendingMedia {
   message: string;
   fileID?: string;
   coverID?: string;
+  imageUpload?: ImageUploadState;
+  coverUpload?: ImageUploadState;
   verified?: boolean;
   media?: ManagedPhoto;
 }
@@ -66,15 +72,17 @@ export async function uploadImage(
   path: string,
   requestId: string,
 ): Promise<string> {
-  const prepared = await preparePhotoUpload(path);
-  if (String(localConfig.mode) === 'mock') return saveLocal(prepared.path);
-  return (
-    await callCloud<{ fileID: string }>('uploadPhoto', {
-      base64: prepared.base64,
-      requestId,
-    })
-  ).fileID;
+  const state = await inspectImage(path);
+  return uploadOriginalImage(
+    path,
+    requestId,
+    state,
+    new MediaUploadSession(),
+    () => {},
+    () => {},
+  );
 }
+
 interface UploadTicket {
   url: string;
   fileID: string;
@@ -93,6 +101,42 @@ export class MediaUploadSession {
   check() {
     if (this.cancelled) throw new Error('上传已暂停，可返回后重试。');
   }
+  async uploadImage(
+    item: PendingMedia,
+    cover: boolean,
+    update: () => void,
+  ): Promise<string> {
+    const key = cover ? 'coverUpload' : 'imageUpload';
+    const fileKey = cover ? 'coverID' : 'fileID';
+    // 旧版已成功上传的文件可直接复用，不会重新编码历史照片。
+    if (item[fileKey] && !item[key]) return item[fileKey]!;
+    this.check();
+    const state =
+      item[key] || (await inspectImage(cover ? item.coverPath : item.path));
+    this.check();
+    item[key] = state;
+    if (!cover) {
+      item.width = state.width;
+      item.height = state.height;
+      item.size = state.size;
+    }
+    const changed = () => {
+      if (state.fileID) item[fileKey] = state.fileID;
+      update();
+    };
+    changed();
+    return uploadOriginalImage(
+      cover ? item.coverPath : item.path,
+      item.id + (cover ? '-cover' : ''),
+      state,
+      this,
+      changed,
+      (value) => {
+        item.progress = value;
+        update();
+      },
+    );
+  }
   async uploadVideo(item: PendingMedia, update: () => void): Promise<string> {
     validateVideo(item);
     this.check();
@@ -110,11 +154,6 @@ export class MediaUploadSession {
         'prepareVideoUpload',
         payload,
       );
-      console.info(
-        '[仅配置域名] 视频上传主机：',
-        ticket.url.match(/^https?:\/\/[^/]+/)?.[0],
-      );
-      
       this.check();
       await new Promise<void>((resolve, reject) => {
         this.task = wx.uploadFile({
@@ -176,20 +215,20 @@ export async function uploadMedia(
     item.fileID = await session.uploadVideo(item, update);
     update();
     session.check();
-    if (item.coverPath && !item.coverID) {
+    if (
+      item.coverPath &&
+      (!item.coverID || (item.coverUpload && !item.coverUpload.verified))
+    ) {
       item.message = '正在上传视频封面…';
       update();
-      item.coverID = await uploadImage(item.coverPath, item.id + '-cover');
+      item.coverID = await session.uploadImage(item, true, update);
       update();
     }
-  } else if (!item.fileID) {
-    const info = await wx.getImageInfo({ src: item.path });
-    item.width = info.width;
-    item.height = info.height;
-    session.check();
-    item.fileID = await uploadImage(item.path, item.id);
+  } else {
+    item.fileID = await session.uploadImage(item, false, update);
     update();
   }
+  session.check();
   const original = item.fileID || '';
   item.media = {
     id: item.id,

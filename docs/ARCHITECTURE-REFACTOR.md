@@ -1,5 +1,7 @@
 # 代码架构整理报告（2026-09-22）
 
+本文记录前一轮保守架构整理。后续已单独升级图片上传与展示，当前行为及部署要求以 [图片链路](IMAGE-PIPELINE.md) 为准。
+
 ## 1. 现状与主要问题
 
 本项目使用原生微信小程序 TypeScript，入口为 app.ts（没有独立 app.js 源文件）。app.json 注册 10 个页面、6 个全局组件。没有 tabBar/custom-tab-bar、behaviors、独立 api/helpers/assets 目录；图片主要来自内容配置和云存储。没有新增运行时依赖的必要。

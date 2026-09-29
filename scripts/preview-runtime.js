@@ -328,7 +328,12 @@ function renderNode(node, parent, context, owner, path, skipFor = false) {
   }
   if (tag === 'image') {
     element.style.objectFit = 'contain';
-    element.addEventListener('load', () => call('load'));
+    element.addEventListener('load', () =>
+      call('load', {
+        width: element.naturalWidth,
+        height: element.naturalHeight,
+      }),
+    );
     element.addEventListener('error', () => call('error'));
   }
   element.addEventListener('click', (event) => {

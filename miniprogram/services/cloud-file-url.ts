@@ -1,9 +1,10 @@
+import { imageDisplay } from '../config/image';
 import { initializeCloud } from './cloud';
 
-export type CloudFileRendition = 'original' | 'thumbnail';
+export type CloudFileRendition =
+  'original' | 'thumbnail' | 'thumbnail-compatible';
 
 const cloudFilePrefix = 'cloud://';
-const thumbnailRule = 'imageMogr2/thumbnail/1080x1080';
 const batchSize = 50;
 const urlCache = new Map<string, Promise<string>>();
 
@@ -12,8 +13,12 @@ function cacheKey(source: string, rendition: CloudFileRendition): string {
 }
 
 function withRendition(url: string, rendition: CloudFileRendition): string {
-  if (rendition !== 'thumbnail' || !/^https?:\/\//i.test(url)) return url;
-  return url + (url.includes('?') ? '&' : '?') + thumbnailRule;
+  if (rendition === 'original' || !/^https?:\/\//i.test(url)) return url;
+  const rule =
+    rendition === 'thumbnail'
+      ? imageDisplay.thumbnail
+      : imageDisplay.compatible;
+  return url + (url.includes('?') ? '&' : '?') + rule;
 }
 
 function isCloudFile(source: string): boolean {

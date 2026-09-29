@@ -62,6 +62,8 @@ test('照片写入、草稿与上传均验证真实管理员，伪造身份无�
     'savePhotoDraft',
     'publishPhotos',
     'uploadPhoto',
+    'prepareImageUpload',
+    'verifyImageUpload',
     'prepareVideoUpload',
     'verifyVideoUpload',
     'inspectManagedPhotoFile',
@@ -320,4 +322,38 @@ test('视频元数据保存不丢失，封面和视频均受草稿/发布引用�
     ).ok,
     true,
   );
+});
+
+test('WebP 原文件继续受草稿及发布引用保护，解除引用后可清理', async () => {
+  const f = fixture();
+  const fileID = 'cloud://env/wedding/managed/new-image.webp';
+  const image = {
+    ...photo,
+    original: fileID,
+    thumbnail: fileID,
+    type: 'image',
+  };
+  assert.equal(
+    (await f.handle({ action: 'publishPhotos', payload: { photos: [image] } }))
+      .ok,
+    true,
+  );
+  assert.deepEqual(
+    (await f.handle({ action: 'inspectManagedPhotoFile', payload: { fileID } }))
+      .data.references,
+    { draft: 1, published: 1 },
+  );
+  assert.equal(
+    (await f.handle({ action: 'deleteManagedPhotoFile', payload: { fileID } }))
+      .ok,
+    false,
+  );
+  assert.equal(f.stats().deletes, 0);
+  await f.handle({ action: 'publishPhotos', payload: { photos: [] } });
+  assert.equal(
+    (await f.handle({ action: 'deleteManagedPhotoFile', payload: { fileID } }))
+      .ok,
+    true,
+  );
+  assert.equal(f.stats().deletes, 1);
 });
