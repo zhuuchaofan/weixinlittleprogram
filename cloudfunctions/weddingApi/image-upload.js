@@ -31,7 +31,10 @@ async function handleImageUpload({ action, payload, openid, storage, cloud }) {
     .update(openid + ':image-v2:' + payload.requestId)
     .digest('hex');
   const cloudPath = 'wedding/managed/' + key + '.' + payload.format;
-  const { data: m } = await storage.getUploadMetadata({ cloudPath });
+  const { data: m } = await storage.getUploadMetadata({
+    cloudPath,
+    method: 'post',
+  });
   if (!m?.fileId || !m.url || !m.authorization || !m.token || !m.cosFileId)
     throw new Error('无法取得上传凭据');
   if (action === 'verifyImageUpload') {

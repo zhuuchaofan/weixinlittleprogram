@@ -1,13 +1,11 @@
-const cloud = require('wx-server-sdk');
-const cloudbase = require('@cloudbase/node-sdk');
-const storage = cloudbase.init({ env: cloudbase.SYMBOL_CURRENT_ENV });
+const cloudbase = require('@cloudbase/js-sdk');
 const { createHandler } = require('./core');
 const { createGuestbookHandler } = require('./guestbook');
 const { createPhotoHandler } = require('./photos');
 const { createEventProgramHandler } = require('./event-program');
+const { invocationFromContext } = require('./invocation');
 
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
-const db = cloud.database();
+const cloudByEnvironment = new Map();
 
 function admins() {
   return (process.env.ADMIN_OPENIDS || '')
@@ -19,7 +17,7 @@ function canCollect() {
   const closesAt = Date.parse(process.env.COLLECTION_CLOSES_AT || '');
   return !Number.isFinite(closesAt) || Date.now() < closesAt;
 }
-function createIdentityRepository(collectionName) {
+function createIdentityRepository(db, collectionName) {
   const collection = db.collection(collectionName);
   return {
     async get(id) {
@@ -43,59 +41,78 @@ function createIdentityRepository(collectionName) {
   };
 }
 
-const rsvpCollection = db.collection('rsvps');
-const rsvpRepository = {
-  ...createIdentityRepository('rsvps'),
-  async summary() {
-    const [all, arriving, guests] = await Promise.all([
-      rsvpCollection.count(),
-      rsvpCollection.where({ attending: true }).count(),
-      rsvpCollection
-        .aggregate()
-        .match({ attending: true })
-        .group({ _id: null, total: db.command.aggregate.sum('$partySize') })
-        .end(),
-    ]);
-    return {
-      responses: all.total,
-      attending: arriving.total,
-      guests: guests.list[0]?.total || 0,
-      declined: all.total - arriving.total,
-    };
-  },
+exports.main = async (event, context) => {
+  const { openid, envId } = invocationFromContext(
+    context,
+    cloudbase.parseContext,
+    process.env.TCB_ENV || '',
+  );
+  if (!envId)
+    return { ok: false, code: 'UNAVAILABLE', message: '云环境信息缺失' };
+  let cloud = cloudByEnvironment.get(envId);
+  if (!cloud) {
+    cloud = cloudbase.init({ env: envId });
+    cloudByEnvironment.set(envId, cloud);
+  }
+  const db = cloud.database();
+  const getOpenId = () => openid;
+  const rsvpCollection = db.collection('rsvps');
+  const rsvpRepository = {
+    ...createIdentityRepository(db, 'rsvps'),
+    async summary() {
+      const [all, arriving, guests] = await Promise.all([
+        rsvpCollection.count(),
+        rsvpCollection.where({ attending: true }).count(),
+        rsvpCollection
+          .aggregate()
+          .match({ attending: true })
+          .group({ _id: null, total: db.command.aggregate.sum('$partySize') })
+          .end(),
+      ]);
+      return {
+        responses: all.total,
+        attending: arriving.total,
+        guests: guests.list[0]?.total || 0,
+        declined: all.total - arriving.total,
+      };
+    },
+  };
+  const guestMessageCollection = db.collection('guest_messages');
+  const guestbookRepository = {
+    ...createIdentityRepository(db, 'guest_messages'),
+    async summary() {
+      const result = await guestMessageCollection.count();
+      return { messages: result.total };
+    },
+  };
+  const handlePhotos = createPhotoHandler({
+    cloud,
+    db,
+    storage: cloud,
+    getAdmins: admins,
+    getOpenId,
+  });
+  const handleEventProgram = createEventProgramHandler({
+    db,
+    getAdmins: admins,
+    getOpenId,
+  });
+  const handleGuestbook = createGuestbookHandler({
+    repository: guestbookRepository,
+    getOpenId,
+    getAdmins: admins,
+    canCollect,
+  });
+  const handleRsvp = createHandler({
+    repository: rsvpRepository,
+    getOpenId,
+    getAdmins: admins,
+    canCollect,
+  });
+  return (
+    (await handlePhotos(event)) ||
+    (await handleEventProgram(event)) ||
+    (await handleGuestbook(event)) ||
+    (await handleRsvp(event))
+  );
 };
-const guestMessageCollection = db.collection('guest_messages');
-const guestbookRepository = {
-  ...createIdentityRepository('guest_messages'),
-  async summary() {
-    const result = await guestMessageCollection.count();
-    return { messages: result.total };
-  },
-};
-
-const getOpenId = () => cloud.getWXContext().OPENID;
-const handleRsvp = createHandler({
-  repository: rsvpRepository,
-  getOpenId,
-  getAdmins: admins,
-  canCollect,
-});
-const handleGuestbook = createGuestbookHandler({
-  repository: guestbookRepository,
-  getOpenId,
-  getAdmins: admins,
-  canCollect,
-});
-const handlePhotos = createPhotoHandler({
-  storage,
-  cloud,
-  db,
-  getAdmins: admins,
-});
-const handleEventProgram = createEventProgramHandler({ db, getAdmins: admins });
-
-exports.main = async (event) =>
-  (await handlePhotos(event)) ||
-  (await handleEventProgram({ ...event, userInfo: { openid: getOpenId() } })) ||
-  (await handleGuestbook(event)) ||
-  (await handleRsvp(event));

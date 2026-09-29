@@ -20,7 +20,7 @@
 ## 上传与恢复边界
 
 - 新服务：miniprogram/services/image-upload.ts。只读取元数据与 16 字节头到 JS，不将整张图片转成字符串。
-- 新云端模块：cloudfunctions/weddingApi/image-upload.js；photos.js 必须先以真实 getWXContext().OPENID 验证 ADMIN_OPENIDS，再调用模块。
+- 新云端模块：cloudfunctions/weddingApi/image-upload.js；photos.js 必须先以本次云函数 `context` 解析的 `WX_OPENID` 验证 `ADMIN_OPENIDS`，再调用模块。
 - 新 action：prepareImageUpload / verifyImageUpload；payload 为 requestId、size、format。签发路径由服务端按真实身份与请求编号哈希生成，客户端不能任意指定目录。
 - 同一条目重试复用路径；已收到上传成功响应就保存 fileID，校验失败只重试校验；草稿保存失败只重试保存。
 - 本机恢复队列新增可选 imageUpload/coverUpload 状态，不更换 storage key，不改数据库形状。旧版已上传记录按原方式复用。
@@ -37,7 +37,7 @@
 ## 部署顺序
 
 1. 微信开发者工具中右键 cloudfunctions/weddingApi → 上传并部署：云端安装依赖。先部署云函数，再发布小程序。保留 ADMIN_OPENIDS、现有环境配置与数据库/存储权限。
-2. 保持仓库锁定的 @cloudbase/node-sdk 2.10.0：已核对本机依赖使用 multipart POST 凭据。不要在本次部署中顺手跨主版本升级签发 SDK。
+2. 云函数依赖已改为锁定的 `@cloudbase/js-sdk@3.10.1`，签发时显式指定 `method: 'post'`，保持小程序的 `wx.uploadFile` 表单格式。先用一张测试图在真机验证实际环境返回的 POST 凭据，再上传批量原图。
 3. 微信公众平台 → 开发管理 → 开发设置 → 服务器域名：确认 prepareImageUpload 返回 URL 的 HTTPS 主机已加入 uploadFile 合法域名。当前环境经调试确认使用 COS 存储主机；配置时只填写主机名，不带 `https://`、路径或签名参数。保存后在开发者工具「详情 → 域名信息」刷新并重新编译，核对 uploadFile 列表。不要复制或公开完整上传 URL、凭据；视频上传主机仍需按实际环境核对。
 4. 确认实际云存储临时 URL 支持 imageMogr2 缩放、WebP/PNG 输出。检查响应 Content-Type、尺寸和体积；这依赖实际环境的图片处理配置。没有开通或不可用时能回退原文件，但不等于已获得 WebP 节流收益。
 5. 保留云函数足够超时与内存，现有文档建议至少 60 秒、256 MB；新照片校验也会下载最多 30 MiB，需要按实际环境验证。原图存储与点击大图流量比旧 135 KB 副本增加，缩略图不影响原文件质量。

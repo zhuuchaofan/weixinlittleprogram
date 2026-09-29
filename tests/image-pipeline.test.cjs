@@ -233,13 +233,14 @@ test('云端图片凭据仅向真实管理员签发，路径隔离、大小及�
   const paths = [];
   const handler = createPhotoHandler({
     cloud: {
-      getWXContext: () => ({ OPENID: identity }),
       downloadFile: async () => ({ fileContent: bytes }),
     },
     db: { collection: () => ({}) },
     getAdmins: () => ['owner', 'second-owner'],
+    getOpenId: () => identity,
     storage: {
-      getUploadMetadata: async ({ cloudPath }) => {
+      getUploadMetadata: async ({ cloudPath, method }) => {
+        assert.equal(method, 'post');
         paths.push(cloudPath);
         return {
           data: {

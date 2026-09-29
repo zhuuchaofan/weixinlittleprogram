@@ -28,13 +28,13 @@
 
 ## 上线前配置（必须在实际环境执行）
 
-1. 上传并部署 weddingApi，选择云端安装依赖。新增显式依赖 @cloudbase/node-sdk 2.10.0，与现有 wx-server-sdk 3.x 的依赖版本一致；该版本签发 POST 凭据，与 wx.uploadFile 的 multipart POST 匹配。升级 SDK 前需重新核对签名方法，3.18.3 的 getUploadMetadata 改为 PUT，不能直接替换。
+1. 先备份 `photo_content` 的 `draft` 与 `published` 文档和当前云函数版本，再上传部署 `weddingApi` 并选择云端安装依赖。云函数锁定 `@cloudbase/js-sdk@3.10.1`，`getUploadMetadata` 显式请求 `post`，与现有 `wx.uploadFile` multipart POST 匹配。需在真实云环境分别验证图片、视频和封面签名。
 2. 继续保留 ADMIN_OPENIDS 服务端白名单；photo_content 客户端规则保持 read:false / write:false。云存储继续允许读取、禁止匿名/普通客户端直接写入，不需要开放全员写权限。
 3. 微信公众平台 → 开发管理 → 开发设置 → 服务器域名：把本环境 prepareImageUpload / prepareVideoUpload 返回 url 的 HTTPS 主机加入 uploadFile 合法域名；播放所用实际云存储/CDN 主机按平台要求配置。域名与环境相关，不在源码猜填。先在云函数日志/开发工具中取得主机，勿传播签名或 token。真机测试必须开启合法域名校验。
 4. weddingApi 建议配置至少 60 秒超时、256 MB 内存；图片与视频校验会读取最多 30 MiB 文件，产生存储读取流量。核对云环境额度及实际调用超时。
 5. 更新公众平台隐私保护指引，准确声明管理员主动选择的照片/视频、公开展示、存储及删除方式；仓库隐私页面与补充说明已经同步。
 
-依赖说明：本地 npm audit 仍报告现有 wx-server-sdk/CloudBase 依赖链的漏洞（包括高危及严重项）。本次锁定依赖以便复现，没有强制跨主版本升级或宣称依赖审计通过；发布前需单独评估和更新 SDK。签发接口只向服务端确认的管理员开放。
+依赖说明：云函数已移除旧 `wx-server-sdk` / `@cloudbase/node-sdk` 依赖链；本地对新锁文件执行 `npm audit --omit=dev` 报告 0 项告警。该结果不证明实际云环境签名和数据库兼容，部署后仍须完成上述双账号真机验收。签发接口只向服务端确认的管理员开放。
 
 ## 验收范围
 

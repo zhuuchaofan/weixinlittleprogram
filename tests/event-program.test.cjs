@@ -28,6 +28,7 @@ function program() {
 }
 function fixture() {
   const docs = {};
+  let identity = 'visitor';
   const collection = {
     doc(id) {
       return {
@@ -43,9 +44,11 @@ function fixture() {
   };
   return {
     docs,
+    setIdentity: (value) => (identity = value),
     handle: createEventProgramHandler({
       db: { collection: () => collection },
       getAdmins: () => ['owner'],
+      getOpenId: () => identity,
     }),
   };
 }
@@ -72,23 +75,22 @@ test('流程草稿仅主人可读写，发布后访客只读取已发布版本',
   const f = fixture();
   const visitorDraft = await f.handle({
     action: 'getEventProgramDraft',
-    userInfo: { openid: 'visitor' },
+    userInfo: { openid: 'owner' },
   });
   assert.equal(visitorDraft.code, 'FORBIDDEN');
+  f.setIdentity('owner');
   await f.handle({
     action: 'saveEventProgramDraft',
-    userInfo: { openid: 'owner' },
     payload: { program: program() },
   });
   assert.equal((await f.handle({ action: 'getEventProgram' })).data, null);
   await f.handle({
     action: 'publishEventProgram',
-    userInfo: { openid: 'owner' },
     payload: { program: program() },
   });
+  f.setIdentity('visitor');
   const visible = await f.handle({
     action: 'getEventProgram',
-    userInfo: { openid: 'visitor' },
   });
   assert.equal(visible.data.items[0].title, '主持暖场');
   assert.equal(visible.data.photoBooth.title, '门口 Photo Booth');

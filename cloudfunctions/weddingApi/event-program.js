@@ -55,7 +55,7 @@ function validateEventProgram(value) {
     },
   };
 }
-function createEventProgramHandler({ db, getAdmins }) {
+function createEventProgramHandler({ db, getAdmins, getOpenId }) {
   const collection = db.collection('event_program');
   const allowed = new Set([
     'getEventProgram',
@@ -66,7 +66,7 @@ function createEventProgramHandler({ db, getAdmins }) {
   return async function handleEventProgram(event) {
     const action = event?.action;
     if (!allowed.has(action)) return null;
-    const openid = event?.userInfo?.openid;
+    const openid = getOpenId();
     try {
       if (action === 'getEventProgram') {
         const result = await collection

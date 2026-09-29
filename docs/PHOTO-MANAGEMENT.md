@@ -26,7 +26,7 @@
 
 `photo_content/draft` 存草稿，`photo_content/published` 存已展示媒体。V2 文档包含媒体 ID、说明、相册、多个展示位置、比例和文件 ID，没有管理员名单或宾客数据。
 
-公开读接口只返回 published。getAccess 仅返回 isAdmin，服务端从 getWXContext 读取身份，与 ADMIN_OPENIDS 比较；草稿读取、上传、保存、发布每次都校验。前端隐藏入口不是权限边界。
+公开读接口只返回 published。getAccess 仅返回 isAdmin，服务端从本次云函数调用的 context 解析 `WX_OPENID`，与 `ADMIN_OPENIDS` 比较；草稿读取、上传、保存、发布每次都校验。前端隐藏入口不是权限边界。
 
 上传文件在公开可读存储中：草稿不会出现在访客页面，但已知文件链接的人仍可读取，因此本阶段私密不是文件级保密。管理页可永久删除仅由小程序上传的 `wedding/managed/` JPG/PNG/WebP/MP4；服务器会检查草稿和已发布内容均未引用后才删除。手动上传到 `wedding/original/` 的原图继续在云开发控制台维护，避免误删。
 

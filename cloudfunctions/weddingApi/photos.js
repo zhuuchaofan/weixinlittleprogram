@@ -158,7 +158,7 @@ function photoReferenceCount(document, fileID) {
       photo?.url === fileID,
   ).length;
 }
-function createPhotoHandler({ cloud, db, getAdmins, storage }) {
+function createPhotoHandler({ cloud, db, getAdmins, getOpenId, storage }) {
   const collection = db.collection('photo_content');
   const get = async (key) =>
     (await collection.where({ _id: key }).limit(1).get()).data[0] || null;
@@ -196,7 +196,7 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
     )
       return null;
     try {
-      const openid = cloud.getWXContext().OPENID;
+      const openid = getOpenId();
       const isAdmin = !!openid && getAdmins().includes(openid);
       if (action === 'getAccess') return { ok: true, data: { isAdmin } };
       if (action === 'getPhotos') {
@@ -324,7 +324,10 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
           .update(openid + ':' + payload.requestId)
           .digest('hex');
         const cloudPath = 'wedding/managed/' + key + '.mp4';
-        const metadata = await storage.getUploadMetadata({ cloudPath });
+        const metadata = await storage.getUploadMetadata({
+          cloudPath,
+          method: 'post',
+        });
         const m = metadata.data;
         if (
           !m?.fileId ||

@@ -27,7 +27,6 @@ function fixture() {
   };
   const handle = createPhotoHandler({
     cloud: {
-      getWXContext: () => ({ OPENID: identity }),
       uploadFile: async () => {
         uploads++;
         return { fileID: 'cloud://env/wedding/managed/uploaded.jpg' };
@@ -38,6 +37,7 @@ function fixture() {
     },
     db: { collection: () => collection },
     getAdmins: () => ['owner'],
+    getOpenId: () => identity,
   });
   return {
     handle,
@@ -206,13 +206,14 @@ test('签发视频凭据前鉴权、限制元数据、重试使用相同路径�
   const paths = [];
   const handle = createPhotoHandler({
     cloud: {
-      getWXContext: () => ({ OPENID: identity }),
       downloadFile: async () => ({ fileContent: content }),
     },
     db: { collection: () => ({}) },
     getAdmins: () => ['owner'],
+    getOpenId: () => identity,
     storage: {
-      getUploadMetadata: async ({ cloudPath }) => {
+      getUploadMetadata: async ({ cloudPath, method }) => {
+        assert.equal(method, 'post');
         paths.push(cloudPath);
         return {
           data: {
