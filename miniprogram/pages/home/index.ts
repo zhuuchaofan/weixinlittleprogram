@@ -95,7 +95,6 @@ Page({
     const reduceMotion = getReduceMotion();
     const eventStatus = getBanquetStatus(appConfig.eventDate);
     const collectionClosed = isCollectionClosed(appConfig.collectionCloseDate);
-    if (eventStatus.phase === 'today') void this.refreshProgram();
     if (
       this.data.reduceMotion !== reduceMotion ||
       this.data.eventStatus.phase !== eventStatus.phase ||

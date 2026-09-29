@@ -6,7 +6,27 @@ export type CloudFileRendition =
 
 const cloudFilePrefix = 'cloud://';
 const batchSize = 50;
-const urlCache = new Map<string, Promise<string>>();
+const fallbackCacheMs = 5 * 60 * 1000;
+interface CachedUrl {
+  value: Promise<string>;
+  expiresAt: number;
+}
+const urlCache = new Map<string, CachedUrl>();
+
+function cacheLifetime(maxAge: number | undefined): number {
+  if (!Number.isFinite(maxAge) || !maxAge || maxAge <= 0)
+    return fallbackCacheMs;
+  // 小程序文档示例的 maxAge 为毫秒；按毫秒并留 10% 余量，
+  // 即使某端返回秒数也只会提前刷新，且最长仅缓存五分钟。
+  return Math.min(fallbackCacheMs, Math.floor(maxAge * 0.9));
+}
+
+function cachedUrl(key: string): CachedUrl | undefined {
+  const cached = urlCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached;
+  urlCache.delete(key);
+  return undefined;
+}
 
 function cacheKey(source: string, rendition: CloudFileRendition): string {
   return rendition + '\u0000' + source;
@@ -25,12 +45,15 @@ function isCloudFile(source: string): boolean {
   return source.startsWith(cloudFilePrefix);
 }
 
-async function fetchCloudFileUrl(source: string): Promise<string> {
+async function fetchCloudFileUrl(
+  source: string,
+): Promise<{ url: string; maxAge: number | undefined }> {
   initializeCloud();
   const result = await wx.cloud.getTempFileURL({ fileList: [source] });
-  const url = result.fileList[0]?.tempFileURL;
+  const file = result.fileList[0];
+  const url = file?.tempFileURL;
   if (!url) throw new Error('云端文件链接暂时不可用');
-  return url;
+  return { url, maxAge: file.maxAge };
 }
 
 /** 解析云存储 File ID。缩略图只在 HTTPS 临时链接上追加实时处理规则。 */
@@ -40,17 +63,21 @@ export async function resolveCloudFileUrl(
 ): Promise<string> {
   if (!source || !isCloudFile(source)) return source;
   const key = cacheKey(source, rendition);
-  const cached = urlCache.get(key);
-  if (cached) return await cached;
+  const cached = cachedUrl(key);
+  if (cached) return await cached.value;
 
-  const resolving = fetchCloudFileUrl(source).then((url) =>
-    withRendition(url, rendition),
-  );
-  urlCache.set(key, resolving);
+  const requestedAt = Date.now();
+  const entry: CachedUrl = { value: Promise.resolve(''), expiresAt: Infinity };
+  entry.value = fetchCloudFileUrl(source).then(({ url, maxAge }) => {
+    if (urlCache.get(key) === entry)
+      entry.expiresAt = requestedAt + cacheLifetime(maxAge);
+    return withRendition(url, rendition);
+  });
+  urlCache.set(key, entry);
   try {
-    return await resolving;
+    return await entry.value;
   } catch (error) {
-    urlCache.delete(key);
+    if (urlCache.get(key) === entry) urlCache.delete(key);
     throw error;
   }
 }
@@ -63,25 +90,27 @@ export async function prewarmCloudFileUrls(
   rendition: CloudFileRendition = 'thumbnail',
 ): Promise<void> {
   const pending = [...new Set(sources.filter(isCloudFile))].filter(
-    (source) => !urlCache.has(cacheKey(source, rendition)),
+    (source) => !cachedUrl(cacheKey(source, rendition)),
   );
   for (let offset = 0; offset < pending.length; offset += batchSize) {
     const batch = pending.slice(offset, offset + batchSize);
     try {
       initializeCloud();
+      const requestedAt = Date.now();
       const result = await wx.cloud.getTempFileURL({ fileList: batch });
-      const urls = new Map(
+      const files = new Map(
         result.fileList
           .filter((item) => !!item.tempFileURL)
-          .map((item) => [item.fileID, item.tempFileURL as string]),
+          .map((item) => [item.fileID, item]),
       );
       batch.forEach((source) => {
-        const url = urls.get(source);
-        if (url)
-          urlCache.set(
-            cacheKey(source, rendition),
-            Promise.resolve(withRendition(url, rendition)),
-          );
+        const key = cacheKey(source, rendition);
+        const file = files.get(source);
+        if (file && !cachedUrl(key))
+          urlCache.set(key, {
+            value: Promise.resolve(withRendition(file.tempFileURL, rendition)),
+            expiresAt: requestedAt + cacheLifetime(file.maxAge),
+          });
       });
     } catch {
       // 页面仍会用单张解析与失败重试兜底，预热不应阻塞展示。

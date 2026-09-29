@@ -13,9 +13,11 @@ export function createAccessChecker(options: AccessCheckerOptions = {}) {
   const request =
     options.request ||
     (() =>
-      callCloud<{ isAdmin: boolean }>('getAccess').then(
-        (result) => result.isAdmin === true,
-      ));
+      callCloud<{ isAdmin: boolean }>('getAccess').then((result) => {
+        if (result?.isAdmin === true) return true;
+        if (result?.isAdmin === false) return false;
+        throw new Error('管理员状态响应无效');
+      }));
   const now = options.now || (() => Date.now());
   let pending: Promise<boolean> | undefined;
   let cached: { value: boolean; expiresAt: number } | undefined;
@@ -27,11 +29,12 @@ export function createAccessChecker(options: AccessCheckerOptions = {}) {
       if (cached && cached.expiresAt > now()) return cached.value;
       if (!pending)
         pending = request()
-          .catch(() => false)
           .then((value) => {
             cached = { value, expiresAt: now() + ADMIN_CACHE_MS };
             return value;
           })
+          // 菜单失败时仍隐藏，但不把网络或云端故障缓存成非管理员。
+          .catch(() => false)
           .finally(() => {
             pending = undefined;
           });

@@ -42,3 +42,41 @@ test('管理员展示结果五分钟缓存并合并并发请求，过期后再�
     localConfig.mode = previousMode;
   }
 });
+
+test('明确的非管理员结果会缓存，请求失败后则可立即重试并恢复', async () => {
+  const { localConfig } = require('../miniprogram/config/local.ts');
+  const { createAccessChecker } = require('../miniprogram/services/access.ts');
+  const previousMode = localConfig.mode;
+  localConfig.mode = 'cloud';
+  try {
+    let nonAdminCalls = 0;
+    const nonAdmin = createAccessChecker({
+      request: async () => {
+        nonAdminCalls++;
+        return false;
+      },
+    });
+    assert.equal(await nonAdmin.checkAdmin(), false);
+    assert.equal(await nonAdmin.checkAdmin(), false);
+    assert.equal(nonAdminCalls, 1);
+
+    let attempts = 0;
+    const recovering = createAccessChecker({
+      request: async () => {
+        attempts++;
+        if (attempts === 1) throw new Error('网络暂不可用');
+        return true;
+      },
+    });
+    assert.deepEqual(
+      await Promise.all([recovering.checkAdmin(), recovering.checkAdmin()]),
+      [false, false],
+    );
+    assert.equal(attempts, 1);
+    assert.equal(await recovering.checkAdmin(), true);
+    assert.equal(await recovering.checkAdmin(), true);
+    assert.equal(attempts, 2);
+  } finally {
+    localConfig.mode = previousMode;
+  }
+});

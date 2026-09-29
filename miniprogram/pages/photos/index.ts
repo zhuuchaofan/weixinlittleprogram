@@ -25,6 +25,7 @@ import { previewPhotos } from '../../utils/preview';
 Page({
   data: {
     pending: [] as PendingMedia[],
+    mediaLimit: MEDIA_LIMIT,
     authorized: false,
     loadFailed: false,
     dirty: false,
@@ -229,9 +230,11 @@ Page({
         this.data.pending.filter(
           (p) => !this.data.photos.some((v) => v.id === p.id),
         ).length >=
-      60
+      MEDIA_LIMIT
     ) {
-      this.setData({ error: '最多安排 60 张照片，请先移除不需要的条目。' });
+      this.setData({
+        error: `最多安排 ${MEDIA_LIMIT} 张照片，请先移除不需要的条目。`,
+      });
       return;
     }
     if (this.data.photos.some((p) => p.original === fileID)) {
@@ -282,7 +285,7 @@ Page({
     }
   },
   duplicate(e: WechatMiniprogram.TouchEvent) {
-    if (this.data.busy || this.data.photos.length >= 60) return;
+    if (this.data.busy || this.data.photos.length >= MEDIA_LIMIT) return;
     const photo = this.data.photos[Number(e.currentTarget.dataset.index)];
     this.setData({
       photos: [
@@ -388,7 +391,9 @@ Page({
         (p) => !this.data.photos.some((v) => v.id === p.id),
       ).length;
     if (remaining <= 0) {
-      this.setData({ error: '最多安排 60 个媒体，请先移除不需要的条目。' });
+      this.setData({
+        error: `最多安排 ${MEDIA_LIMIT} 个媒体，请先移除不需要的条目。`,
+      });
       return;
     }
     const type = e.currentTarget.dataset.type === 'video' ? 'video' : 'image';
