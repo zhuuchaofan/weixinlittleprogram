@@ -4,10 +4,15 @@
   <view class="lead">{{appConfig.galleryIntro}}</view>
   <view wx:if="{{!photoContentReady}}" class="photo-content-pending" aria-label="照片正在准备"></view>
   <block wx:else>
-    <view wx:if="{{albums.length > 1}}" class="tabs section"><button wx:for="{{albums}}" wx:key="id" class="tab {{active === index ? 'selected' : ''}}" data-index="{{index}}" bindtap="select" aria-label="{{item.title}}，{{active === index ? copy.text03 : copy.text04}}">{{item.title}} <text class="count">{{item.photos.length}}</text></button></view>
-    <view class="small muted gallery-note">{{copy.text09}}</view><view class="album-intro small muted">{{description}} · {{total}} {{copy.text05}}</view>
-    <view wx:if="{{!total}}" class="empty">{{copy.text06}}<view>{{copy.text07}}</view></view>
-    <view wx:else class="photo-grid"><view wx:for="{{columns}}" wx:key="id" wx:for-item="column" class="column"><view wx:for="{{column.photos}}" wx:key="id" wx:for-item="photo" class="tile"><media-video wx:if="{{photo.type === 'video'}}" src="{{photo.original}}" cover="{{photo.coverUrl || photo.thumbnail}}" caption="{{photo.caption}}" ratio="{{photo.ratio}}" /><photo-frame wx:else compact="{{true}}" src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="{{photo.ratio}}" data-id="{{photo.id}}" bind:open="preview" /><view class="photo-caption">{{photo.caption}}<text wx:if="{{photo.placeholder}}"> {{copy.text08}}</text></view></view></view></view>
+    <view wx:if="{{contentError}}" class="empty">照片暂时无法读取<button class="secondary" bindtap="retry">重新读取</button></view>
+    <view wx:if="{{!contentError && view === 'overview'}}" class="media-overview"><button class="overview-card" data-view="photos" bindtap="openSection"><text class="overview-title">照片</text><text class="small muted">{{images.length}} 张 · 婚纱照、日常照与答谢宴</text></button><button class="overview-card" data-view="videos" bindtap="openSection"><text class="overview-title">视频</text><text class="small muted">{{videos.length}} 段回忆</text></button></view>
+    <block wx:if="{{!contentError && view !== 'overview'}}">
+      <button class="text-button overview-back" bindtap="backToOverview">‹ 返回照片与视频</button>
+      <view wx:if="{{view === 'photos'}}" class="category-tabs"><button wx:for="{{categories}}" wx:key="key" class="tab {{category === item.key ? 'selected' : ''}}" data-category="{{item.key}}" bindtap="selectCategory">{{item.label}}</button></view>
+      <view class="small muted gallery-note">{{view === 'videos' ? '轻触视频播放。' : copy.text09}}</view><view class="album-intro small muted">{{view === 'videos' ? '视频' : category === 'all' ? '全部照片' : category === 'wedding' ? '婚纱照' : category === 'daily' ? '日常照' : category === 'baoji_0927' ? '927 宝鸡答谢宴' : '928 临潼答谢宴'}} · {{total}} {{view === 'videos' ? '段' : copy.text05}}</view>
+      <view wx:if="{{!total}}" class="empty">这里还没有{{view === 'videos' ? '视频' : '照片'}}</view>
+      <view wx:else class="photo-grid"><view wx:for="{{columns}}" wx:key="id" wx:for-item="column" class="column"><view wx:for="{{column.photos}}" wx:key="id" wx:for-item="photo" class="tile"><media-video wx:if="{{photo.type === 'video'}}" src="{{photo.original}}" cover="{{photo.coverUrl || photo.thumbnail}}" caption="{{photo.caption}}" ratio="{{photo.ratio}}" /><photo-frame wx:else compact="{{true}}" src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="{{photo.ratio}}" data-id="{{photo.id}}" bind:open="preview" /><view class="photo-caption">{{photo.caption}}<text wx:if="{{photo.placeholder}}"> {{copy.text08}}</text></view></view></view></view>
+    </block>
   </block>
   <page-footer />
 </view>

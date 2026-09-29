@@ -3,6 +3,7 @@ import {
   setEditorUnloadWarning,
 } from '../../utils/editor-navigation';
 import { MEDIA_LIMIT } from '../../services/media';
+import { setSharedVisibility } from '../../services/media-visibility';
 import { prepareSelectedMedia } from '../../services/media-selection';
 import {
   waitForMediaUploads,
@@ -30,14 +31,15 @@ Page({
     saveState: '草稿读取中…',
     expandedId: '',
     filter: 'all',
-    filterLabels: [
-      '全部',
-      '婚纱照相册',
-      '首页封面',
-      '故事照片',
-      '球球',
-      '布丁',
+    mediaFilter: 'all',
+    categoryLabels: [
+      '待分类',
+      '婚纱照',
+      '日常照',
+      '927 宝鸡答谢宴',
+      '928 临潼答谢宴',
     ],
+    filterLabels: ['全部', '照片册', '首页封面', '故事照片', '球球', '布丁'],
     filterIndex: 0,
     busy: false,
     error: '',
@@ -49,7 +51,7 @@ Page({
     cleanupId: '',
     cleanupInspection: null as ManagedPhotoFileInspection | null,
     photos: [] as ManagedPhoto[],
-    slots: ['婚纱照相册', '首页封面', '故事照片', '球球', '布丁'],
+    slots: ['照片册', '首页封面', '故事照片', '球球', '布丁'],
   },
   session: null as MediaUploadSession | null,
   alive: true,
@@ -109,6 +111,11 @@ Page({
       filter: ['all', 'album', 'cover', 'story', 'qiuqiu', 'buding'][index],
       expandedId: '',
     });
+  },
+  mediaFilterChange(e: WechatMiniprogram.TouchEvent) {
+    const filter = String(e.currentTarget.dataset.type);
+    if (!['all', 'image', 'video'].includes(filter)) return;
+    this.setData({ mediaFilter: filter, expandedId: '' });
   },
   async load() {
     this.setData({ busy: true, loadFailed: false, error: '' });
@@ -241,6 +248,8 @@ Page({
             thumbnail: fileID,
             original: fileID,
             caption: '',
+            category: 'pending',
+            visibility: 'public',
             slot: 'album',
             ratio: 'portrait',
             placeholder: false,
@@ -278,7 +287,14 @@ Page({
     this.setData({
       photos: [
         ...this.data.photos,
-        { ...photo, id: 'photo-' + Date.now(), slot: 'album' },
+        {
+          ...photo,
+          id: 'photo-' + Date.now(),
+          slot: 'album',
+          ...(photo.type !== 'video' && !photo.category
+            ? { category: 'pending' as const }
+            : {}),
+        },
       ],
       message: '已复用这张照片，可为新条目选择其他用途，不会重复上传。',
     });
@@ -287,6 +303,31 @@ Page({
   caption(e: WechatMiniprogram.Input) {
     const photos = this.data.photos.slice();
     photos[Number(e.currentTarget.dataset.index)].caption = e.detail.value;
+    this.setData({ photos });
+    this.markDirty();
+  },
+  category(e: WechatMiniprogram.PickerChange) {
+    const photos = this.data.photos.slice();
+    const index = Number(e.currentTarget.dataset.index);
+    const photo = photos[index];
+    if (!photo || photo.type === 'video' || photo.slot !== 'album') return;
+    photo.category = [
+      'pending',
+      'wedding',
+      'daily',
+      'baoji_0927',
+      'lintong_0928',
+    ][Number(e.detail.value)] as ManagedPhoto['category'];
+    this.setData({ photos });
+    this.markDirty();
+  },
+  visibility(e: WechatMiniprogram.SwitchChange) {
+    const index = Number(e.currentTarget.dataset.index);
+    const photos = setSharedVisibility(
+      this.data.photos,
+      index,
+      e.detail.value ? 'private' : 'public',
+    );
     this.setData({ photos });
     this.markDirty();
   },
@@ -299,9 +340,15 @@ Page({
     if (photos[index].type === 'video' && slot !== 'album') return;
     if (slot === 'cover')
       photos.forEach((p, i) => {
-        if (i !== index && p.slot === 'cover') p.slot = 'album';
+        if (i !== index && p.slot === 'cover') {
+          p.slot = 'album';
+          if (p.type !== 'video' && !p.category) p.category = 'pending';
+        }
       });
     photos[index].slot = slot;
+    if (slot !== 'album') delete photos[index].category;
+    else if (!photos[index].category && photos[index].type !== 'video')
+      photos[index].category = 'pending';
     this.setData({ photos });
     this.markDirty();
   },
@@ -492,6 +539,17 @@ Page({
     await this.persist(false);
   },
   async publish() {
+    if (
+      this.data.photos.some(
+        (photo) =>
+          photo.slot === 'album' &&
+          photo.type !== 'video' &&
+          photo.category === 'pending',
+      )
+    ) {
+      this.setData({ error: '请先为新增照片选择分类，再更新展示。' });
+      return;
+    }
     const result = await wx.showModal({
       title: '更新亲友看到的照片？',
       content: '当前草稿将替换已展示的照片安排。',

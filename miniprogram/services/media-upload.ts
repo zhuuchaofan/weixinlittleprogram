@@ -233,6 +233,8 @@ export async function uploadMedia(
   item.media = {
     id: item.id,
     type: item.type,
+    ...(item.type === 'image' ? { category: 'pending' as const } : {}),
+    visibility: 'public',
     url: original,
     original,
     thumbnail: item.type === 'video' ? item.coverID || '' : original,

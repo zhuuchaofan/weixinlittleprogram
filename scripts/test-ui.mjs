@@ -12,6 +12,7 @@ const results = [];
 const errors = [];
 const consoleMessages = [];
 const page = await browser.newPage();
+await page.clock.install({ time: new Date('2026-09-27T12:00:00+08:00') });
 const previewUrl = process.env.PREVIEW_URL || 'http://127.0.0.1:4173';
 page.on('pageerror', (error) => errors.push(error.message));
 page.on('console', (message) => {
@@ -268,8 +269,10 @@ try {
     await page.getByRole('button', { name: /去看照片/ }).click();
     await page.waitForSelector('body[data-ready="gallery"]');
   });
-  await check('单组相册隐藏多余标签、大图前后翻页', async () => {
-    assert.equal(await page.locator('.tab').count(), 0);
+  await check('照片视频总览进入照片、大图前后翻页', async () => {
+    assert.equal(await page.locator('.overview-card').count(), 2);
+    await page.locator('.overview-card').first().click();
+    assert.equal(await page.locator('.category-tabs .tab').count(), 5);
     assert.equal(await page.locator('.tile').count(), 8);
     await page
       .locator('photo-frame')
@@ -373,6 +376,7 @@ try {
   });
   await check('相册和故事空状态', async () => {
     await visit('gallery');
+    await page.locator('.overview-card').first().click();
     await page.evaluate(() =>
       window.__page.setData({
         columns: [
@@ -553,9 +557,7 @@ try {
     );
     await visit('gallery');
     await page.waitForFunction(() =>
-      window.__page.data.albums[0].photos.some(
-        (p) => p.caption === '测试照片说明',
-      ),
+      window.__page.data.images.some((p) => p.caption === '测试照片说明'),
     );
     await visit('photos');
     await page.evaluate(async () => {
@@ -563,6 +565,7 @@ try {
       await window.__page.persist(true);
     });
     await visit('gallery');
+    await page.locator('.overview-card').first().click();
     await page.waitForFunction(() => window.__page.data.total === 0);
     assert.ok(await page.locator('.empty').isVisible());
   });
@@ -758,7 +761,11 @@ try {
         );
       });
       await visit('gallery');
-      assert.equal(await page.locator('.tile').count(), 2);
+      await page.locator('.overview-card').first().click();
+      assert.equal(await page.locator('.tile').count(), 1);
+      await page.locator('.overview-back').click();
+      await page.locator('.overview-card').last().click();
+      assert.equal(await page.locator('.tile').count(), 1);
       assert.equal(await page.locator('media-video').count(), 1);
       assert.equal(await page.locator('video').count(), 0);
       await page.screenshot({
@@ -859,6 +866,85 @@ try {
     } finally {
       await page.unroute('**/pipeline-image?**');
     }
+  });
+  await check('照片四类与视频分开展示，私密媒体不进入访客列表', async () => {
+    await visit('photos');
+    await page.evaluate(async () => {
+      const owner = window.__page;
+      const categories = [
+        'wedding',
+        'daily',
+        'baoji_0927',
+        'lintong_0928',
+        undefined,
+      ];
+      const photos = categories.map((category, index) => ({
+        id: 'category-' + index,
+        type: 'image',
+        category,
+        visibility: 'public',
+        slot: 'album',
+        original: '',
+        thumbnail: '',
+        caption: '',
+        ratio: 'portrait',
+        placeholder: true,
+      }));
+      photos.push({
+        ...photos[0],
+        id: 'secret-image',
+        visibility: 'private',
+      });
+      const video = {
+        ...photos[0],
+        id: 'public-video',
+        type: 'video',
+        category: undefined,
+      };
+      owner.setData({
+        photos: [
+          ...photos,
+          video,
+          { ...video, id: 'secret-video', visibility: 'private' },
+        ],
+      });
+      await owner.persist(true);
+    });
+    await visit('gallery');
+    assert.equal(await page.locator('.overview-card').count(), 2);
+    assert.deepEqual(
+      await page.evaluate(() => [
+        window.__page.data.images.length,
+        window.__page.data.videos.length,
+      ]),
+      [5, 1],
+    );
+    await page.locator('.overview-card').first().click();
+    assert.equal(await page.locator('.tile').count(), 5);
+    await page.locator('.category-tabs .tab').nth(1).click();
+    assert.equal(await page.locator('.tile').count(), 1);
+    await page.locator('.overview-back').click();
+    await page.locator('.overview-card').last().click();
+    assert.equal(await page.locator('.tile').count(), 1);
+    await visit('photos');
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__page.data.photos.filter(
+            (item) => item.visibility === 'private',
+          ).length,
+      ),
+      2,
+    );
+    await visit('gallery');
+    await page.evaluate(async () => {
+      window.__page.setData({ contentError: true });
+      await window.__page.onShow();
+    });
+    assert.equal(
+      await page.evaluate(() => window.__page.data.contentError),
+      false,
+    );
   });
   assert.deepEqual(errors, []);
   // 既有测试手动注入这些缺失资源验证图片失败回退；仍记录原始控制台消息。

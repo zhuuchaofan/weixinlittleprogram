@@ -17,6 +17,7 @@ export function normalizeMediaData(value: unknown): ManagedPhoto[] {
       ...p,
       id: p.id || 'legacy-' + index,
       type,
+      visibility: p.visibility === 'private' ? 'private' : 'public',
       url: original,
       original,
       thumbnail:

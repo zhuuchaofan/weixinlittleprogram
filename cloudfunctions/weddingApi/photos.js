@@ -1,11 +1,33 @@
 const { handleImageUpload, ImageUploadError } = require('./image-upload');
 const { createHash, randomUUID } = require('node:crypto');
 class PhotoInputError extends Error {}
-function validatePhotos(value) {
+const categories = [
+  'pending',
+  'wedding',
+  'daily',
+  'baoji_0927',
+  'lintong_0928',
+];
+function fileReferences(photo) {
+  return [
+    photo?.original,
+    photo?.thumbnail,
+    photo?.url,
+    photo?.coverUrl,
+  ].filter(
+    (value) => typeof value === 'string' && value.startsWith('cloud://'),
+  );
+}
+function validatePhotos(value, previous = []) {
   if (!Array.isArray(value) || value.length > 60)
     throw new PhotoInputError('最多保存 60 张照片');
   const ids = new Set();
-  return value.map((p) => {
+  const historic = previous.filter((p) => p && typeof p === 'object');
+  const knownById = new Map(historic.map((p) => [p.id, p]));
+  const privateFiles = new Set(
+    historic.filter((p) => p.visibility === 'private').flatMap(fileReferences),
+  );
+  const photos = value.map((p) => {
     if (
       !p ||
       typeof p.id !== 'string' ||
@@ -31,6 +53,15 @@ function validatePhotos(value) {
       throw new PhotoInputError('照片信息无效');
     if (p.type && !['image', 'video'].includes(p.type))
       throw new PhotoInputError('媒体类型无效');
+    if (p.category !== undefined && !categories.includes(p.category))
+      throw new PhotoInputError('照片分类无效');
+    if (p.type === 'video' && p.category !== undefined)
+      throw new PhotoInputError('视频不能设置照片分类');
+    if (
+      p.visibility !== undefined &&
+      !['public', 'private'].includes(p.visibility)
+    )
+      throw new PhotoInputError('媒体可见性无效');
     if (
       p.type === 'video' &&
       (p.slot !== 'album' ||
@@ -50,8 +81,22 @@ function validatePhotos(value) {
             p.coverUrl.length > 1024)))
     )
       throw new PhotoInputError('视频仅用于相册，需在 60 秒、30 MB 以内');
+    const old = knownById.get(p.id);
+    const sameItem = old?.original === p.original;
+    const category =
+      p.slot === 'album' && p.type !== 'video'
+        ? (p.category ?? (sameItem ? old.category : undefined))
+        : undefined;
+    const visibility =
+      p.visibility ||
+      (sameItem && old.visibility) ||
+      (fileReferences(p).some((file) => privateFiles.has(file))
+        ? 'private'
+        : 'public');
     return {
       ...(p.type ? { type: p.type, url: p.original } : {}),
+      ...(category ? { category } : {}),
+      visibility,
       ...(p.type === 'video'
         ? {
             coverUrl: p.coverUrl || '',
@@ -72,6 +117,15 @@ function validatePhotos(value) {
       placeholder: false,
     };
   });
+  const visibilityByFile = new Map();
+  for (const photo of photos)
+    for (const fileID of fileReferences(photo)) {
+      const known = visibilityByFile.get(fileID);
+      if (known && known !== photo.visibility)
+        throw new PhotoInputError('同一云文件不能同时设置公开和私密');
+      visibilityByFile.set(fileID, photo.visibility);
+    }
+  return photos;
 }
 function validateManagedFileID(value) {
   if (
@@ -139,7 +193,15 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
         const published = await get('published');
         return {
           ok: true,
-          data: published ? { photos: published.photos } : null,
+          data: published
+            ? {
+                photos: Array.isArray(published.photos)
+                  ? published.photos.filter(
+                      (photo) => photo?.visibility !== 'private',
+                    )
+                  : published.photos,
+              }
+            : null,
         };
       }
       if (!isAdmin)
@@ -275,16 +337,36 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
         });
         return { ok: true, data: { fileID: result.fileID } };
       }
-      const photos = validatePhotos(event.payload?.photos);
+      const [draft, published] = await Promise.all([
+        get('draft'),
+        get('published'),
+      ]);
+      const photos = validatePhotos(event.payload?.photos, [
+        ...(published?.photos || []),
+        ...(draft?.photos || []),
+      ]);
       if (photos.filter((p) => p.slot === 'cover').length > 1)
         throw new PhotoInputError('首页只能设置一张封面');
+      if (
+        action === 'publishPhotos' &&
+        photos.some(
+          (p) =>
+            p.slot === 'album' &&
+            p.type !== 'video' &&
+            p.category === 'pending',
+        )
+      )
+        throw new PhotoInputError('请先为新增照片选择分类再更新展示');
       await collection
         .doc('draft')
         .set({ data: { photos, updatedAt: new Date().toISOString() } });
       if (action === 'publishPhotos')
-        await collection
-          .doc('published')
-          .set({ data: { photos, updatedAt: new Date().toISOString() } });
+        await collection.doc('published').set({
+          data: {
+            photos: photos.filter((p) => p.visibility !== 'private'),
+            updatedAt: new Date().toISOString(),
+          },
+        });
       return { ok: true, data: { photos } };
     } catch (error) {
       return {

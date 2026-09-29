@@ -357,3 +357,116 @@ test('WebP 原文件继续受草稿及发布引用保护，解除引用后可清
   );
   assert.equal(f.stats().deletes, 1);
 });
+
+test('历史照片继续公开；私密照片和视频只留草稿，访客接口不返回文件 ID', async () => {
+  const f = fixture();
+  const privatePhoto = {
+    ...photo,
+    id: 'secret',
+    original: 'cloud://env/secret.jpg',
+    thumbnail: 'cloud://env/secret.jpg',
+    category: 'daily',
+    visibility: 'private',
+  };
+  const privateVideo = {
+    ...photo,
+    id: 'secret-video',
+    type: 'video',
+    original: 'cloud://env/secret.mp4',
+    thumbnail: '',
+    coverUrl: '',
+    duration: 12,
+    width: 100,
+    height: 100,
+    size: 100,
+    visibility: 'private',
+  };
+  const result = await f.handle({
+    action: 'publishPhotos',
+    payload: { photos: [photo, privatePhoto, privateVideo] },
+  });
+  assert.equal(result.ok, true);
+  assert.deepEqual(
+    f.docs.draft.photos.map((p) => p.id),
+    ['one', 'secret', 'secret-video'],
+  );
+  assert.deepEqual(
+    f.docs.published.photos.map((p) => p.id),
+    ['one'],
+  );
+  f.setIdentity('visitor');
+  assert.deepEqual(
+    (await f.handle({ action: 'getPhotos' })).data.photos.map((p) => p.id),
+    ['one'],
+  );
+  f.docs.published.photos.push(privatePhoto);
+  assert.deepEqual(
+    (await f.handle({ action: 'getPhotos' })).data.photos.map((p) => p.id),
+    ['one'],
+  );
+});
+
+test('旧客户端遗漏新字段时保留分类和私密；同文件公私混用被拒绝', async () => {
+  const f = fixture();
+  const original = {
+    ...photo,
+    category: 'wedding',
+    visibility: 'private',
+  };
+  assert.equal(
+    (
+      await f.handle({
+        action: 'savePhotoDraft',
+        payload: { photos: [original] },
+      })
+    ).ok,
+    true,
+  );
+  assert.equal(
+    (await f.handle({ action: 'publishPhotos', payload: { photos: [photo] } }))
+      .ok,
+    true,
+  );
+  assert.equal(f.docs.draft.photos[0].category, 'wedding');
+  assert.equal(f.docs.draft.photos[0].visibility, 'private');
+  assert.deepEqual(f.docs.published.photos, []);
+  const duplicate = { ...photo, id: 'copy', visibility: 'public' };
+  assert.equal(
+    (
+      await f.handle({
+        action: 'publishPhotos',
+        payload: { photos: [original, duplicate] },
+      })
+    ).ok,
+    false,
+  );
+  assert.deepEqual(f.docs.published.photos, []);
+});
+
+test('新增照片待分类可存草稿但不能发布；历史缺失分类仍可发布', async () => {
+  const f = fixture();
+  const pending = { ...photo, id: 'new', category: 'pending' };
+  assert.equal(
+    (
+      await f.handle({
+        action: 'savePhotoDraft',
+        payload: { photos: [pending] },
+      })
+    ).ok,
+    true,
+  );
+  assert.equal(
+    (
+      await f.handle({
+        action: 'publishPhotos',
+        payload: { photos: [pending] },
+      })
+    ).ok,
+    false,
+  );
+  assert.equal(
+    (await f.handle({ action: 'publishPhotos', payload: { photos: [photo] } }))
+      .ok,
+    true,
+  );
+});

@@ -1,5 +1,7 @@
 export interface Photo {
   type?: 'image' | 'video';
+  category?: 'pending' | 'wedding' | 'daily' | 'baoji_0927' | 'lintong_0928';
+  visibility?: 'public' | 'private';
   url?: string;
   coverUrl?: string;
   duration?: number;

@@ -1,2 +1,8 @@
 .tabs { display: flex; border-bottom: 1rpx solid var(--line); gap: 10rpx; flex-wrap: wrap; }.tab { min-width: 0; flex: 1; padding: 18rpx 8rpx; border-radius: 0; color: var(--muted); border-bottom: 4rpx solid transparent; }.selected { color: var(--accent); border-bottom-color: var(--accent); }.count { margin-left: 12rpx; font-size: 22rpx; }.album-intro { margin: 24rpx 0; }.photo-grid { display: flex; gap: 22rpx; }.column { flex: 1; min-width: 0; }.tile { margin-bottom: 30rpx; }.photo-caption { font-size: 23rpx; padding-top: 12rpx; color: var(--muted); }.gallery-note { margin-top: 28rpx; }
 .photo-content-pending { min-height: 460rpx; margin-top: 34rpx; border-top: 1rpx solid var(--line); }
+.media-overview { display: flex; flex-direction: column; gap: 22rpx; margin: 36rpx 0; }
+.overview-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10rpx; width: 100%; padding: 38rpx; text-align: left; border: 1rpx solid var(--line); background: #fcf9f4; }
+.overview-title { font-size: 38rpx; color: var(--accent); }
+.overview-back { margin-top: 24rpx; padding-left: 0; }
+.category-tabs { display: flex; gap: 8rpx; overflow-x: auto; margin-top: 26rpx; padding-bottom: 10rpx; }
+.category-tabs .tab { flex: 0 0 auto; font-size: 23rpx; padding: 16rpx 20rpx; white-space: nowrap; }

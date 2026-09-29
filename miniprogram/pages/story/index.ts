@@ -37,7 +37,11 @@ Page({
     if (result.state === 'unavailable' && this.data.photoContentReady) return;
 
     const items = storyPhotoState(
-      result.state === 'published' ? result.photos : null,
+      result.state === 'published'
+        ? result.photos
+        : result.state === 'missing'
+          ? null
+          : [],
     );
     const photoSignature = photoArrangementSignature(
       items.flatMap((item) => item.photos),

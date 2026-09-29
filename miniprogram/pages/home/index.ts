@@ -64,8 +64,8 @@ Page({
     copy: uiCopy.home,
     appConfig,
     coverPhoto,
-    catPhotos,
-    catColumns: createCatColumns(catPhotos),
+    catPhotos: [] as Photo[],
+    catColumns: createCatColumns([]),
     navigation: navigation.filter(
       (item) =>
         item.url === '/pages/invitation/index' ||
@@ -109,7 +109,11 @@ Page({
     if (refreshVersion !== homeRefreshVersion) return;
     if (result.state === 'unavailable' && this.data.photoContentReady) return;
     const state = homePhotoState(
-      result.state === 'published' ? result.photos : null,
+      result.state === 'published'
+        ? result.photos
+        : result.state === 'missing'
+          ? null
+          : [],
     );
     const photoSignature = photoArrangementSignature([
       state.cover,

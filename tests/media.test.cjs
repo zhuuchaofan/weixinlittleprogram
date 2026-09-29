@@ -17,9 +17,80 @@ const {
   validateVideo,
 } = require('../miniprogram/services/media.ts');
 const { localConfig } = require('../miniprogram/config/local.ts');
-const { photoService } = require('../miniprogram/services/photos.ts');
+const {
+  photoService,
+  getPublishedPhotos,
+} = require('../miniprogram/services/photos.ts');
+const {
+  setSharedVisibility,
+} = require('../miniprogram/services/media-visibility.ts');
 const uploads = require('../miniprogram/services/media-upload.ts');
 const tap = (dataset = {}) => ({ currentTarget: { dataset } });
+
+test('复用同一原图或视频封面时私密状态同步到全部关联条目', () => {
+  const a = {
+    id: 'a',
+    original: 'cloud://env/a.jpg',
+    thumbnail: 'cloud://env/a.jpg',
+  };
+  const b = {
+    id: 'b',
+    original: 'cloud://env/b.mp4',
+    coverUrl: 'cloud://env/a.jpg',
+  };
+  const c = { id: 'c', original: 'cloud://env/b.mp4' };
+  const result = setSharedVisibility([a, b, c], 0, 'private');
+  assert.deepEqual(
+    result.map((item) => item.visibility),
+    ['private', 'private', 'private'],
+  );
+});
+
+test('主人切换私密会同步复用条目；新增待分类照片不能直接发布', async () => {
+  const { page } = setup();
+  const original = 'cloud://env/shared.jpg';
+  page.setData({
+    photos: [
+      { id: 'one', original, thumbnail: original, slot: 'album' },
+      {
+        id: 'two',
+        original,
+        thumbnail: original,
+        slot: 'album',
+        category: 'pending',
+      },
+    ],
+  });
+  page.visibility({
+    currentTarget: { dataset: { index: 0 } },
+    detail: { value: true },
+  });
+  assert.deepEqual(
+    page.data.photos.map((item) => item.visibility),
+    ['private', 'private'],
+  );
+  await page.publish();
+  assert.match(page.data.error, /选择分类/);
+});
+
+test('mock 访客读取也过滤私密媒体，历史无字段条目保持公开', async () => {
+  const { store } = setup();
+  store.set('photos:published', [
+    { id: 'old', original: 'cloud://env/old.jpg', slot: 'album' },
+    {
+      id: 'hidden',
+      original: 'cloud://env/hidden.jpg',
+      slot: 'album',
+      visibility: 'private',
+    },
+  ]);
+  const result = await getPublishedPhotos();
+  assert.equal(result.state, 'published');
+  assert.deepEqual(
+    result.photos.map((item) => item.id),
+    ['old'],
+  );
+});
 function setup() {
   localConfig.mode = 'mock';
   const store = new Map();

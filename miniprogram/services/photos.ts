@@ -35,6 +35,8 @@ export function photoArrangementSignature(
       photo.placeholder,
       photo.ratio,
       photo.type,
+      photo.category,
+      photo.visibility,
       photo.url,
       photo.coverUrl,
       photo.duration,
@@ -61,12 +63,14 @@ export function initialPhotos(): ManagedPhoto[] {
   return photos;
 }
 export async function getPublishedPhotos(): Promise<PublishedPhotosResult> {
+  const publicPhotos = (value: unknown) =>
+    normalizeMediaData(value).filter((photo) => photo.visibility !== 'private');
   try {
     if (String(localConfig.mode) === 'mock') {
       const photos = wx.getStorageSync('photos:published') as unknown;
       if (photos === null || photos === undefined) return { state: 'missing' };
       return Array.isArray(photos)
-        ? { state: 'published', photos: normalizeMediaData(photos) }
+        ? { state: 'published', photos: publicPhotos(photos) }
         : { state: 'unavailable' };
     }
     const result = await callCloud<unknown>('getPhotos');
@@ -79,7 +83,7 @@ export async function getPublishedPhotos(): Promise<PublishedPhotosResult> {
       return { state: 'unavailable' };
     return {
       state: 'published',
-      photos: normalizeMediaData((result as { photos: ManagedPhoto[] }).photos),
+      photos: publicPhotos((result as { photos: ManagedPhoto[] }).photos),
     };
   } catch {
     return { state: 'unavailable' };
