@@ -32,6 +32,8 @@
     <view class="poster-kicker">{{copy.afterKicker}}</view>
     <view class="memory-title serif">{{copy.afterTitle}}</view>
     <view class="memory-lead">{{copy.afterLead}}</view>
+    <button class="primary photo-cta after-photo-cta" bindtap="enter">{{copy.photoCta}}</button>
+    <navigator wx:if="{{!collectionClosed}}" class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
   </view>
 
   <view class="photo-opening">
@@ -43,8 +45,6 @@
         <view class="photo-label">{{copy.text03}}</view>
       </view>
     </block>
-    <button wx:if="{{eventStatus.phase === 'after'}}" class="primary photo-cta after-photo-cta" bindtap="enter">{{copy.photoCta}}</button>
-    <navigator wx:if="{{eventStatus.phase === 'after' && !collectionClosed}}" class="blessing-cta" url="/pages/guestbook/index">{{copy.blessingCta}}</navigator>
   </view>
 
   <view class="secondary-navigation section">

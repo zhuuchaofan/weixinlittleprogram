@@ -2,7 +2,7 @@
   "name": "two-cats-one-home",
   "version": "0.1.0",
   "private": true,
-  "description": "两猫一屋 · 原生微信生活纪念册",
+  "description": "球球布丁家属院",
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "typecheck": "tsc --noEmit",

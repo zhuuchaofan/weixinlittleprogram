@@ -26,14 +26,15 @@
 
 .photo-cta { width: 100%; min-height: 94rpx; margin-top: 30rpx; letter-spacing: 1rpx; }
 .blessing-cta { display: block; min-height: 76rpx; padding: 22rpx 0 10rpx; color: var(--accent); font-size: 27rpx; line-height: 1.5; text-align: center; }
-.memory-intro { padding: 48rpx 0 30rpx; }
+.memory-intro { padding: 48rpx 0 36rpx; border-bottom: 1rpx solid var(--line); }
 .memory-title { margin-top: 16rpx; font-size: 62rpx; line-height: 1.22; }
 .memory-lead { margin-top: 16rpx; color: var(--muted); font-size: 28rpx; }
 .photo-opening { padding-top: 46rpx; }
 .hero { margin-top: 20rpx; }
 .hero-pending { min-height: var(--hero-min-height); margin-top: 20rpx; border: 1rpx solid var(--line); background: #f3eadc; }
 .photo-label { margin-top: 16rpx; color: var(--muted); font-size: 21rpx; letter-spacing: 4rpx; }
-.after-photo-cta { margin-top: 30rpx; }
+.after-photo-cta { margin-top: 34rpx; }
+.memory-intro + .photo-opening { padding-top: 36rpx; }
 
 .secondary-navigation { margin-top: 58rpx; }
 .nav-row { display: grid; grid-template-columns: 46rpx minmax(0, 1fr) 28rpx; align-items: center; column-gap: 20rpx; min-height: 132rpx; border-bottom: 1rpx solid var(--line); color: var(--ink); }

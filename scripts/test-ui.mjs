@@ -107,7 +107,16 @@ try {
     assert.ok(await page.locator('.memory-intro').isVisible());
     assert.equal(await page.locator('.event-poster').count(), 0);
     assert.equal(await page.locator('.arrival-strip').count(), 0);
-    assert.equal(await page.locator('.photo-opening .primary').count(), 1);
+    assert.equal(await page.locator('.memory-intro .primary').count(), 1);
+    assert.equal(await page.locator('.photo-opening .primary').count(), 0);
+    assert.ok(
+      (await page.locator('.memory-intro .primary').boundingBox()).y <
+        (await page.locator('.photo-opening').boundingBox()).y,
+    );
+    await page.screenshot({
+      path: 'artifacts/ui/393-home-after.png',
+      fullPage: true,
+    });
     await visit('home');
   });
   await check('首页仅在答谢宴当天展示流程与 Photo Booth', async () => {
@@ -266,7 +275,7 @@ try {
   await check('猫咪彩蛋展开、首页导航进入相册', async () => {
     await page.getByText('球球与布丁，也在等你来。').click();
     assert.ok(await page.locator('.cat-reveal').isVisible());
-    await page.getByRole('button', { name: /去看照片/ }).click();
+    await page.getByRole('button', { name: /查看照片与视频/ }).click();
     await page.waitForSelector('body[data-ready="gallery"]');
   });
   await check('照片视频总览进入照片、大图前后翻页', async () => {
@@ -763,7 +772,7 @@ try {
       await visit('gallery');
       await page.locator('.overview-card').first().click();
       assert.equal(await page.locator('.tile').count(), 1);
-      await page.locator('.overview-back').click();
+      await page.locator('.overview-back .page-back-link').click();
       await page.locator('.overview-card').last().click();
       assert.equal(await page.locator('.tile').count(), 1);
       assert.equal(await page.locator('media-video').count(), 1);
@@ -923,7 +932,7 @@ try {
     assert.equal(await page.locator('.tile').count(), 5);
     await page.locator('.category-tabs .tab').nth(1).click();
     assert.equal(await page.locator('.tile').count(), 1);
-    await page.locator('.overview-back').click();
+    await page.locator('.overview-back .page-back-link').click();
     await page.locator('.overview-card').last().click();
     assert.equal(await page.locator('.tile').count(), 1);
     await visit('photos');

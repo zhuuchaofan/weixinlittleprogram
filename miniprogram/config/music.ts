@@ -10,7 +10,7 @@ export interface MusicConfig {
 export const musicConfig: MusicConfig = {
   enabled: false,
   fileId: '',
-  title: '朱超凡&高佳益 · 两猫一屋',
+  title: '朱超凡&高佳益 · 球球布丁家属院',
   volume: 0.16,
   loop: true,
 };
