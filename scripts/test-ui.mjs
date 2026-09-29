@@ -278,10 +278,43 @@ try {
     await page.getByRole('button', { name: /查看照片与视频/ }).click();
     await page.waitForSelector('body[data-ready="gallery"]');
   });
-  await check('照片视频总览进入照片、大图前后翻页', async () => {
-    assert.equal(await page.locator('.overview-card').count(), 2);
-    await page.locator('.overview-card').first().click();
-    assert.equal(await page.locator('.category-tabs .tab').count(), 5);
+  await check('六张统一目录卡片、全部照片大图前后翻页', async () => {
+    assert.deepEqual(await page.locator('.directory-title').allInnerTexts(), [
+      '婚纱照',
+      '日常照',
+      '927 宝鸡答谢宴',
+      '928 临潼答谢宴',
+      '视频',
+      '全部照片',
+    ]);
+    assert.equal(await page.locator('.directory-card').count(), 6);
+    assert.equal(
+      await page.locator('.gallery-intro .title').innerText(),
+      '我们的照片与影像',
+    );
+    for (const [index, title, count] of [
+      [0, '婚纱照', '8 张'],
+      [1, '日常照', '0 张'],
+      [2, '927 宝鸡答谢宴', '0 张'],
+      [3, '928 临潼答谢宴', '0 张'],
+      [4, '视频', '0 段'],
+      [5, '全部照片', '8 张'],
+    ]) {
+      await page.locator('.directory-card').nth(index).click();
+      assert.equal(
+        await page.locator('.gallery-section-title').innerText(),
+        title,
+      );
+      assert.equal(await page.locator('.gallery-count').innerText(), count);
+      await page.locator('.overview-back .page-back-link').click();
+    }
+    await page.locator('.directory-card').nth(5).click();
+    assert.equal(await page.locator('.gallery-intro').count(), 0);
+    assert.equal(await page.locator('.category-tabs').count(), 0);
+    assert.equal(
+      await page.locator('.gallery-section-title').innerText(),
+      '全部照片',
+    );
     assert.equal(await page.locator('.tile').count(), 8);
     await page
       .locator('photo-frame')
@@ -294,6 +327,17 @@ try {
     await page.getByRole('button', { name: '下一张', exact: true }).click();
     assert.match(await page.getByRole('dialog').innerText(), /2 \/ 8/);
     await page.getByRole('button', { name: '关闭', exact: true }).click();
+    await page.locator('.overview-back .page-back-link').click();
+    assert.equal(await page.locator('.directory-card').count(), 6);
+    await page.evaluate(() => {
+      window.__page.onLoad({ category: 'wedding' });
+      window.__page.refreshView();
+    });
+    assert.equal(
+      await page.locator('.gallery-section-title').innerText(),
+      '婚纱照',
+    );
+    await page.locator('.overview-back .page-back-link').click();
   });
   await visit('rsvp');
   await check('空表校验、未同意隐私禁止提交', async () => {
@@ -385,7 +429,7 @@ try {
   });
   await check('相册和故事空状态', async () => {
     await visit('gallery');
-    await page.locator('.overview-card').first().click();
+    await page.locator('.directory-card').first().click();
     await page.evaluate(() =>
       window.__page.setData({
         columns: [
@@ -528,56 +572,69 @@ try {
     await page.evaluate(() =>
       window.__page.filterChange({ detail: { value: '2' } }),
     );
-    assert.equal(await page.locator('.photo-entry').count(), 1);
+    assert.equal(await page.locator('.photo-entry').count(), 8);
     await page.screenshot({
       path: 'artifacts/ui/photos-filtered-compact.png',
       fullPage: true,
     });
   });
-  await check('照片草稿编辑、复用、排序、发布及首页相册读取', async () => {
-    await visit('photos');
-    assert.equal(
-      await page.evaluate(() => window.__page.data.authorized),
-      true,
-    );
-    await page.evaluate(async () => {
-      const p = window.__page;
-      p.caption({
-        currentTarget: { dataset: { index: 0 } },
-        detail: { value: '测试照片说明' },
+  await check(
+    '照片草稿编辑、多位置精选、排序、发布及首页相册读取',
+    async () => {
+      await visit('photos');
+      assert.equal(
+        await page.evaluate(() => window.__page.data.authorized),
+        true,
+      );
+      await page.evaluate(async () => {
+        const p = window.__page;
+        p.caption({
+          currentTarget: { dataset: { index: 0 } },
+          detail: { value: '测试照片说明' },
+        });
+        p.placement({
+          currentTarget: { dataset: { index: 0, placement: 'qiuqiu' } },
+          detail: { value: true },
+        });
+        p.placement({
+          currentTarget: { dataset: { index: 0, placement: 'story' } },
+          detail: { value: true },
+        });
+        p.move({ currentTarget: { dataset: { index: 1, delta: -1 } } });
+        await p.save();
       });
-      p.duplicate({ currentTarget: { dataset: { index: 0 } } });
-      p.slot({
-        currentTarget: { dataset: { index: p.data.photos.length - 1 } },
-        detail: { value: '3' },
+      await visit('photos');
+      assert.deepEqual(
+        await page.evaluate(() => {
+          const edited = window.__page.data.photos.find(
+            (photo) => photo.caption === '测试照片说明',
+          );
+          return [edited.category, ...edited.placements];
+        }),
+        ['daily', 'story', 'qiuqiu'],
+      );
+      await page.evaluate(() => window.__page.persist(true));
+      await visit('home');
+      await page.waitForFunction(() =>
+        window.__page.data.catPhotos.some(
+          (p) => p.catLabel === 'qiuqiu' && !p.placeholder,
+        ),
+      );
+      await visit('gallery');
+      await page.waitForFunction(() =>
+        window.__page.data.images.some((p) => p.caption === '测试照片说明'),
+      );
+      await visit('photos');
+      await page.evaluate(async () => {
+        window.__page.setData({ photos: [] });
+        await window.__page.persist(true);
       });
-      p.move({ currentTarget: { dataset: { index: 1, delta: -1 } } });
-      await p.save();
-    });
-    await visit('photos');
-    assert.equal(
-      await page.evaluate(() => window.__page.data.photos.at(-1).slot),
-      'qiuqiu',
-    );
-    await page.evaluate(() => window.__page.persist(true));
-    await visit('home');
-    await page.waitForFunction(() =>
-      window.__page.data.catPhotos.some((p) => p.slot === 'qiuqiu'),
-    );
-    await visit('gallery');
-    await page.waitForFunction(() =>
-      window.__page.data.images.some((p) => p.caption === '测试照片说明'),
-    );
-    await visit('photos');
-    await page.evaluate(async () => {
-      window.__page.setData({ photos: [] });
-      await window.__page.persist(true);
-    });
-    await visit('gallery');
-    await page.locator('.overview-card').first().click();
-    await page.waitForFunction(() => window.__page.data.total === 0);
-    assert.ok(await page.locator('.empty').isVisible());
-  });
+      await visit('gallery');
+      await page.locator('.directory-card').nth(5).click();
+      await page.waitForFunction(() => window.__page.data.total === 0);
+      assert.ok(await page.locator('.empty').isVisible());
+    },
+  );
   await check(
     '遗留云图导入自动保存，重新进入仍可见且不会自动发布',
     async () => {
@@ -611,12 +668,18 @@ try {
     await visit('photos');
     await page.evaluate(async () => {
       const p = window.__page;
-      p.setData({ photos: [{ ...p.data.photos[0], slot: 'qiuqiu' }] });
+      p.setData({
+        photos: [
+          { ...p.data.photos[0], category: 'daily', placements: ['qiuqiu'] },
+        ],
+      });
       await p.persist(true);
     });
     await visit('home');
     await page.waitForFunction(() =>
-      window.__page.data.catPhotos.some((p) => p.slot === 'qiuqiu'),
+      window.__page.data.catPhotos.some(
+        (p) => p.catLabel === 'qiuqiu' && !p.placeholder,
+      ),
     );
     assert.ok(
       await page.evaluate(() =>
@@ -632,7 +695,7 @@ try {
       await window.__page.onShow();
       const catPhotos = Array.from({ length: 4 }, (_, i) => ({
         id: 'layout-' + i,
-        slot: i === 0 ? 'qiuqiu' : 'buding',
+        catLabel: i === 0 ? 'qiuqiu' : 'buding',
         thumbnail: '',
         original: '',
         placeholder: true,
@@ -770,10 +833,10 @@ try {
         );
       });
       await visit('gallery');
-      await page.locator('.overview-card').first().click();
+      await page.locator('.directory-card').nth(5).click();
       assert.equal(await page.locator('.tile').count(), 1);
       await page.locator('.overview-back .page-back-link').click();
-      await page.locator('.overview-card').last().click();
+      await page.locator('.directory-card').nth(4).click();
       assert.equal(await page.locator('.tile').count(), 1);
       assert.equal(await page.locator('media-video').count(), 1);
       assert.equal(await page.locator('video').count(), 0);
@@ -920,7 +983,7 @@ try {
       await owner.persist(true);
     });
     await visit('gallery');
-    assert.equal(await page.locator('.overview-card').count(), 2);
+    assert.equal(await page.locator('.directory-card').count(), 6);
     assert.deepEqual(
       await page.evaluate(() => [
         window.__page.data.images.length,
@@ -928,12 +991,13 @@ try {
       ]),
       [5, 1],
     );
-    await page.locator('.overview-card').first().click();
+    await page.locator('.directory-card').nth(5).click();
     assert.equal(await page.locator('.tile').count(), 5);
-    await page.locator('.category-tabs .tab').nth(1).click();
+    await page.locator('.overview-back .page-back-link').click();
+    await page.locator('.directory-card').first().click();
     assert.equal(await page.locator('.tile').count(), 1);
     await page.locator('.overview-back .page-back-link').click();
-    await page.locator('.overview-card').last().click();
+    await page.locator('.directory-card').nth(4).click();
     assert.equal(await page.locator('.tile').count(), 1);
     await visit('photos');
     assert.equal(

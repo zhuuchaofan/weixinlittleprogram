@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createPhotoHandler } = require('../cloudfunctions/weddingApi/photos');
+const {
+  normalizeLibrary,
+} = require('../cloudfunctions/weddingApi/media-library');
 function fixture() {
   let identity = 'owner',
     uploads = 0,
@@ -467,6 +470,151 @@ test('新增照片待分类可存草稿但不能发布；历史缺失分类仍�
   assert.equal(
     (await f.handle({ action: 'publishPhotos', payload: { photos: [photo] } }))
       .ok,
+    true,
+  );
+});
+
+test('新版读取把同文件旧相册、封面、故事合为一条，私密冲突整体隐藏', async () => {
+  const f = fixture();
+  const legacy = [
+    { ...photo, id: 'cover', slot: 'cover', caption: '封面' },
+    { ...photo, id: 'album', category: 'wedding', caption: '相册' },
+    { ...photo, id: 'story', slot: 'story', visibility: 'private' },
+  ];
+  f.docs.published = { photos: legacy };
+  f.setIdentity('visitor');
+  assert.deepEqual(
+    (await f.handle({ action: 'getMediaLibrary' })).data.photos,
+    [],
+  );
+  assert.deepEqual((await f.handle({ action: 'getPhotos' })).data.photos, []);
+  const merged = normalizeLibrary(legacy);
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].id, 'album');
+  assert.equal(merged[0].caption, '相册');
+  assert.deepEqual(merged[0].placements, ['cover', 'story']);
+  assert.equal(
+    normalizeLibrary([
+      { ...photo, category: 'wedding' },
+      { ...photo, id: 'cat', slot: 'qiuqiu' },
+    ])[0].category,
+    'daily',
+  );
+});
+
+test('新版草稿和发布使用单条媒体，旧访客仍收到 slot 投影且旧管理写入受保护', async () => {
+  const f = fixture();
+  const item = {
+    ...photo,
+    slot: undefined,
+    category: 'wedding',
+    visibility: 'public',
+    placements: ['cover', 'story'],
+  };
+  assert.equal(
+    (
+      await f.handle({
+        action: 'saveMediaLibraryDraft',
+        payload: { photos: [item] },
+      })
+    ).ok,
+    true,
+  );
+  assert.equal(f.docs.published, undefined);
+  assert.equal(f.docs.draft.schemaVersion, 2);
+  assert.equal(
+    (
+      await f.handle({
+        action: 'savePhotoDraft',
+        payload: { photos: [photo] },
+      })
+    ).code,
+    'UPGRADE_REQUIRED',
+  );
+  assert.equal(
+    (
+      await f.handle({
+        action: 'publishMediaLibrary',
+        payload: { photos: [item] },
+      })
+    ).ok,
+    true,
+  );
+  f.setIdentity('visitor');
+  assert.deepEqual(
+    (await f.handle({ action: 'getMediaLibrary' })).data.photos.map(
+      (p) => p.id,
+    ),
+    ['one'],
+  );
+  assert.deepEqual(
+    (await f.handle({ action: 'getPhotos' })).data.photos.map((p) => p.slot),
+    ['album', 'cover', 'story'],
+  );
+  f.setIdentity('owner');
+  const oldWrite = await f.handle({
+    action: 'publishPhotos',
+    payload: { photos: [photo] },
+  });
+  assert.equal(oldWrite.code, 'UPGRADE_REQUIRED');
+  assert.equal(f.docs.published.schemaVersion, 2);
+});
+
+test('新版拒绝重复文件、多封面及新增待分类；历史待分类可继续发布', async () => {
+  const f = fixture();
+  const base = {
+    ...photo,
+    slot: undefined,
+    category: 'daily',
+    visibility: 'public',
+    placements: [],
+  };
+  for (const photos of [
+    [base, { ...base, id: 'copy' }],
+    [
+      { ...base, placements: ['cover'] },
+      {
+        ...base,
+        id: 'two',
+        original: 'cloud://env/b.jpg',
+        thumbnail: 'cloud://env/b.jpg',
+        placements: ['cover'],
+      },
+    ],
+    [{ ...base, category: 'wedding', placements: ['qiuqiu'] }],
+  ]) {
+    assert.equal(
+      (await f.handle({ action: 'publishMediaLibrary', payload: { photos } }))
+        .ok,
+      false,
+    );
+  }
+  assert.equal(
+    (
+      await f.handle({
+        action: 'saveMediaLibraryDraft',
+        payload: { photos: [{ ...base, category: 'pending' }] },
+      })
+    ).ok,
+    true,
+  );
+  assert.equal(
+    (
+      await f.handle({
+        action: 'publishMediaLibrary',
+        payload: { photos: [{ ...base, category: 'pending' }] },
+      })
+    ).ok,
+    false,
+  );
+  f.docs.published = { photos: [photo] };
+  assert.equal(
+    (
+      await f.handle({
+        action: 'publishMediaLibrary',
+        payload: { photos: [{ ...base, category: 'pending' }] },
+      })
+    ).ok,
     true,
   );
 });

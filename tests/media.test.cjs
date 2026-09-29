@@ -20,6 +20,8 @@ const { localConfig } = require('../miniprogram/config/local.ts');
 const {
   photoService,
   getPublishedPhotos,
+  getPublishedMediaLibrary,
+  normalizeMediaLibrary,
 } = require('../miniprogram/services/photos.ts');
 const {
   setSharedVisibility,
@@ -90,6 +92,154 @@ test('mock 访客读取也过滤私密媒体，历史无字段条目保持公开
     result.photos.map((item) => item.id),
     ['old'],
   );
+});
+
+test('旧云函数未提供新版读取时，访客和主人仍可读取原有照片', async () => {
+  const previousMode = localConfig.mode;
+  const previousEnv = localConfig.cloudEnvId;
+  const previousWx = global.wx;
+  const actions = [];
+  const original = 'cloud://env/shared.jpg';
+  global.wx = {
+    cloud: {
+      init() {},
+      async callFunction({ data }) {
+        actions.push(data.action);
+        if (
+          data.action === 'getMediaLibrary' ||
+          data.action === 'getMediaLibraryDraft' ||
+          data.action === 'saveMediaLibraryDraft'
+        )
+          return {
+            result: { ok: false, code: 'NOT_FOUND', message: '不支持的操作。' },
+          };
+        return {
+          result: {
+            ok: true,
+            data: {
+              photos: [
+                { id: 'album', slot: 'album', original, caption: '旧照片' },
+                { id: 'cover', slot: 'cover', original },
+              ],
+            },
+          },
+        };
+      },
+    },
+  };
+  try {
+    localConfig.mode = 'cloud';
+    localConfig.cloudEnvId = 'test';
+    const published = await getPublishedMediaLibrary();
+    assert.equal(published.state, 'published');
+    assert.deepEqual(
+      published.photos.map((item) => item.id),
+      ['album'],
+    );
+    assert.deepEqual(published.photos[0].placements, ['cover']);
+    assert.deepEqual(
+      (await photoService.draft()).map((item) => item.id),
+      ['album'],
+    );
+    await assert.rejects(
+      photoService.save([]),
+      /请先部署新版 weddingApi 云函数/,
+    );
+    assert.deepEqual(actions, [
+      'getMediaLibrary',
+      'getPhotos',
+      'getMediaLibraryDraft',
+      'getPhotoDraft',
+      'saveMediaLibraryDraft',
+    ]);
+  } finally {
+    localConfig.mode = previousMode;
+    localConfig.cloudEnvId = previousEnv;
+    global.wx = previousWx;
+  }
+});
+
+test('新版读取真实失败时不退回旧接口，避免掩盖云端故障', async () => {
+  const previousMode = localConfig.mode;
+  const previousEnv = localConfig.cloudEnvId;
+  const previousWx = global.wx;
+  const actions = [];
+  global.wx = {
+    cloud: {
+      init() {},
+      async callFunction({ data }) {
+        actions.push(data.action);
+        return {
+          result: { ok: false, code: 'INTERNAL', message: '服务暂时不可用' },
+        };
+      },
+    },
+  };
+  try {
+    localConfig.mode = 'cloud';
+    localConfig.cloudEnvId = 'test';
+    assert.deepEqual(await getPublishedMediaLibrary(), {
+      state: 'unavailable',
+    });
+    assert.deepEqual(actions, ['getMediaLibrary']);
+  } finally {
+    localConfig.mode = previousMode;
+    localConfig.cloudEnvId = previousEnv;
+    global.wx = previousWx;
+  }
+});
+
+test('旧版封面、故事与相册同文件合并；猫咪归日常，私密冲突优先隐藏', () => {
+  const original = 'cloud://env/wedding.jpg';
+  const items = normalizeMediaLibrary([
+    { id: 'cover', slot: 'cover', original, caption: '封面说明' },
+    {
+      id: 'album',
+      slot: 'album',
+      original,
+      category: 'wedding',
+      caption: '相册说明',
+    },
+    { id: 'story', slot: 'story', original, visibility: 'private' },
+    { id: 'cat', slot: 'qiuqiu', original: 'cloud://env/cat.jpg' },
+  ]);
+  assert.equal(items.length, 2);
+  assert.equal(items[0].id, 'album');
+  assert.equal(items[0].caption, '相册说明');
+  assert.equal(items[0].category, 'wedding');
+  assert.equal(items[0].visibility, 'private');
+  assert.deepEqual(items[0].placements, ['cover', 'story']);
+  assert.equal(items[1].category, 'daily');
+  assert.deepEqual(items[1].placements, ['qiuqiu']);
+});
+
+test('新版 mock 访客读取同一文件只返回一条，私密精选不泄露', async () => {
+  const { store } = setup();
+  store.set('photos:published', {
+    schemaVersion: 2,
+    photos: [
+      {
+        id: 'one',
+        original: 'cloud://env/one.jpg',
+        category: 'daily',
+        placements: ['cover'],
+      },
+      {
+        id: 'hidden',
+        original: 'cloud://env/secret.jpg',
+        category: 'wedding',
+        placements: ['story'],
+        visibility: 'private',
+      },
+    ],
+  });
+  const result = await getPublishedMediaLibrary();
+  assert.equal(result.state, 'published');
+  assert.deepEqual(
+    result.photos.map((item) => item.id),
+    ['one'],
+  );
+  assert.deepEqual(result.photos[0].placements, ['cover']);
 });
 function setup() {
   localConfig.mode = 'mock';

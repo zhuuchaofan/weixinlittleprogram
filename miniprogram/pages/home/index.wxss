@@ -67,3 +67,4 @@
 .booth-mark { padding-top: 4rpx; color: var(--accent); font-size: 18rpx; letter-spacing: 1rpx; }
 .booth-title { font-size: 29rpx; line-height: 1.4; }
 .booth-description { margin-top: 5rpx; color: var(--muted); font-size: 22rpx; line-height: 1.55; }
+.cat-album-link { display: block; margin-top: 24rpx; padding: 16rpx 0; color: var(--accent); font-size: 24rpx; text-align: right; }

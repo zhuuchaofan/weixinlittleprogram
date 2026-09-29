@@ -1,5 +1,7 @@
 # CloudBase 部署与收束
 
+照片库 V2 的备份、兼容部署与双账号验收顺序见 [统一照片库 V2](MEDIA-LIBRARY-V2.md)。
+
 ## 服务边界
 
 客户端只调用 `weddingApi`；云函数从 `cloud.getWXContext().OPENID` 识别用户。前端的管理员菜单缓存不授予权限，云函数每次照片、登记、祝福管理操作都会校验真实 OpenID。

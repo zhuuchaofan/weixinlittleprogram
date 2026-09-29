@@ -239,7 +239,7 @@ export async function uploadMedia(
     original,
     thumbnail: item.type === 'video' ? item.coverID || '' : original,
     caption: '',
-    slot: 'album',
+    placements: [],
     placeholder: false,
     ratio:
       item.width === item.height

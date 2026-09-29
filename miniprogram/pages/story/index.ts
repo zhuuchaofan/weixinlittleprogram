@@ -1,5 +1,6 @@
 import {
-  getPublishedPhotos,
+  getPublishedMediaLibrary,
+  initialMediaLibrary,
   photoArrangementSignature,
 } from '../../services/photos';
 import { uiCopy } from '../../config/ui-copy';
@@ -10,14 +11,14 @@ import type { Photo } from '../../models';
 
 let storyRefreshVersion = 0;
 
-function storyPhotoState(photos: Array<Photo & { slot?: string }> | null) {
+function storyPhotoState(photos: Photo[] | null) {
   return storyItems.map((item, index) => ({
     ...item,
     photos:
       index === 0
-        ? photos
-          ? photos.filter((photo) => photo.slot === 'story')
-          : item.photos
+        ? (photos || initialMediaLibrary()).filter((photo) =>
+            photo.placements?.includes('story'),
+          )
         : [],
   }));
 }
@@ -32,7 +33,7 @@ Page({
   },
   async onShow() {
     const refreshVersion = ++storyRefreshVersion;
-    const result = await getPublishedPhotos();
+    const result = await getPublishedMediaLibrary();
     if (refreshVersion !== storyRefreshVersion) return;
     if (result.state === 'unavailable' && this.data.photoContentReady) return;
 

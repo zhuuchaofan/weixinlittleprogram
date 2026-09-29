@@ -40,7 +40,14 @@ Page({
       '927 宝鸡答谢宴',
       '928 临潼答谢宴',
     ],
-    filterLabels: ['全部', '照片册', '首页封面', '故事照片', '球球', '布丁'],
+    filterLabels: [
+      '全部',
+      '待分类',
+      '婚纱照',
+      '日常照',
+      '927 宝鸡答谢宴',
+      '928 临潼答谢宴',
+    ],
     filterIndex: 0,
     busy: false,
     error: '',
@@ -52,7 +59,12 @@ Page({
     cleanupId: '',
     cleanupInspection: null as ManagedPhotoFileInspection | null,
     photos: [] as ManagedPhoto[],
-    slots: ['照片册', '首页封面', '故事照片', '球球', '布丁'],
+    placementLabels: [
+      { key: 'cover', label: '首页封面' },
+      { key: 'story', label: '我们的这一页' },
+      { key: 'qiuqiu', label: '球球' },
+      { key: 'buding', label: '布丁' },
+    ],
   },
   session: null as MediaUploadSession | null,
   alive: true,
@@ -109,7 +121,14 @@ Page({
     const index = Number(e.detail.value);
     this.setData({
       filterIndex: index,
-      filter: ['all', 'album', 'cover', 'story', 'qiuqiu', 'buding'][index],
+      filter: [
+        'all',
+        'pending',
+        'wedding',
+        'daily',
+        'baoji_0927',
+        'lintong_0928',
+      ][index],
       expandedId: '',
     });
   },
@@ -253,7 +272,7 @@ Page({
             caption: '',
             category: 'pending',
             visibility: 'public',
-            slot: 'album',
+            placements: [],
             ratio: 'portrait',
             placeholder: false,
           },
@@ -284,25 +303,6 @@ Page({
       return false;
     }
   },
-  duplicate(e: WechatMiniprogram.TouchEvent) {
-    if (this.data.busy || this.data.photos.length >= MEDIA_LIMIT) return;
-    const photo = this.data.photos[Number(e.currentTarget.dataset.index)];
-    this.setData({
-      photos: [
-        ...this.data.photos,
-        {
-          ...photo,
-          id: 'photo-' + Date.now(),
-          slot: 'album',
-          ...(photo.type !== 'video' && !photo.category
-            ? { category: 'pending' as const }
-            : {}),
-        },
-      ],
-      message: '已复用这张照片，可为新条目选择其他用途，不会重复上传。',
-    });
-    this.markDirty();
-  },
   caption(e: WechatMiniprogram.Input) {
     const photos = this.data.photos.slice();
     photos[Number(e.currentTarget.dataset.index)].caption = e.detail.value;
@@ -313,7 +313,7 @@ Page({
     const photos = this.data.photos.slice();
     const index = Number(e.currentTarget.dataset.index);
     const photo = photos[index];
-    if (!photo || photo.type === 'video' || photo.slot !== 'album') return;
+    if (!photo || photo.type === 'video') return;
     photo.category = [
       'pending',
       'wedding',
@@ -321,6 +321,14 @@ Page({
       'baoji_0927',
       'lintong_0928',
     ][Number(e.detail.value)] as ManagedPhoto['category'];
+    if (photo.category !== 'daily' && photo.placements)
+      photo.placements = photo.placements.filter(
+        (placement) => placement !== 'qiuqiu' && placement !== 'buding',
+      );
+    if (photo.category !== 'daily') {
+      photo.qiuqiuSelected = false;
+      photo.budingSelected = false;
+    }
     this.setData({ photos });
     this.markDirty();
   },
@@ -334,24 +342,41 @@ Page({
     this.setData({ photos });
     this.markDirty();
   },
-  slot(e: WechatMiniprogram.PickerChange) {
-    const photos = this.data.photos.slice();
+  placement(e: WechatMiniprogram.SwitchChange) {
+    const photos = this.data.photos.map((photo) => ({
+      ...photo,
+      placements: [...(photo.placements || [])],
+    }));
     const index = Number(e.currentTarget.dataset.index);
-    const slot = ['album', 'cover', 'story', 'qiuqiu', 'buding'][
-      Number(e.detail.value)
-    ];
-    if (photos[index].type === 'video' && slot !== 'album') return;
-    if (slot === 'cover')
-      photos.forEach((p, i) => {
-        if (i !== index && p.slot === 'cover') {
-          p.slot = 'album';
-          if (p.type !== 'video' && !p.category) p.category = 'pending';
-        }
+    const placement = String(e.currentTarget.dataset.placement);
+    if (
+      !photos[index] ||
+      photos[index].type === 'video' ||
+      !['cover', 'story', 'qiuqiu', 'buding'].includes(placement)
+    )
+      return;
+    if (placement === 'cover' && e.detail.value)
+      photos.forEach((photo) => {
+        photo.placements = photo.placements?.filter(
+          (value) => value !== 'cover',
+        );
+        photo.coverSelected = false;
       });
-    photos[index].slot = slot;
-    if (slot !== 'album') delete photos[index].category;
-    else if (!photos[index].category && photos[index].type !== 'video')
-      photos[index].category = 'pending';
+    const selected = photos[index];
+    selected.placements = e.detail.value
+      ? [
+          ...new Set([
+            ...(selected.placements || []),
+            placement as NonNullable<ManagedPhoto['placements']>[number],
+          ]),
+        ]
+      : selected.placements?.filter((value) => value !== placement);
+    if (placement === 'cover') selected.coverSelected = e.detail.value;
+    if (placement === 'story') selected.storySelected = e.detail.value;
+    if (placement === 'qiuqiu') selected.qiuqiuSelected = e.detail.value;
+    if (placement === 'buding') selected.budingSelected = e.detail.value;
+    if (e.detail.value && (placement === 'qiuqiu' || placement === 'buding'))
+      selected.category = 'daily';
     this.setData({ photos });
     this.markDirty();
   },
@@ -544,17 +569,6 @@ Page({
     await this.persist(false);
   },
   async publish() {
-    if (
-      this.data.photos.some(
-        (photo) =>
-          photo.slot === 'album' &&
-          photo.type !== 'video' &&
-          photo.category === 'pending',
-      )
-    ) {
-      this.setData({ error: '请先为新增照片选择分类，再更新展示。' });
-      return;
-    }
     const result = await wx.showModal({
       title: '更新亲友看到的照片？',
       content: '当前草稿将替换已展示的照片安排。',

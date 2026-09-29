@@ -1,4 +1,10 @@
 const { handleImageUpload, ImageUploadError } = require('./image-upload');
+const {
+  MediaLibraryError,
+  normalizeLibrary,
+  validateLibrary,
+  projectLegacyLibrary,
+} = require('./media-library');
 const { createHash, randomUUID } = require('node:crypto');
 class PhotoInputError extends Error {}
 const categories = [
@@ -172,6 +178,10 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
       ![
         'getAccess',
         'getPhotos',
+        'getMediaLibrary',
+        'getMediaLibraryDraft',
+        'saveMediaLibraryDraft',
+        'publishMediaLibrary',
         'getPhotoDraft',
         'savePhotoDraft',
         'publishPhotos',
@@ -191,15 +201,46 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
       if (action === 'getAccess') return { ok: true, data: { isAdmin } };
       if (action === 'getPhotos') {
         const published = await get('published');
+        const privateOriginals = new Set(
+          normalizeLibrary(published?.photos)
+            .filter((photo) => photo.visibility === 'private')
+            .map((photo) => photo.original),
+        );
         return {
           ok: true,
           data: published
             ? {
                 photos: Array.isArray(published.photos)
-                  ? published.photos.filter(
-                      (photo) => photo?.visibility !== 'private',
-                    )
+                  ? (published.schemaVersion === 2
+                      ? projectLegacyLibrary(published.photos)
+                      : published.photos
+                    ).filter((photo) => {
+                      const original =
+                        typeof photo === 'string'
+                          ? photo
+                          : photo?.original ||
+                            photo?.url ||
+                            photo?.imageUrl ||
+                            photo?.thumbnail;
+                      return (
+                        photo?.visibility !== 'private' &&
+                        !privateOriginals.has(original)
+                      );
+                    })
                   : published.photos,
+              }
+            : null,
+        };
+      }
+      if (action === 'getMediaLibrary') {
+        const published = await get('published');
+        return {
+          ok: true,
+          data: published
+            ? {
+                photos: normalizeLibrary(published.photos).filter(
+                  (photo) => photo.visibility !== 'private',
+                ),
               }
             : null,
         };
@@ -221,7 +262,24 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
       }
       if (action === 'getPhotoDraft') {
         const draft = (await get('draft')) || (await get('published'));
-        return { ok: true, data: draft ? { photos: draft.photos } : null };
+        return {
+          ok: true,
+          data: draft
+            ? {
+                photos:
+                  draft.schemaVersion === 2
+                    ? projectLegacyLibrary(draft.photos)
+                    : draft.photos,
+              }
+            : null,
+        };
+      }
+      if (action === 'getMediaLibraryDraft') {
+        const draft = (await get('draft')) || (await get('published'));
+        return {
+          ok: true,
+          data: draft ? { photos: normalizeLibrary(draft.photos) } : null,
+        };
       }
       if (
         action === 'inspectManagedPhotoFile' ||
@@ -341,6 +399,38 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
         get('draft'),
         get('published'),
       ]);
+      if (
+        action === 'saveMediaLibraryDraft' ||
+        action === 'publishMediaLibrary'
+      ) {
+        const photos = validateLibrary(
+          event.payload?.photos,
+          published?.photos || [],
+          action === 'publishMediaLibrary',
+        );
+        await collection.doc('draft').set({
+          data: {
+            schemaVersion: 2,
+            photos,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+        if (action === 'publishMediaLibrary')
+          await collection.doc('published').set({
+            data: {
+              schemaVersion: 2,
+              photos: photos.filter((photo) => photo.visibility !== 'private'),
+              updatedAt: new Date().toISOString(),
+            },
+          });
+        return { ok: true, data: { photos } };
+      }
+      if (draft?.schemaVersion === 2 || published?.schemaVersion === 2)
+        return {
+          ok: false,
+          code: 'UPGRADE_REQUIRED',
+          message: '照片库已更新，请升级小程序后再管理照片。',
+        };
       const photos = validatePhotos(event.payload?.photos, [
         ...(published?.photos || []),
         ...(draft?.photos || []),
@@ -373,7 +463,9 @@ function createPhotoHandler({ cloud, db, getAdmins, storage }) {
         ok: false,
         code: 'PHOTO_ERROR',
         message:
-          error instanceof PhotoInputError || error instanceof ImageUploadError
+          error instanceof PhotoInputError ||
+          error instanceof MediaLibraryError ||
+          error instanceof ImageUploadError
             ? error.message
             : '照片操作失败，请检查云函数和 photo_content 集合配置后重试',
       };

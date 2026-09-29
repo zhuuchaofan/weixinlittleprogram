@@ -1,15 +1,20 @@
 <view class="page gallery-page">
-  <view wx:if="{{view !== 'overview'}}" class="overview-back"><page-back-link label="返回照片与视频" bind:back="backToOverview" /></view>
-  <view class="kicker">{{copy.text01}}</view>
-  <view class="title">{{copy.text02}}</view>
-  <view class="lead">{{appConfig.galleryIntro}}</view>
+  <view wx:if="{{view === 'overview'}}" class="gallery-intro"><view class="kicker">{{copy.text01}}</view><view class="title">我们的照片与影像</view><view class="lead">{{appConfig.galleryIntro}}</view></view>
+  <view wx:else class="overview-back"><page-back-link label="返回目录" bind:back="backToOverview" /></view>
   <view wx:if="{{!photoContentReady}}" class="photo-content-pending" aria-label="照片正在准备"></view>
   <block wx:else>
     <view wx:if="{{contentError}}" class="empty">照片暂时无法读取<button class="secondary" bindtap="retry">重新读取</button></view>
-    <view wx:if="{{!contentError && view === 'overview'}}" class="media-overview"><view class="overview-caption"><text>翻阅目录</text><text>01 — 02</text></view><view class="overview-card overview-photos" role="button" hover-class="overview-card-pressed" data-view="photos" bindtap="openSection" aria-label="查看照片，{{images.length}}张"><view class="overview-card-copy"><text class="overview-index">01 / PHOTOS</text><text class="overview-title serif">照片</text><text class="overview-subtitle">婚纱照 · 日常照 · 两场答谢宴</text></view><view class="overview-card-side"><text class="overview-count serif">{{images.length}}</text><text class="overview-unit">张珍藏</text><text class="overview-arrow">↗</text></view></view><view class="overview-card overview-videos" role="button" hover-class="overview-card-pressed" data-view="videos" bindtap="openSection" aria-label="查看视频，{{videos.length}}段"><view class="overview-card-copy"><text class="overview-index">02 / FILMS</text><text class="overview-title serif">视频</text><text class="overview-subtitle">让那些瞬间，再动起来</text></view><view class="overview-card-side"><text class="overview-count serif">{{videos.length}}</text><text class="overview-unit">段影像</text><text class="overview-arrow">↗</text></view></view></view>
+    <view wx:if="{{!contentError && view === 'overview'}}" class="media-overview">
+      <view class="directory-grid">
+        <view wx:for="{{directoryCards}}" wx:key="key" class="directory-card" role="button" hover-class="directory-card-pressed" data-view="{{item.view}}" data-category="{{item.category}}" bindtap="openSection" aria-label="查看{{item.label}}，{{item.count}}{{item.unit}}">
+          <text class="directory-index">{{item.indexLabel}}</text>
+          <text class="directory-title serif">{{item.label}}</text>
+          <view class="directory-bottom"><text>{{item.count}} {{item.unit}}</text><text class="directory-arrow">↗</text></view>
+        </view>
+      </view>
+    </view>
     <block wx:if="{{!contentError && view !== 'overview'}}">
-      <view wx:if="{{view === 'photos'}}" class="category-tabs"><button wx:for="{{categories}}" wx:key="key" class="tab {{index === 0 ? 'all-category' : ''}} {{category === item.key ? 'selected' : ''}}" data-category="{{item.key}}" bindtap="selectCategory" aria-label="查看{{item.label}}">{{item.label}}</button></view>
-      <view class="gallery-heading"><text class="gallery-section-title serif">{{view === 'videos' ? '视频' : category === 'all' ? '全部照片' : category === 'wedding' ? '婚纱照' : category === 'daily' ? '日常照' : category === 'baoji_0927' ? '927 宝鸡答谢宴' : '928 临潼答谢宴'}}</text><text class="gallery-count">{{total}} {{view === 'videos' ? '段' : '张'}}</text></view><view class="small muted gallery-note">{{view === 'videos' ? '轻触视频播放。' : copy.text09}}</view>
+      <view class="gallery-heading"><text class="gallery-section-title serif">{{sectionTitle}}</text><text class="gallery-count">{{total}} {{view === 'videos' ? '段' : '张'}}</text></view><view class="small muted gallery-note">{{view === 'videos' ? '轻触视频播放。' : copy.text09}}</view>
       <view wx:if="{{!total}}" class="empty">这里还没有{{view === 'videos' ? '视频' : '照片'}}</view>
       <view wx:else class="photo-grid"><view wx:for="{{columns}}" wx:key="id" wx:for-item="column" class="column"><view wx:for="{{column.photos}}" wx:key="id" wx:for-item="photo" class="tile"><media-video wx:if="{{photo.type === 'video'}}" src="{{photo.original}}" cover="{{photo.coverUrl || photo.thumbnail}}" caption="{{photo.caption}}" ratio="{{photo.ratio}}" /><photo-frame wx:else compact="{{true}}" src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="{{photo.ratio}}" data-id="{{photo.id}}" bind:open="preview" /><view class="photo-caption">{{photo.caption}}<text wx:if="{{photo.placeholder}}"> {{copy.text08}}</text></view></view></view></view>
     </block>

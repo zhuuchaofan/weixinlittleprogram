@@ -1,7 +1,8 @@
 import { getReduceMotion } from '../../services/motion-preference';
 import type { EventProgram, Photo } from '../../models';
 import {
-  getPublishedPhotos,
+  getPublishedMediaLibrary,
+  initialMediaLibrary,
   photoArrangementSignature,
 } from '../../services/photos';
 import { uiCopy } from '../../config/ui-copy';
@@ -23,17 +24,18 @@ import { eventProgramService } from '../../services/event-program';
 
 let homeRefreshVersion = 0;
 let programRefreshVersion = 0;
+type CatPhoto = Photo & { catLabel?: string };
 
 function programSignature(program: EventProgram): string {
   return JSON.stringify(program);
 }
 
 function createCatColumns(
-  photos: Photo[],
-): Array<{ id: string; photos: Photo[] }> {
+  photos: CatPhoto[],
+): Array<{ id: string; photos: CatPhoto[] }> {
   const columns = [
-    { id: 'cat-column-0', photos: [] as Photo[] },
-    { id: 'cat-column-1', photos: [] as Photo[] },
+    { id: 'cat-column-0', photos: [] as CatPhoto[] },
+    { id: 'cat-column-1', photos: [] as CatPhoto[] },
   ];
   photos.forEach((photo, index) =>
     columns[index % columns.length].photos.push(photo),
@@ -41,20 +43,30 @@ function createCatColumns(
   return columns;
 }
 
-function homePhotoState(photos: Array<Photo & { slot?: string }> | null) {
-  if (!photos) return { cover: coverPhoto, cats: catPhotos };
+function homePhotoState(photos: Photo[] | null) {
+  const items = photos || initialMediaLibrary();
   return {
-    cover: photos.find((photo) => photo.slot === 'cover') || {
+    cover: items.find((photo) => photo.placements?.includes('cover')) || {
       ...coverPhoto,
       thumbnail: '',
       original: '',
       placeholder: true,
     },
     cats: catPhotos.flatMap<Photo>((cat) => {
-      const published = photos.filter((photo) => photo.slot === cat.id);
+      const published = items.filter((photo) =>
+        photo.placements?.includes(cat.id as 'qiuqiu' | 'buding'),
+      );
       return published.length
-        ? published
-        : [{ ...cat, thumbnail: '', original: '', placeholder: true }];
+        ? published.map((photo) => ({ ...photo, catLabel: cat.id }))
+        : [
+            {
+              ...cat,
+              catLabel: cat.id,
+              thumbnail: '',
+              original: '',
+              placeholder: true,
+            },
+          ];
     }),
   };
 }
@@ -64,7 +76,7 @@ Page({
     copy: uiCopy.home,
     appConfig,
     coverPhoto,
-    catPhotos: [] as Photo[],
+    catPhotos: [] as CatPhoto[],
     catColumns: createCatColumns([]),
     navigation: navigation.filter(
       (item) =>
@@ -104,7 +116,7 @@ Page({
       this.setData({ reduceMotion, eventStatus, collectionClosed });
 
     const refreshVersion = ++homeRefreshVersion;
-    const result = await getPublishedPhotos();
+    const result = await getPublishedMediaLibrary();
     if (refreshVersion !== homeRefreshVersion) return;
     if (result.state === 'unavailable' && this.data.photoContentReady) return;
     const state = homePhotoState(

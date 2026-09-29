@@ -1,5 +1,6 @@
 export interface Photo {
   type?: 'image' | 'video';
+  placements?: Array<'cover' | 'story' | 'qiuqiu' | 'buding'>;
   category?: 'pending' | 'wedding' | 'daily' | 'baoji_0927' | 'lintong_0928';
   visibility?: 'public' | 'private';
   url?: string;

@@ -64,11 +64,12 @@
       <view wx:for="{{catColumns}}" wx:key="id" wx:for-item="column" class="cat-column">
         <view wx:for="{{column.photos}}" wx:key="id" wx:for-item="photo" class="cat-photo">
           <photo-frame src="{{photo.thumbnail}}" caption="{{photo.caption}}" placeholder="{{photo.placeholder}}" ratio="{{photo.ratio}}" compact="{{true}}" data-id="{{photo.id}}" bind:open="previewCat" />
-          <view class="cat-caption">{{photo.slot === 'qiuqiu' || photo.id === 'qiuqiu' ? appConfig.cats[0] : appConfig.cats[1]}}</view>
+          <view class="cat-caption">{{photo.catLabel === 'qiuqiu' ? appConfig.cats[0] : appConfig.cats[1]}}</view>
           <view wx:if="{{photo.caption && photo.caption !== appConfig.cats[0] && photo.caption !== appConfig.cats[1]}}" class="cat-description">{{photo.caption}}</view>
         </view>
       </view>
     </view>
+    <navigator class="cat-album-link" url="/pages/gallery/index?category=daily">查看更多日常照 ↗</navigator>
   </view>
   <page-footer music-enabled="{{false}}" />
 </view>
