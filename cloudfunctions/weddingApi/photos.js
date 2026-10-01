@@ -412,19 +412,15 @@ function createPhotoHandler({ cloud, db, getAdmins, getOpenId, storage }) {
           action === 'publishMediaLibrary',
         );
         await collection.doc('draft').set({
-          data: {
-            schemaVersion: 2,
-            photos,
-            updatedAt: new Date().toISOString(),
-          },
+          schemaVersion: 2,
+          photos,
+          updatedAt: new Date().toISOString(),
         });
         if (action === 'publishMediaLibrary')
           await collection.doc('published').set({
-            data: {
-              schemaVersion: 2,
-              photos: photos.filter((photo) => photo.visibility !== 'private'),
-              updatedAt: new Date().toISOString(),
-            },
+            schemaVersion: 2,
+            photos: photos.filter((photo) => photo.visibility !== 'private'),
+            updatedAt: new Date().toISOString(),
           });
         return { ok: true, data: { photos } };
       }
@@ -452,16 +448,31 @@ function createPhotoHandler({ cloud, db, getAdmins, getOpenId, storage }) {
         throw new PhotoInputError('请先为新增照片选择分类再更新展示');
       await collection
         .doc('draft')
-        .set({ data: { photos, updatedAt: new Date().toISOString() } });
+        .set({ photos, updatedAt: new Date().toISOString() });
       if (action === 'publishPhotos')
         await collection.doc('published').set({
-          data: {
-            photos: photos.filter((p) => p.visibility !== 'private'),
-            updatedAt: new Date().toISOString(),
-          },
+          photos: photos.filter((p) => p.visibility !== 'private'),
+          updatedAt: new Date().toISOString(),
         });
       return { ok: true, data: { photos } };
     } catch (error) {
+      if (
+        !(error instanceof PhotoInputError) &&
+        !(error instanceof MediaLibraryError) &&
+        !(error instanceof ImageUploadError)
+      ) {
+        const detail = String(error?.message || error || 'unknown')
+          .replace(/(?:https?:\/\/|cloud:\/\/)[^\s"']+/gi, '[address]')
+          .replace(/\b[A-Za-z0-9+/_=-]{48,}\b/g, '[value]')
+          .slice(0, 300);
+        console.error('weddingApi photo operation failed', {
+          action,
+          transport: cloud?.config?.endPointMode || 'unknown',
+          name: String(error?.name || 'Error').slice(0, 80),
+          code: String(error?.code || error?.errCode || '').slice(0, 80),
+          detail,
+        });
+      }
       return {
         ok: false,
         code: 'PHOTO_ERROR',

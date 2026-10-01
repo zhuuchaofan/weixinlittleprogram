@@ -3,9 +3,14 @@ const { createHandler } = require('./core');
 const { createGuestbookHandler } = require('./guestbook');
 const { createPhotoHandler } = require('./photos');
 const { createEventProgramHandler } = require('./event-program');
-const { invocationFromContext } = require('./invocation');
+const {
+  invocationFromContext,
+  cloudConfigForInvocation,
+} = require('./invocation');
 
-const cloudByEnvironment = new Map();
+function createCloudForInvocation(envId) {
+  return cloudbase.init(cloudConfigForInvocation(envId));
+}
 
 function admins() {
   return (process.env.ADMIN_OPENIDS || '')
@@ -25,7 +30,7 @@ function createIdentityRepository(db, collectionName) {
       return result.data[0] || null;
     },
     async put(id, data) {
-      await collection.doc(id).set({ data });
+      await collection.doc(id).set(data);
     },
     async remove(id) {
       await collection.where({ _id: id }).remove();
@@ -49,11 +54,7 @@ exports.main = async (event, context) => {
   );
   if (!envId)
     return { ok: false, code: 'UNAVAILABLE', message: '云环境信息缺失' };
-  let cloud = cloudByEnvironment.get(envId);
-  if (!cloud) {
-    cloud = cloudbase.init({ env: envId });
-    cloudByEnvironment.set(envId, cloud);
-  }
+  const cloud = createCloudForInvocation(envId);
   const db = cloud.database();
   const getOpenId = () => openid;
   const rsvpCollection = db.collection('rsvps');
@@ -72,7 +73,7 @@ exports.main = async (event, context) => {
       return {
         responses: all.total,
         attending: arriving.total,
-        guests: guests.list[0]?.total || 0,
+        guests: guests.data[0]?.total || 0,
         declined: all.total - arriving.total,
       };
     },

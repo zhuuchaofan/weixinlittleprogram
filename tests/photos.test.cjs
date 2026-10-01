@@ -20,7 +20,7 @@ function fixture() {
       }),
     }),
     doc: (id) => ({
-      set: async ({ data }) => {
+      set: async (data) => {
         docs[id] = structuredClone(data);
       },
     }),
@@ -54,6 +54,41 @@ const photo = {
   original: 'cloud://env/a.jpg',
   ratio: 'landscape',
 };
+
+test('照片读取失败时仅在云端记录脱敏诊断，访客响应不泄露细节', async () => {
+  const secret = 's'.repeat(64);
+  const originalError = console.error;
+  const logged = [];
+  console.error = (...items) => logged.push(items);
+  try {
+    const handle = createPhotoHandler({
+      db: {
+        collection: () => ({
+          where: () => ({
+            limit: () => ({
+              get: async () => {
+                const error = new Error(
+                  `database failure cloud://env/private.jpg token=${secret}`,
+                );
+                error.code = 'DB_FAILURE';
+                throw error;
+              },
+            }),
+          }),
+        }),
+      },
+      getAdmins: () => [],
+      getOpenId: () => '',
+    });
+    const result = await handle({ action: 'getMediaLibrary' });
+    assert.equal(result.code, 'PHOTO_ERROR');
+    assert.doesNotMatch(JSON.stringify(result), /private|token|DB_FAILURE/);
+    assert.equal(logged[0][1].code, 'DB_FAILURE');
+    assert.doesNotMatch(JSON.stringify(logged), /private|ssssssss/);
+  } finally {
+    console.error = originalError;
+  }
+});
 test('照片写入、草稿与上传均验证真实管理员，伪造身份无效', async () => {
   const f = fixture();
   f.setIdentity('visitor');

@@ -18,6 +18,9 @@
 ## 部署 weddingApi
 
 1. 先在云开发控制台备份 `photo_content` 的 `draft` 与 `published` 原始文档，并保存当前 `weddingApi` 云函数版本以备回退。在微信开发者工具中右键 `cloudfunctions/weddingApi` →「上传并部署：云端安装依赖」，确认云端安装的是锁文件中的 `@cloudbase/js-sdk@3.10.1`。本地生产依赖审计为 0 项告警；云端依赖安装和 API 仍需在实际环境验证。
+   针对升级后的 `getMediaLibrary` / `INVALID_CREDENTIALS`，初始化明确指定 `endPointMode: 'CLOUD_API'`，数据库和存储沿用签名的 `/admin` 通道，避免 SDK 默认切换到 `/v1` HTTP 网关。每次调用读取当前运行时临时凭据，不将密钥写入代码、日志或返回值。已通过真实 SDK 的离线 HTTP 拦截测试，验证读取、发布、私密过滤、身份隔离、统计与上传签名；该测试不证明云端接受凭据。部署后用访客账号读取照片册，确认 `getMediaLibrary` 返回 `ok: true` 且旧照片出现，再检查管理员草稿和上传。若仍失败，以重新部署后的错误日志为准继续排查。
+   数据库参数同步适配 JS SDK：`doc.set(document)` 直接传文档，`doc.get().data` 与聚合结果 `data` 为数组。旧照片结构保持兼容，部署不迁移或删除现有文档。
+   `@cloudbase/signature-nodejs@2.0.0` 已列为直接生产依赖，确保云端不会因跳过可选依赖而缺少签名模块。若重新部署后照片读取仍失败，日志中的 `transport` 应为 `CLOUD_API`；没有该字段则尚未运行本次代码。
 2. 保留并配置 `ADMIN_OPENIDS`：管理员 OpenID 以英文逗号分隔；为空即拒绝全部管理员操作。
 3. 设置环境变量：
 
@@ -27,7 +30,7 @@ COLLECTION_CLOSES_AT=2026-09-28T16:00:00.000Z
 
 该时间等于中国时区 2026 年 9 月 29 日 00:00。截止后 `save` 和 `guestbookSave` 返回 `COLLECTION_CLOSED`；本人读取、本人删除和管理员汇总保持可用。
 
-4. 保持 `photo_content`、`rsvps`、`guest_messages` 和 `event_program` 的客户端读写规则，以及云存储现有权限。新版 JS SDK 的数据库与存储调用需在云开发平台检查 HTTP API 策略是否允许云函数访问；不要放宽访客权限。
+4. 保持 `photo_content`、`rsvps`、`guest_messages` 和 `event_program` 的客户端读写规则，以及云存储现有权限。当前事件云函数使用 `CLOUD_API` 通道，无需为本次修复开启 HTTP 网关或放宽访客权限。
 5. 用管理员与普通访客两个微信账号在真机检查：`getAccess` 结果、旧照片和私密过滤、草稿与发布、图片及视频 POST 上传、播放、文件引用删除保护、登记和祝福读取。开启合法域名校验；不要把 OpenID、上传签名或完整 File ID 发到截图和日志。
 6. 若出现数据库访问、上传签名或身份解析失败，停止提审，恢复备份的云函数版本。数据文档未由依赖升级迁移，不需为回退改写数据。
 

@@ -34,9 +34,9 @@ function fixture() {
       return {
         async get() {
           if (!docs[id]) throw new Error('not found');
-          return { data: docs[id] };
+          return { data: [docs[id]] };
         },
-        async set({ data }) {
+        async set(data) {
           docs[id] = structuredClone(data);
         },
       };

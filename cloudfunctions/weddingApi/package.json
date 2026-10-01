@@ -4,6 +4,7 @@
   "private": true,
   "main": "index.js",
   "dependencies": {
-    "@cloudbase/js-sdk": "3.10.1"
+    "@cloudbase/js-sdk": "3.10.1",
+    "@cloudbase/signature-nodejs": "2.0.0"
   }
 }

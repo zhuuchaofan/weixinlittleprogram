@@ -73,7 +73,7 @@ function createEventProgramHandler({ db, getAdmins, getOpenId }) {
           .doc('published')
           .get()
           .catch(() => null);
-        return { ok: true, data: result?.data?.program || null };
+        return { ok: true, data: result?.data?.[0]?.program || null };
       }
       if (!getAdmins().includes(openid))
         return {
@@ -86,16 +86,16 @@ function createEventProgramHandler({ db, getAdmins, getOpenId }) {
           .doc('draft')
           .get()
           .catch(() => null);
-        return { ok: true, data: result?.data?.program || null };
+        return { ok: true, data: result?.data?.[0]?.program || null };
       }
       const program = validateEventProgram(event?.payload?.program);
       await collection
         .doc('draft')
-        .set({ data: { program, updatedAt: new Date().toISOString() } });
+        .set({ program, updatedAt: new Date().toISOString() });
       if (action === 'publishEventProgram')
         await collection
           .doc('published')
-          .set({ data: { program, updatedAt: new Date().toISOString() } });
+          .set({ program, updatedAt: new Date().toISOString() });
       return { ok: true, data: null };
     } catch (error) {
       return {
