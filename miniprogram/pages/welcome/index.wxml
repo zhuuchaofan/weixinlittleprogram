@@ -13,7 +13,7 @@
     <view class="section-title form-title">{{mode === 'create' ? '创建小家' : '加入小家'}}</view>
     <view class="field">
       <text class="field-label">我的称呼</text>
-      <input value="{{name}}" maxlength="12" placeholder="例如：超凡" bindinput="inputName" />
+      <input value="{{name}}" maxlength="12" placeholder="对方会看到这个称呼，例如：小猪" bindinput="inputName" />
     </view>
     <view wx:if="{{mode === 'join'}}" class="field">
       <text class="field-label">邀请码</text>

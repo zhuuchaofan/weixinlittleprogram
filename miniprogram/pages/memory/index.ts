@@ -15,13 +15,16 @@ Page({
   onShow() {
     void this.load();
   },
-  async load() {
+  onPullDownRefresh() {
+    void this.load(true).finally(() => wx.stopPullDownRefresh());
+  },
+  async load(force = false) {
     this.setData({ loading: true, error: '' });
     try {
-      const household = await requireHousehold();
+      const household = await requireHousehold(force === true);
       if (household) {
         this.setData({ household });
-        void this.loadDates();
+        await this.loadDates();
       }
     } catch (error) {
       this.setData({ error: errorMessage(error) });

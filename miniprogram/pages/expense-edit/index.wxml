@@ -20,7 +20,7 @@
     </view>
     <view class="field">
       <text class="field-label">日期</text>
-      <picker mode="date" value="{{date}}" bindchange="pickDate"><view class="picker-value">{{date}}</view></picker>
+      <picker mode="date" value="{{date}}" end="{{today}}" bindchange="pickDate"><view class="picker-value">{{date}}</view></picker>
     </view>
     <view class="field">
       <text class="field-label">谁付的</text>
@@ -42,6 +42,7 @@
     <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
   </block>
   <view wx:if="{{isSettlement && error}}" class="notice error">{{error}}</view>
+  <view wx:if="{{recordedText}}" class="recorded small muted">{{recordedText}}</view>
   <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">{{isSettlement ? '删除并撤销结算' : '删除这笔账'}}</button>
   <view class="page-end"></view>
 </view>

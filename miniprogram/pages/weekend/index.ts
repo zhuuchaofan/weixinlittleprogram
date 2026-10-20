@@ -40,11 +40,14 @@ Page({
   onShow() {
     void this.load();
   },
-  async load() {
+  onPullDownRefresh() {
+    void this.load(true).finally(() => wx.stopPullDownRefresh());
+  },
+  async load(force = false) {
     const version = ++loadVersion;
     this.setData({ loading: true, error: '' });
     try {
-      const household = await requireHousehold();
+      const household = await requireHousehold(force === true);
       if (!household) return;
       const wishes = await wishService.list();
       if (version === loadVersion)

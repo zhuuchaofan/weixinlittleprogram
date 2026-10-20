@@ -66,10 +66,16 @@ function expense(payload) {
   };
 }
 
+const TODO_KINDS = ['shop', 'todo', 'chore'];
+
+function todoKind(value) {
+  return oneOf(value, TODO_KINDS, '请选择清单类型。');
+}
+
 function todo(payload) {
   return {
     text: text(payload?.text, { field: '内容', min: 1, max: 60 }),
-    kind: oneOf(payload.kind, ['shop', 'todo', 'chore'], '请选择清单类型。'),
+    kind: todoKind(payload.kind),
     who: oneOf(payload.who, ['a', 'b', 'both'], '请选择负责人。'),
     done: payload.done === true,
   };
@@ -107,6 +113,7 @@ module.exports = {
   DISH_TAGS,
   expense,
   todo,
+  todoKind,
   dish,
   wish,
   anniversary,

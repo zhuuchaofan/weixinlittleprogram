@@ -36,13 +36,14 @@
 
     <view class="section">
       <view class="section-head"><view class="section-title">回忆</view></view>
-      <view class="list">
+      <view wx:if="{{household.archive === 'wedding-2026'}}" class="list">
         <navigator class="list-row" url="/pages/archive/index" hover-class="list-row-active">
           <view class="row-main"><view class="row-title">答谢宴 · 登记与祝福</view><view class="row-sub">2026.09.28 亲友留下的话</view></view>
           <text class="chevron">›</text>
         </navigator>
       </view>
-      <view class="small muted later">回忆时间线，之后开放。</view>
+      <view wx:if="{{household.archive === 'wedding-2026'}}" class="small muted later">回忆时间线，之后开放。</view>
+      <view wx:else class="empty">回忆时间线，之后开放。</view>
     </view>
 
   </block>

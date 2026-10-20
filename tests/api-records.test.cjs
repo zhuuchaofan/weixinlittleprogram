@@ -70,6 +70,18 @@ function memoryRecords(prefix) {
       const d = docs.get(id);
       if (d && d.householdId === householdId) docs.delete(id);
     },
+    async removeWhere(householdId, where) {
+      let removed = 0;
+      for (const [id, d] of docs)
+        if (
+          d.householdId === householdId &&
+          Object.entries(where).every(([key, value]) => d[key] === value)
+        ) {
+          docs.delete(id);
+          removed++;
+        }
+      return removed;
+    },
   };
 }
 
@@ -458,4 +470,50 @@ test('导出包含吃啥、周末、纪念日', async () => {
     'yearly',
   ]);
   assert.equal(/"[AB]"/.test(JSON.stringify(parsed)), false);
+});
+
+test('清除已完成：只删本小家、本类型、已完成的条目', async () => {
+  const { call, todos } = await setup();
+  const milk = await call('A', 'todo.add', {
+    text: '牛奶',
+    kind: 'shop',
+    who: 'both',
+  });
+  const eggs = await call('A', 'todo.add', {
+    text: '鸡蛋',
+    kind: 'shop',
+    who: 'both',
+  });
+  await call('A', 'todo.add', { text: '面包', kind: 'shop', who: 'both' });
+  const trash = await call('B', 'todo.add', {
+    text: '倒垃圾',
+    kind: 'chore',
+    who: 'b',
+  });
+  const other = await call('X', 'todo.add', {
+    text: '别人家的',
+    kind: 'shop',
+    who: 'a',
+  });
+  for (const [who, item] of [
+    ['A', milk],
+    ['B', eggs],
+    ['B', trash],
+    ['X', other],
+  ])
+    await call(who, 'todo.update', { id: item.data.id, done: true });
+  assert.equal(
+    (await call('A', 'todo.clearDone', { kind: 'food' })).code,
+    'VALIDATION',
+  );
+  const result = await call('B', 'todo.clearDone', { kind: 'shop' });
+  assert.deepEqual(result.data, { removed: 2 });
+  assert.deepEqual(
+    (await call('A', 'todo.list')).data.map((t) => [t.text, t.done]),
+    [
+      ['面包', false],
+      ['倒垃圾', true],
+    ],
+  );
+  assert.equal(todos.docs.has(other.data.id), true, '其他小家的不受影响');
 });

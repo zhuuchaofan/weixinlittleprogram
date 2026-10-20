@@ -1,5 +1,9 @@
-import type { Expense, LedgerSummary } from '../../models';
-import { requireHousehold, memberNames } from '../../services/household';
+import type { Expense, Household, LedgerSummary } from '../../models';
+import {
+  byPartner,
+  memberNames,
+  requireHousehold,
+} from '../../services/household';
 import { listMonth, settleMonth } from '../../services/ledger';
 import { errorMessage } from '../../services/cloud';
 import { SETTLEMENT, SPLITS } from '../../config/options';
@@ -13,9 +17,11 @@ type Row = Expense & {
   payerName: string;
   splitText: string;
   isSettlement: boolean;
+  byText: string;
 };
 
 let loadVersion = 0;
+let household: Household | null = null;
 
 Page({
   data: {
@@ -33,11 +39,14 @@ Page({
   onShow() {
     void this.load();
   },
-  async load() {
+  onPullDownRefresh() {
+    void this.load(true).finally(() => wx.stopPullDownRefresh());
+  },
+  async load(force = false) {
     const version = ++loadVersion;
     this.setData({ loading: true, error: '' });
     try {
-      const household = await requireHousehold();
+      household = await requireHousehold(force === true);
       if (!household) return;
       const names = memberNames(household);
       const result = await listMonth(this.data.month);
@@ -75,6 +84,7 @@ Page({
         splitText:
           record.cat === SETTLEMENT ? '结算' : splitLabel(record.split),
         isSettlement: record.cat === SETTLEMENT,
+        byText: household ? byPartner(record.byRole, household, '记') : '',
       })),
     });
   },

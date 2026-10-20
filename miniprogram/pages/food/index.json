@@ -1,1 +1,1 @@
-{ "navigationBarTitleText": "吃啥" }
+{ "navigationBarTitleText": "吃啥", "enablePullDownRefresh": true }

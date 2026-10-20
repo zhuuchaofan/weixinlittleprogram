@@ -1,4 +1,4 @@
-import type { Todo, TodoInput } from '../models';
+import type { Todo, TodoInput, TodoKind } from '../models';
 import { callApi } from './cloud';
 
 const recent = new Map<string, Todo>();
@@ -22,6 +22,11 @@ export function updateTodo(
   fields: Partial<TodoInput> & { done?: boolean },
 ): Promise<Todo> {
   return callApi<Todo>('todo.update', { id, ...fields });
+}
+
+export async function clearDone(kind: TodoKind): Promise<number> {
+  const result = await callApi<{ removed: number }>('todo.clearDone', { kind });
+  return result.removed;
 }
 
 export async function removeTodo(id: string): Promise<void> {

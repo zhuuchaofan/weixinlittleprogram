@@ -14,3 +14,4 @@
 .amount { font-size: 34rpx; }
 .row-settlement .cat-badge { background: var(--ok-soft); color: var(--ok); }
 .row-settlement .row-title, .row-settlement .amount { color: var(--muted); }
+.by-partner { color: var(--accent); }

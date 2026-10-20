@@ -1,5 +1,5 @@
-import type { ExpenseInput, Payer, Split } from '../../models';
-import { getHousehold, memberNames } from '../../services/household';
+import type { ExpenseInput, Household, Payer, Split } from '../../models';
+import { byPartner, getHousehold, memberNames } from '../../services/household';
 import {
   addExpense,
   cachedExpense,
@@ -8,7 +8,7 @@ import {
 } from '../../services/ledger';
 import { errorMessage } from '../../services/cloud';
 import { CATEGORIES, SETTLEMENT, SPLITS } from '../../config/options';
-import { todayKey } from '../../utils/date';
+import { formatTimestamp, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 
@@ -24,14 +24,17 @@ Page({
     note: '',
     cat: CATEGORIES[0],
     date: todayKey(),
+    today: todayKey(),
+    recordedText: '',
     payer: 'a' as Payer,
     split: 'half' as Split,
     busy: false,
     error: '',
   },
   async onLoad(options: Record<string, string | undefined>) {
+    let household: Household | null = null;
     try {
-      const household = await getHousehold();
+      household = await getHousehold();
       if (!household) return;
       this.setData({ names: memberNames(household), payer: household.myRole });
     } catch (error) {
@@ -54,6 +57,10 @@ Page({
       date: record.date,
       payer: record.payer,
       split: record.split,
+      recordedText:
+        (household ? byPartner(record.byRole, household, '') || '我' : '') +
+        ' 记录于 ' +
+        formatTimestamp(record.ts),
     });
   },
   inputAmount(event: WechatMiniprogram.Input) {

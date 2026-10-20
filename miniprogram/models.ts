@@ -13,6 +13,8 @@ export interface Household {
   /** 只有 1 人时有值；满 2 人后为空字符串。 */
   inviteCode: string;
   myRole: MemberRole;
+  /** 有答谢宴归档权限时为 'wedding-2026'，否则为空字符串。 */
+  archive: string;
   members: HouseholdMember[];
 }
 

@@ -7,6 +7,7 @@ const CODE_PATTERN = /^[A-HJ-NP-Z2-9]{6}$/;
 const MAX_MEMBERS = 2;
 const DEFAULT_CITY = '东京';
 const DEFAULT_CURRENCY = 'CNY';
+const { ARCHIVE_ID } = require('./archive-id');
 
 function makeInviteCode() {
   let code = '';
@@ -43,6 +44,8 @@ function publicHousehold(household, openid) {
     inviteCode:
       household.members.length < MAX_MEMBERS ? household.inviteCode : '',
     myRole: me ? me.role : '',
+    // 只有主人在控制台标记过的小家才有答谢宴归档入口。
+    archive: household.archive === ARCHIVE_ID ? ARCHIVE_ID : '',
     members: household.members.map((member) => ({
       role: member.role,
       name: member.name,

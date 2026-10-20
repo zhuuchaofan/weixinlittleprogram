@@ -1,4 +1,7 @@
 /** 答谢宴登记与祝福的只读归档。只返回展示字段，不返回 openid。 */
+const { ApiError } = require('./errors');
+const { ARCHIVE_ID } = require('./archive-id');
+
 function publicRsvp(record) {
   return {
     guestName: record.guestName,
@@ -25,7 +28,9 @@ function byTime(a, b) {
 function createArchiveHandler({ repository, requireMembership }) {
   return {
     async 'archive.get'(openid) {
-      await requireMembership(openid);
+      const household = await requireMembership(openid);
+      if (household.archive !== ARCHIVE_ID)
+        throw new ApiError('FORBIDDEN', '这个小家没有可查看的归档。');
       const [rsvps, messages] = await Promise.all([
         repository.listRsvps(),
         repository.listMessages(),

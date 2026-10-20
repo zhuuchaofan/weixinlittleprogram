@@ -6,6 +6,4 @@
 .date-passed .date-days { color: var(--muted); }
 .later { margin: 16rpx 4rpx 0; }
 .top-bar { display: flex; align-items: center; justify-content: space-between; margin: -8rpx 0 16rpx; }
-.icon-button { width: 88rpx; height: 88rpx; margin-right: -12rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-.icon-button-active { background: var(--sunken); }
-.icon { width: 44rpx; height: 44rpx; }
+.top-bar .icon-button { margin-right: -12rpx; }

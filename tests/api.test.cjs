@@ -152,8 +152,8 @@ test('A 修改城市和称呼后 B 能读到；非成员不能修改', async () 
   assert.equal(seenByB.data.members[1].name, '佳益');
 });
 
-test('归档：仅成员可读，去掉 openid 并汇总人数', async () => {
-  const { call } = setup({
+test('归档：仅标记过的小家可读，去掉 openid 并汇总人数', async () => {
+  const { call, households } = setup({
     listRsvps: async () => [
       {
         _id: 'x',
@@ -185,7 +185,24 @@ test('归档：仅成员可读，去掉 openid 并汇总人数', async () => {
     ],
   });
   assert.equal((await call('A', 'archive.get')).code, 'NO_HOUSEHOLD');
-  await call('A', 'household.create', { name: '超凡' });
+  const mine = await call('A', 'household.create', { name: '超凡' });
+  const friends = await call('F', 'household.create', { name: '朋友' });
+  assert.equal(mine.data.archive, '');
+  assert.equal(
+    (await call('A', 'archive.get')).code,
+    'FORBIDDEN',
+    '未标记的小家不能读取',
+  );
+  // 主人在控制台给自己的小家加上 archive 字段
+  await households.update(mine.data.id, { archive: 'wedding-2026' });
+  assert.equal((await call('A', 'household.get')).data.archive, 'wedding-2026');
+  assert.equal((await call('F', 'household.get')).data.archive, '');
+  assert.equal(
+    (await call('F', 'archive.get')).code,
+    'FORBIDDEN',
+    '朋友的小家看不到',
+  );
+  assert.equal(friends.ok, true);
   const result = await call('A', 'archive.get');
   assert.equal(result.ok, true);
   assert.deepEqual(result.data.summary, {

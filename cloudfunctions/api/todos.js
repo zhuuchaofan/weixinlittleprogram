@@ -3,7 +3,7 @@ const { publicRecord, requireRecord } = require('./records');
 
 const FIELDS = ['text', 'kind', 'who', 'done'];
 
-/** repository: listAll(householdId)、get、insert、update、remove */
+/** repository: listAll(householdId)、get、insert、update、remove、removeWhere */
 function createTodoHandler({ repository, requireMembership, now }) {
   const view = (record, household) => publicRecord(record, household, FIELDS);
   return {
@@ -32,6 +32,16 @@ function createTodoHandler({ repository, requireMembership, now }) {
       const fields = validate.todo({ ...existing, ...payload });
       await repository.update(household._id, id, fields);
       return view({ ...existing, ...fields }, household);
+    },
+    /** 清除某一类清单里所有已完成的条目，返回删除条数。 */
+    async 'todo.clearDone'(openid, payload) {
+      const household = await requireMembership(openid);
+      const kind = validate.todoKind(payload.kind);
+      const removed = await repository.removeWhere(household._id, {
+        kind,
+        done: true,
+      });
+      return { removed };
     },
     async 'todo.remove'(openid, payload) {
       const household = await requireMembership(openid);

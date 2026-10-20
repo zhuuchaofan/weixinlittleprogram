@@ -91,6 +91,10 @@ function createRecordRepository(db, collectionName) {
     async remove(householdId, id) {
       await collection.where({ _id: id, householdId }).remove();
     },
+    async removeWhere(householdId, where) {
+      const result = await collection.where({ ...where, householdId }).remove();
+      return result.deleted || 0;
+    },
   };
 }
 

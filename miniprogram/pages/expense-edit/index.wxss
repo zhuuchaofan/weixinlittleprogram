@@ -4,3 +4,4 @@
 .radio { width: 40rpx; height: 40rpx; flex-shrink: 0; border-radius: 50%; border: 2rpx solid var(--line); }
 .radio-on { border: 12rpx solid var(--accent); }
 .settle-text { margin-top: 12rpx; }
+.recorded { text-align: center; margin-top: 32rpx; }

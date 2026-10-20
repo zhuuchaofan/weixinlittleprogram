@@ -10,3 +10,5 @@
 .todo-main { display: flex; flex-direction: column; justify-content: center; padding: 16rpx 0; }
 .todo-done { opacity: 0.75; }
 .struck { text-decoration: line-through; color: var(--muted); }
+.top-row { display: flex; align-items: center; gap: 12rpx; }
+.top-row .segmented { flex: 1; min-width: 0; }

@@ -9,6 +9,11 @@ export function formatDateTime(value: string): string {
   return `${date.getUTCFullYear()}年${date.getUTCMonth() + 1}月${date.getUTCDate()}日 ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
+/** 毫秒时间戳 → 2026年10月20日 22:30（UTC+8）。 */
+export function formatTimestamp(ts: number): string {
+  return formatDateTime(new Date(ts).toISOString());
+}
+
 /** 今天，YYYY-MM-DD。 */
 export function todayKey(now: number = Date.now()): string {
   return new Date(now + OFFSET_MS).toISOString().slice(0, 10);
