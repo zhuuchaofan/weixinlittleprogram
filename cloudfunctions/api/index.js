@@ -85,6 +85,17 @@ function createRecordRepository(db, collectionName) {
       const result = await collection.add(doc);
       return result.id;
     },
+    async insertWithId(id, doc) {
+      try {
+        await collection.add({ ...doc, _id: id });
+        return true;
+      } catch (error) {
+        // 主键冲突的错误码随 SDK 版本变化，以「该 _id 已存在」为准。
+        const existing = await collection.where({ _id: id }).limit(1).get();
+        if (existing.data.length > 0) return false;
+        throw error;
+      }
+    },
     async update(householdId, id, fields) {
       await collection.where({ _id: id, householdId }).update(fields);
     },

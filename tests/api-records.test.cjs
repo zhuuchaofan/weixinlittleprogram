@@ -62,6 +62,11 @@ function memoryRecords(prefix) {
       docs.set(id, { ...doc, _id: id });
       return id;
     },
+    async insertWithId(id, doc) {
+      if (docs.has(id)) return false;
+      docs.set(id, { ...doc, _id: id });
+      return true;
+    },
     async update(householdId, id, fields) {
       const d = docs.get(id);
       if (d && d.householdId === householdId) docs.set(id, { ...d, ...fields });
@@ -217,6 +222,46 @@ test('两人各记 5 笔：B 能读到 A 的记录，月度汇总与结算与手
     sept.data.records.find((r) => r.cat === '结算').date,
     '2026-09-30',
   );
+});
+
+test('结算并发：两人同时结算只产生一条结算记录，撤销后可重新结算', async () => {
+  const { call, expenses } = await setup();
+  await call('A', 'expense.add', expense({ amount: 3000 }));
+  await call('B', 'expense.add', expense({ amount: 1000, payer: 'b' }));
+  const settlements = () =>
+    [...expenses.docs.values()].filter((d) => d.cat === '结算');
+
+  const [first, second] = await Promise.all([
+    call('A', 'expense.settle', { month: '2026-10' }),
+    call('B', 'expense.settle', { month: '2026-10' }),
+  ]);
+  assert.deepEqual(
+    [first.ok, second.ok, second.code].sort(),
+    [false, true, 'ALREADY_SETTLED'].sort(),
+  );
+  assert.equal(settlements().length, 1);
+  const list = await call('A', 'expense.list', { month: '2026-10' });
+  assert.equal(list.data.summary.settled, true);
+
+  // 撤销后两人再同时结算，仍只有一条，_id 与第一次相同
+  const id = settlements()[0]._id;
+  assert.match(id, /^settle_2026-10_[0-9a-f]{24}$/);
+  await call('B', 'expense.remove', { id });
+  const again = await Promise.all([
+    call('B', 'expense.settle', { month: '2026-10' }),
+    call('A', 'expense.settle', { month: '2026-10' }),
+  ]);
+  assert.equal(again.filter((r) => r.ok).length, 1);
+  assert.equal(settlements().length, 1);
+  assert.equal(settlements()[0]._id, id);
+
+  // 结算后又记一笔，账目变了，可以再结算一次
+  await call('A', 'expense.add', expense({ amount: 500 }));
+  assert.equal(
+    (await call('A', 'expense.settle', { month: '2026-10' })).ok,
+    true,
+  );
+  assert.equal(settlements().length, 2);
 });
 
 test('编辑与删除：只能操作本小家的记录', async () => {

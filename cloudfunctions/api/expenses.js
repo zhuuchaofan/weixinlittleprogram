@@ -1,6 +1,11 @@
 const { ApiError } = require('./errors');
 const validate = require('./validate');
-const { SETTLEMENT, summarize, settlementRecord } = require('./ledger');
+const {
+  SETTLEMENT,
+  summarize,
+  settlementRecord,
+  settlementId,
+} = require('./ledger');
 const { todayKey, lastDayOfMonth } = require('./dates');
 const { publicRecord, requireRecord } = require('./records');
 
@@ -10,7 +15,7 @@ function byDateDesc(a, b) {
   return b.date.localeCompare(a.date) || b.ts - a.ts;
 }
 
-/** repository: listMonth(householdId, month)、listAll(householdId)、get、insert、update、remove */
+/** repository: listMonth(householdId, month)、listAll(householdId)、get、insert、insertWithId(id, doc) -> 是否插入、update、remove */
 function createExpenseHandler({ repository, requireMembership, now }) {
   const view = (record, household) => publicRecord(record, household, FIELDS);
 
@@ -71,12 +76,12 @@ function createExpenseHandler({ repository, requireMembership, now }) {
       const settlement = settlementRecord(records, date);
       if (!settlement)
         throw new ApiError('ALREADY_SETTLED', '本月已经结清了。');
-      await repository.insert({
-        ...settlement,
-        householdId: household._id,
-        ts: now(),
-        by: openid,
-      });
+      // 对方已基于同一份账目结算时插入失败，不会生成第二条结算记录。
+      const inserted = await repository.insertWithId(
+        settlementId(household._id, month, records),
+        { ...settlement, householdId: household._id, ts: now(), by: openid },
+      );
+      if (!inserted) throw new ApiError('ALREADY_SETTLED', '本月已经结清了。');
       return monthView(household, month);
     },
   };
