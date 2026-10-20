@@ -1,3 +1,0 @@
-.attendance { display: flex; gap: 18rpx; }.attendance button { flex: 1; }.chosen { border-color: var(--accent); color: var(--accent); background: #efe1d5; }.stepper { display: flex; justify-content: space-between; align-items: center; gap: 24rpx; }.stepper button { width: 110rpx; }.counter { text-align: right; }.consent { display: flex; align-items: flex-start; gap: 14rpx; font-size: 26rpx; }.consent checkbox { flex-shrink: 0; }.privacy-link { color: var(--accent); text-decoration: underline; font-size: 26rpx; padding: 20rpx 0 28rpx; min-height: 88rpx; }.saved-date { margin-bottom: 30rpx; }.after-note { margin-top: 24rpx; }
-
-.consent { font-size: max(26rpx, 14px); }

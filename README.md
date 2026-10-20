@@ -1,58 +1,43 @@
-# 球球布丁家属院
+# 小家
 
-朱超凡&高佳益的微信答谢宴纪念册。它向亲友提供电子请柬、照片册、故事、到场登记和仅主人可见的文字祝福；照片由主人在后台管理，数据通过 CloudBase 云函数处理。
+超凡和佳益两个人共用的微信小程序：记账、清单、吃啥、周末、纪念。由答谢宴小程序改造而来，方案见 [docs/PLAN.md](docs/PLAN.md)，阶段 0 调查与决定见 [docs/STAGE-0-REPORT.md](docs/STAGE-0-REPORT.md)。
 
-当前共有 10 个页面：首页、电子请柬、故事、照片册、到场登记、私密祝福、主人工作台、照片管理、当天流程、隐私说明。没有支付、广告、公开宾客名单或公开祝福墙。
+只通过体验版给两个人使用，不对外发布，不做支付。
 
-## 当前状态
+## 当前进度
 
-- 照片与音乐均使用 CloudBase File ID，不放进小程序代码包。
-- 新照片与视频封面原文件直传，不再 Base64 上传或逐档压小；列表使用 1080px WebP 缩略图，失败可回退，点击看原文件。部署顺序见 [图片链路](docs/IMAGE-PIPELINE.md)。
-- 照片册已在本地实现统一照片库、四类相册、视频入口、精选位置与私密展示；需先部署新版云函数再上传小程序，详见 [统一照片库 V2](docs/MEDIA-LIBRARY-V2.md)。
-- 管理员入口只作为界面展示缓存 5 分钟；云函数每次管理操作均按真实 OpenID 鉴权。
-- 背景音乐当前**关闭**，`miniprogram/config/music.ts` 没有 File ID。仅可在替换为自有或已获公开播放授权的音频后启用。
-- 2026 年 9 月 29 日起停止新增或修改登记、祝福；本人仍可删除，主人仍可读取和清理至 2026 年 12 月 27 日。
+阶段 1：骨架与绑定（G1）。
 
-真实 CloudBase 规则、云函数部署、双账号隔离和 iPhone/安卓验收仍需在你的环境完成，不能由本地代码证明。
+- 5 个 tab：记账、清单、吃啥、周末、纪念。前四个暂为占位。
+- 创建小家（生成 6 位邀请码）、用邀请码加入（最多 2 人，满员后邀请码失效）。
+- 「纪念」页：成员、邀请码、修改称呼和城市；入口「答谢宴 · 登记与祝福」只读归档。
+
+## 架构
+
+```
+小程序（TypeScript，开发者工具 typescript 编译插件）
+   │ wx.cloud.callFunction({ name: 'api' })
+   ▼
+云函数 api：所有读写的唯一入口，按 openid 校验 household 成员
+   ▼
+CloudBase 数据库：所有集合禁止客户端直接读写
+```
+
+- `cloudfunctions/api/router.js`：action 分发；`household.js`：创建、加入、读取、修改；`archive.js`：答谢宴归档只读。
+- 返回给小程序的数据不包含 openid。
+- 日期按中国时区（UTC+8）展示。
 
 ## 使用
 
-1. 在微信开发者工具打开 `D:\chaofan\weixinlittleprogram`，不要只打开 `miniprogram` 子目录。
-2. 保留本地的 `project.config.json` 与 `project.private.config.json`，在 `miniprogram/config/local.ts` 配置环境 ID。
-3. 如为干净副本，运行：
-
-```powershell
-npm ci
-npm run setup
-```
-
-4. 编译入口为 `pages/home/index`。前端没有运行时 npm 依赖，无需“构建 npm”。
+1. 在微信开发者工具打开 `D:\chaofan\weixinlittleprogram`（不要只打开 `miniprogram`）。
+2. `miniprogram/config/local.ts` 填写云环境 ID（干净副本先运行 `npm ci`、`npm run setup`）。
+3. 云端准备见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
 ## 常用命令
 
 ```powershell
 npm run check          # TypeScript、ESLint、自动测试
-npm run format:check   # 格式检查
-npm run check:native   # 本机微信 WXML/WXSS 编译器检查
-npm run preview        # 本地辅助预览，仅监听 127.0.0.1
-npm run test:ui        # 在 preview 运行时执行多尺寸辅助回归
+npm run check:native   # 本机微信 WXML/WXSS 编译器检查（需要 Windows 上的开发者工具）
 ```
 
-浏览器辅助预览直接读取项目 WXML/WXSS/TS，但不是微信基础库，也不能替代开发者工具和真机验收。
-
-## 文档
-
-- [代码架构整理与回归报告](docs/ARCHITECTURE-REFACTOR.md)
-
-- [内容维护](docs/CONTENT-GUIDE.md)
-- [CloudBase 部署与收束](docs/DEPLOYMENT.md)
-- [主人待办](docs/NEXT-FOR-OWNER.md)
-- [自测与真实验收](docs/TEST-CASES.md)
-- [照片管理](docs/PHOTO-MANAGEMENT.md)
-- [提审前核验](docs/REVIEW-READINESS.md)
-
-## 边界
-
-数据库集合禁止客户端直接读写；管理员白名单仅保存在云函数 `ADMIN_OPENIDS`，不得放入前端。访客数据不导出；照片展示前须取得当事人同意。不要在内容配置、云存储文件名、祝福或备注中写入密码、OpenID、身份证、支付信息、手机号或健康信息。
-
-媒体上传支持图片多选和相册视频；部署及兼容说明见 [媒体上传](docs/MEDIA-UPLOAD.md)。保持保存草稿与更新展示分离。
+旧的答谢宴文档保存在 [docs/legacy-wedding](docs/legacy-wedding/)，仅供参考。

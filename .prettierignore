@@ -4,6 +4,6 @@ artifacts
 project.config.json
 project.private.config.json
 miniprogram/config/local.ts
-wedding-miniprogram-codex-plan.md
+docs/legacy-wedding
 *.wxml
 *.wxss

@@ -1,3 +1,0 @@
-.chapter { border-top: 1rpx solid var(--line); padding-top: 30rpx; margin-bottom: 58rpx; }.chapter-date { color: var(--accent); font-size: 23rpx; letter-spacing: 2rpx; }.chapter-title { font-size: 43rpx; margin: 16rpx 0; }.chapter-description { color: var(--muted); font-size: 28rpx; margin-bottom: 28rpx; }.story-photo { margin: 24rpx 0; }.caption { padding-top: 10rpx; }
-.photo-content-pending { min-height: 460rpx; margin-top: 34rpx; border-top: 1rpx solid var(--line); }
-.story-album-link { display: inline-block; margin-top: 12rpx; padding: 10rpx 0; color: var(--accent); font-size: 24rpx; }

@@ -1,30 +1,32 @@
 {
   "pages": [
-    "pages/home/index",
-    "pages/invitation/index",
-    "pages/story/index",
-    "pages/gallery/index",
-    "pages/rsvp/index",
-    "pages/guestbook/index",
-    "pages/admin/index",
-    "pages/privacy/index",
-    "pages/program/index",
-    "pages/photos/index"
+    "pages/ledger/index",
+    "pages/lists/index",
+    "pages/food/index",
+    "pages/weekend/index",
+    "pages/memory/index",
+    "pages/welcome/index",
+    "pages/archive/index"
   ],
   "window": {
-    "navigationBarTitleText": "球球布丁家属院",
+    "navigationBarTitleText": "小家",
     "navigationBarBackgroundColor": "#F7F2E9",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#F7F2E9",
     "backgroundTextStyle": "dark"
   },
-  "usingComponents": {
-    "photo-frame": "/components/photo-frame/index",
-    "page-footer": "/components/page-footer/index",
-    "music-control": "/components/music-control/index",
-    "page-back-link": "/components/page-back-link/index",
-    "editor-action-bar": "/components/editor-action-bar/index",
-    "media-video": "/components/media-video/index"
+  "tabBar": {
+    "color": "#736354",
+    "selectedColor": "#783E3C",
+    "backgroundColor": "#FBF7F0",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/ledger/index", "text": "记账" },
+      { "pagePath": "pages/lists/index", "text": "清单" },
+      { "pagePath": "pages/food/index", "text": "吃啥" },
+      { "pagePath": "pages/weekend/index", "text": "周末" },
+      { "pagePath": "pages/memory/index", "text": "纪念" }
+    ]
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",

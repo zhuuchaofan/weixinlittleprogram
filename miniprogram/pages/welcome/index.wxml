@@ -1,0 +1,25 @@
+<view class="page">
+  <view class="kicker">小家 / WELCOME</view>
+  <view class="title">两个人的小家</view>
+  <view class="lead">记账、清单、吃啥、周末和纪念日，只给我们俩用。</view>
+  <view wx:if="{{checking}}" class="status">正在确认…</view>
+  <view wx:elif="{{mode === 'choose'}}" class="section">
+    <button class="primary" data-mode="create" bindtap="choose">创建小家</button>
+    <view class="gap"></view>
+    <button class="secondary" data-mode="join" bindtap="choose">用邀请码加入</button>
+  </view>
+  <view wx:else class="section">
+    <view class="section-title">{{mode === 'create' ? '创建小家' : '加入小家'}}</view>
+    <view class="field">
+      <text class="field-label">我的称呼</text>
+      <input value="{{name}}" maxlength="12" placeholder="例如：超凡" bindinput="inputName" />
+    </view>
+    <view wx:if="{{mode === 'join'}}" class="field">
+      <text class="field-label">邀请码</text>
+      <input value="{{code}}" maxlength="6" placeholder="6 位，对方在「纪念」页可以看到" bindinput="inputCode" />
+    </view>
+    <button class="primary" bindtap="submit" loading="{{busy}}" disabled="{{busy}}">{{mode === 'create' ? '创建' : '加入'}}</button>
+    <button class="text-button" data-mode="choose" bindtap="choose">返回</button>
+  </view>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
+</view>

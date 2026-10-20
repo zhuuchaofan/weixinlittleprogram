@@ -1,20 +1,10 @@
-import { localConfig } from './config/local';
 import { initializeCloud } from './services/cloud';
-import { musicService } from './services/music';
 App({
   onLaunch() {
-    if (localConfig.mode === 'cloud' && localConfig.cloudEnvId) {
-      try {
-        initializeCloud();
-      } catch {
-        /* 首屏仍可阅读本地内容；照片框及登记 service 分别显示失败状态。 */
-      }
+    try {
+      initializeCloud();
+    } catch {
+      /* 各页面调用云函数时会显示具体错误。 */
     }
-  },
-  onShow() {
-    void musicService.resumeAfterAppShow();
-  },
-  onHide() {
-    musicService.pauseForAppHide();
   },
 });

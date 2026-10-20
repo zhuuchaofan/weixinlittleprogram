@@ -1,100 +1,42 @@
-export interface Photo {
-  type?: 'image' | 'video';
-  placements?: Array<'cover' | 'story' | 'qiuqiu' | 'buding'>;
-  category?: 'pending' | 'wedding' | 'daily' | 'baoji_0927' | 'lintong_0928';
-  visibility?: 'public' | 'private';
-  url?: string;
-  coverUrl?: string;
-  duration?: number;
-  width?: number;
-  height?: number;
-  size?: number;
-  id: string;
-  thumbnail: string;
-  original: string;
-  caption: string;
-  placeholder: boolean;
-  ratio: 'portrait' | 'landscape' | 'square';
+export type MemberRole = 'a' | 'b';
+
+export interface HouseholdMember {
+  role: MemberRole;
+  name: string;
+  isMe: boolean;
 }
-export interface StoryItem {
+
+export interface Household {
   id: string;
-  date: string;
-  title: string;
-  description: string;
-  photos: Photo[];
+  city: string;
+  currency: string;
+  /** 只有 1 人时有值；满 2 人后为空字符串。 */
+  inviteCode: string;
+  myRole: MemberRole;
+  members: HouseholdMember[];
 }
-export interface Album {
-  id: string;
-  title: string;
-  description: string;
-  photos: Photo[];
-}
-export interface RsvpInput {
+
+export interface ArchiveRsvp {
   guestName: string;
   attending: boolean;
   partySize: number;
   note: string;
-  consent: boolean;
-}
-export interface RsvpRecord extends RsvpInput {
-  id: string;
   updatedAt: string;
 }
-export interface Dashboard {
-  records: RsvpRecord[];
+
+export interface ArchiveMessage {
+  signature: string;
+  message: string;
+  updatedAt: string;
+}
+
+export interface Archive {
+  rsvps: ArchiveRsvp[];
+  messages: ArchiveMessage[];
   summary: {
     responses: number;
     attending: number;
-    guests: number;
     declined: number;
+    guests: number;
   };
-  nextCursor: string;
-}
-export interface RsvpService {
-  getMine(): Promise<RsvpRecord | null>;
-  save(input: RsvpInput): Promise<RsvpRecord>;
-  removeMine(): Promise<void>;
-  dashboard(cursor?: string): Promise<Dashboard>;
-}
-export interface GuestMessageInput {
-  signature: string;
-  message: string;
-  consent: boolean;
-}
-export interface GuestMessageRecord extends GuestMessageInput {
-  id: string;
-  updatedAt: string;
-}
-export interface GuestMessageDashboard {
-  records: GuestMessageRecord[];
-  summary: { messages: number };
-  nextCursor: string;
-}
-export interface GuestMessageService {
-  getMine(): Promise<GuestMessageRecord | null>;
-  save(input: GuestMessageInput): Promise<GuestMessageRecord>;
-  removeMine(): Promise<void>;
-  dashboard(cursor?: string): Promise<GuestMessageDashboard>;
-}
-
-export interface EventProgramItem {
-  id: string;
-  title: string;
-  time: string;
-  description: string;
-  visible: boolean;
-}
-
-export interface PhotoBoothNotice {
-  enabled: boolean;
-  title: string;
-  time: string;
-  description: string;
-}
-
-export interface EventProgram {
-  title: string;
-  lead: string;
-  items: EventProgramItem[];
-  photoBooth: PhotoBoothNotice;
 }

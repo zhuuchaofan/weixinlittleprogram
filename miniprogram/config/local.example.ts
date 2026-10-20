@@ -1,10 +1,4 @@
-export const localConfig: {
-  mode: 'mock' | 'cloud';
-  cloudEnvId: string;
-  mockAdminEnabled: boolean;
-} = {
-  mode: 'mock',
+// 本地配置，不提交到 git。云环境 ID 在开发者工具「云开发」控制台查看。
+export const localConfig: { cloudEnvId: string } = {
   cloudEnvId: '',
-  // 只允许查看当前设备的演示数据；云端永远不使用此开关鉴权。
-  mockAdminEnabled: true,
 };

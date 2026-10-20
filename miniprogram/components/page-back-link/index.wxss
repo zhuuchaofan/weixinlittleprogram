@@ -1,4 +1,0 @@
-.page-back-link { display: inline-flex; align-items: center; gap: 14rpx; width: auto; min-width: 0; min-height: 72rpx; margin: 0; padding: 12rpx 0; color: var(--muted); font-size: 25rpx; line-height: 1.4; text-align: left; background: transparent; border: 0; }
-.page-back-link::after { border: 0; }
-.page-back-link[disabled] { color: var(--muted); background: transparent; opacity: .55; }
-.page-back-link-arrow { width: 13rpx; height: 13rpx; margin-left: 4rpx; border-bottom: 2rpx solid currentColor; border-left: 2rpx solid currentColor; transform: rotate(45deg); }

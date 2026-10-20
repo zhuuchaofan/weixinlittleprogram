@@ -18,10 +18,6 @@ export default ts.config(
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
-    files: ['scripts/preview-runtime.js', 'scripts/test-ui.mjs'],
-    languageOptions: { globals: globals.browser },
-  },
-  {
     files: ['miniprogram/**/*.ts'],
     languageOptions: {
       globals: {

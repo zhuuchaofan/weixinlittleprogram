@@ -1,0 +1,7 @@
+.summary { display: flex; gap: 18rpx; padding: 28rpx 0; margin-top: 36rpx; border-top: 1rpx solid var(--line); border-bottom: 1rpx solid var(--line); }
+.summary > view { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.stat { font-size: 62rpx; color: var(--accent); }
+.record { border-top: 1rpx solid var(--line); padding: 26rpx 0; }
+.record-name { font-size: 33rpx; flex: 1; min-width: 0; }
+.record-text { margin: 10rpx 0 14rpx; white-space: pre-wrap; }
+.bottom-space { height: 80rpx; }

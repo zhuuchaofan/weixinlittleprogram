@@ -1,0 +1,7 @@
+<view class="page">
+  <view class="kicker">小家 / 吃啥</view>
+  <view class="title">吃啥</view>
+  <view wx:if="{{loading}}" class="status">正在确认小家…</view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="retry">重试</button></view>
+  <view wx:if="{{ready}}" class="empty">随机抽、菜单管理，下一阶段开放。</view>
+</view>

@@ -2,7 +2,7 @@
   "name": "two-cats-one-home",
   "version": "0.1.0",
   "private": true,
-  "description": "球球布丁家属院",
+  "description": "小家：两人共用的微信小程序",
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "typecheck": "tsc --noEmit",
@@ -11,9 +11,7 @@
     "format:check": "prettier --check .",
     "test": "node --test tests/*.test.cjs",
     "check": "npm run typecheck && npm run lint && npm test",
-    "preview": "node scripts/preview-server.mjs",
-    "check:native": "node scripts/native-check.mjs",
-    "test:ui": "node scripts/test-ui.mjs"
+    "check:native": "node scripts/native-check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

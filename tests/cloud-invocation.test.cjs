@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   invocationFromContext,
   cloudConfigForInvocation,
-} = require('../cloudfunctions/weddingApi/invocation');
+} = require('../cloudfunctions/api/invocation');
 
 test('每次云函数调用仅从当次 context 取微信身份', () => {
   const parse = (context) => ({ environment: context.environment });

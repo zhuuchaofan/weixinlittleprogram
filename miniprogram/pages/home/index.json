@@ -1,7 +1,0 @@
-{
-  "navigationBarTitleText": "球球布丁家属院",
-  "disableScroll": false,
-  "usingComponents": {
-    "music-control": "/components/music-control/index"
-  }
-}

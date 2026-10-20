@@ -1,9 +1,0 @@
-<view class="media-video {{ratio}}">
-  <video wx:if="{{opened}}" id="player" src="{{url}}" controls="{{true}}" autoplay="{{false}}" object-fit="contain" show-center-play-btn="{{true}}" bindplay="play" binderror="error" aria-label="{{caption || '视频'}}" />
-  <view wx:else class="video-cover" bindtap="open" role="button" aria-label="播放{{caption || '视频'}}">
-    <photo-frame wx:if="{{cover}}" src="{{cover}}" ratio="{{ratio}}" adaptive="{{false}}" caption="{{caption}}" />
-    <view wx:else class="no-cover">生活片段</view>
-    <view class="play-button">{{loading ? '加载中…' : '▶ 播放'}}</view>
-  </view>
-  <button wx:if="{{failed}}" class="retry" bindtap="open">视频暂时无法播放，点击重试；仍失败请联系主人</button>
-</view>
