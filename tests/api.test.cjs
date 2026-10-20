@@ -64,7 +64,7 @@ test('未登录身份和未知操作被拒绝', async () => {
   assert.equal((await call('A', 'toString')).code, 'NOT_FOUND');
 });
 
-test('创建小家：默认东京、日元，创建者为 a，记录 ts 与 by', async () => {
+test('创建小家：默认东京、人民币，创建者为 a，记录 ts 与 by', async () => {
   const { households, call } = setup();
   assert.equal((await call('A', 'household.get')).data, null);
   assert.equal(
@@ -74,7 +74,7 @@ test('创建小家：默认东京、日元，创建者为 a，记录 ts 与 by',
   const created = await call('A', 'household.create', { name: '超凡' });
   assert.equal(created.ok, true);
   assert.equal(created.data.city, '东京');
-  assert.equal(created.data.currency, 'JPY');
+  assert.equal(created.data.currency, 'CNY');
   assert.equal(created.data.myRole, 'a');
   assert.match(created.data.inviteCode, CODE_PATTERN);
   assert.deepEqual(created.data.members, [

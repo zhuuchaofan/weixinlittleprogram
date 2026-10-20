@@ -11,7 +11,8 @@ const CATEGORIES = [
   '猫咪',
   '其他',
 ];
-const MAX_AMOUNT = 100000000;
+// 金额以「分」为单位的整数存储，避免浮点误差；上限 1000 万元。
+const MAX_AMOUNT = 1000000000;
 
 function text(value, { field, min = 0, max }) {
   const result = typeof value === 'string' ? value.trim() : '';
@@ -48,11 +49,11 @@ function id(value) {
   return value;
 }
 
-/** 金额只接受正整数日元。 */
+/** 金额只接受正整数（单位：分）。 */
 function expense(payload) {
   const amount = payload?.amount;
   if (!Number.isInteger(amount) || amount < 1 || amount > MAX_AMOUNT)
-    throw new ApiError('VALIDATION', '金额请填写 1 以上的整数日元。');
+    throw new ApiError('VALIDATION', '请填写大于 0 的金额，最多两位小数。');
   if (!isDate(payload.date))
     throw new ApiError('VALIDATION', '请选择有效的日期。');
   return {

@@ -6,7 +6,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_PATTERN = /^[A-HJ-NP-Z2-9]{6}$/;
 const MAX_MEMBERS = 2;
 const DEFAULT_CITY = '东京';
-const DEFAULT_CURRENCY = 'JPY';
+const DEFAULT_CURRENCY = 'CNY';
 
 function makeInviteCode() {
   let code = '';

@@ -1,0 +1,2 @@
+.avatar { width: 64rpx; height: 64rpx; flex-shrink: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 30rpx; }
+.export-button { margin-top: 20rpx; }

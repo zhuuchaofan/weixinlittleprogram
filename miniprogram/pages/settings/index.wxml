@@ -1,0 +1,44 @@
+<view class="page">
+  <view wx:if="{{loading && !household}}" class="status">正在读取…</view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{message}}" class="notice">{{message}}</view>
+
+  <block wx:if="{{household}}">
+    <view class="section-head"><view class="section-title">成员</view></view>
+    <view class="list">
+      <view wx:for="{{household.members}}" wx:key="role" class="list-row">
+        <view class="avatar serif">{{item.name[0]}}</view>
+        <view class="row-main">{{item.name}}<text wx:if="{{item.isMe}}" class="small muted">（我）</text></view>
+        <text class="tag">{{item.role === 'a' ? '创建者' : '成员'}}</text>
+      </view>
+      <view wx:if="{{household.inviteCode}}" class="list-row">
+        <view class="row-main"><view class="row-title">邀请码 {{household.inviteCode}}</view><view class="row-sub">对方加入后自动失效</view></view>
+        <button class="text-button" bindtap="copyCode">复制</button>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">个人与小家</view></view>
+      <view class="card">
+        <view class="field">
+          <text class="field-label">我的称呼</text>
+          <input value="{{myName}}" maxlength="12" bindinput="inputName" />
+        </view>
+        <view class="field">
+          <text class="field-label">所在城市</text>
+          <input value="{{city}}" maxlength="20" bindinput="inputCity" />
+        </view>
+        <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">数据备份</view></view>
+      <view class="card">
+        <view class="small muted">把记账、清单、菜单、周末收藏和纪念日全部复制为文本（JSON），粘贴到备忘录或文件里保存。</view>
+        <button class="secondary export-button" bindtap="exportData" loading="{{exporting}}" disabled="{{exporting}}">复制全部数据</button>
+      </view>
+    </view>
+  </block>
+  <view class="page-end"></view>
+</view>

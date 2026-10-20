@@ -1,12 +1,12 @@
 <view class="page">
   <view wx:if="{{isSettlement}}" class="card">
     <view class="section-title">结算记录</view>
-    <view class="muted settle-text">{{names[payer]}} 付给对方 ¥{{amountText}}。结算记录不能修改，删除即可撤销这次结算。</view>
+    <view class="muted settle-text">{{names[payer]}} 付给对方 {{settleText}}。结算记录不能修改，删除即可撤销这次结算。</view>
   </view>
   <block wx:else>
     <view class="amount-box">
       <text class="yen serif">¥</text>
-      <input class="amount-input serif" type="number" value="{{amountText}}" placeholder="0" bindinput="inputAmount" focus="{{!id}}" />
+      <input class="amount-input serif" type="digit" value="{{amountText}}" placeholder="0.00" bindinput="inputAmount" focus="{{!id}}" />
     </view>
     <view class="field">
       <text class="field-label">分类</text>

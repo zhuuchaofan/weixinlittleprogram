@@ -4,7 +4,7 @@ import { listMonth, settleMonth } from '../../services/ledger';
 import { errorMessage } from '../../services/cloud';
 import { SETTLEMENT, SPLITS } from '../../config/options';
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
-import { yen } from '../../utils/money';
+import { formatYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 
 type Row = Expense & {
@@ -60,16 +60,16 @@ Page({
       names,
       summary,
       summaryText: {
-        total: yen(summary.sharedTotal),
-        a: yen(summary.paid.a),
-        b: yen(summary.paid.b),
+        total: formatYuan(summary.sharedTotal),
+        a: formatYuan(summary.paid.a),
+        b: formatYuan(summary.paid.b),
         suggestion: summary.suggestion
-          ? `${names[summary.suggestion.from]} 应付给 ${names[summary.suggestion.to]} ${yen(summary.suggestion.amount)}`
+          ? `${names[summary.suggestion.from]} 应付给 ${names[summary.suggestion.to]} ${formatYuan(summary.suggestion.amount)}`
           : '本月已结清',
       },
       records: records.map((record) => ({
         ...record,
-        amountText: yen(record.amount),
+        amountText: formatYuan(record.amount),
         dateText: shortDate(record.date),
         payerName: names[record.payer],
         splitText:

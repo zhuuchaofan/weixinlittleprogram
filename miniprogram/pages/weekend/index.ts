@@ -9,7 +9,7 @@ let loadVersion = 0;
 const CONDITIONS = {
   dur: ['半天', '一天', '两天一夜'],
   mood: ['放松', '热闹', '自然', '美食'],
-  budget: ['5千日元内', '1万日元内', '不限'],
+  budget: ['100元内', '300元内', '不限'],
   trans: ['步行', '电车', '开车'],
 };
 
@@ -24,7 +24,7 @@ Page({
       { key: 'budget', label: '预算' },
       { key: 'trans', label: '交通' },
     ],
-    picked: { dur: '一天', mood: '放松', budget: '1万日元内', trans: '电车' },
+    picked: { dur: '一天', mood: '放松', budget: '300元内', trans: '电车' },
     aiEnabled: false,
     aiItems: [] as AiWeekendItem[],
     aiBusy: false,

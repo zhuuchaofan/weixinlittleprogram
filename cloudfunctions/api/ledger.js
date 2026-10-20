@@ -1,9 +1,9 @@
 /**
- * 记账规则（docs/PLAN.md 第 5 节）：
+ * 记账规则（docs/PLAN.md 第 5 节）。金额单位为「分」（人民币）：
  * - 共同支出统计排除 cat === '结算' 与 split === 'self'。
  * - credit：split === 'other' 时为 amount，否则为 amount / 2。
  * - net：payer 为 a 加 credit，为 b 减 credit；split === 'self' 不计入。
- * - net > 0：b 应付给 a；net < 0：a 应付给 b；|net| < 1 视为已结清。
+ * - net > 0：b 应付给 a；net < 0：a 应付给 b；|net| < 1 分视为已结清，结算金额四舍五入到分。
  * - 月份由 date 前 7 位（YYYY-MM）决定。
  */
 const SETTLEMENT = '结算';

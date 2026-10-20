@@ -9,7 +9,7 @@ import {
 import { errorMessage } from '../../services/cloud';
 import { CATEGORIES, SETTLEMENT, SPLITS } from '../../config/options';
 import { todayKey } from '../../utils/date';
-import { parseYen } from '../../utils/money';
+import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 
 Page({
@@ -20,6 +20,7 @@ Page({
     splits: SPLITS,
     names: { a: '', b: '' },
     amountText: '',
+    settleText: '',
     note: '',
     cat: CATEGORIES[0],
     date: todayKey(),
@@ -46,7 +47,8 @@ Page({
     this.setData({
       id: record.id,
       isSettlement: record.cat === SETTLEMENT,
-      amountText: String(record.amount),
+      amountText: fenToInput(record.amount),
+      settleText: formatYuan(record.amount),
       note: record.note,
       cat: record.cat,
       date: record.date,
@@ -72,9 +74,9 @@ Page({
   },
   async save() {
     if (this.data.busy || this.data.isSettlement) return;
-    const amount = parseYen(this.data.amountText);
+    const amount = parseYuan(this.data.amountText);
     if (!amount) {
-      this.setData({ error: '金额请填写 1 以上的整数日元。' });
+      this.setData({ error: '请填写大于 0 的金额，最多两位小数。' });
       return;
     }
     const input: ExpenseInput = {
