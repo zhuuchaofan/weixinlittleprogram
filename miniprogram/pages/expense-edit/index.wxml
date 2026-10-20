@@ -1,8 +1,11 @@
 <view class="page">
-  <view wx:if="{{isSettlement}}" class="notice">这是一条结算记录（{{names[payer]}} 付给对方 ¥{{amountText}}）。结算记录不能修改，删除即可撤销这次结算。</view>
+  <view wx:if="{{isSettlement}}" class="card">
+    <view class="section-title">结算记录</view>
+    <view class="muted settle-text">{{names[payer]}} 付给对方 ¥{{amountText}}。结算记录不能修改，删除即可撤销这次结算。</view>
+  </view>
   <block wx:else>
-    <view class="field">
-      <text class="field-label">金额（日元）</text>
+    <view class="amount-box">
+      <text class="yen serif">¥</text>
       <input class="amount-input serif" type="number" value="{{amountText}}" placeholder="0" bindinput="inputAmount" focus="{{!id}}" />
     </view>
     <view class="field">
@@ -21,21 +24,24 @@
     </view>
     <view class="field">
       <text class="field-label">谁付的</text>
-      <view class="chips">
-        <view class="chip chip-wide {{payer === 'a' ? 'chip-on' : ''}}" data-field="payer" data-value="a" bindtap="choose">{{names.a}}</view>
-        <view class="chip chip-wide {{payer === 'b' ? 'chip-on' : ''}}" data-field="payer" data-value="b" bindtap="choose">{{names.b}}</view>
+      <view class="chips chips-fill">
+        <view class="chip {{payer === 'a' ? 'chip-on' : ''}}" data-field="payer" data-value="a" bindtap="choose">{{names.a}}</view>
+        <view class="chip {{payer === 'b' ? 'chip-on' : ''}}" data-field="payer" data-value="b" bindtap="choose">{{names.b}}</view>
       </view>
     </view>
     <view class="field">
       <text class="field-label">怎么分</text>
-      <view wx:for="{{splits}}" wx:key="value" class="split {{split === item.value ? 'split-on' : ''}}" data-field="split" data-value="{{item.value}}" bindtap="choose">
-        <view>{{item.label}}</view><view class="small muted">{{item.hint}}</view>
+      <view class="list">
+        <view wx:for="{{splits}}" wx:key="value" class="list-row" data-field="split" data-value="{{item.value}}" bindtap="choose" hover-class="list-row-active">
+          <view class="radio {{split === item.value ? 'radio-on' : ''}}"></view>
+          <view class="row-main"><view>{{item.label}}</view><view class="row-sub">{{item.hint}}</view></view>
+        </view>
       </view>
     </view>
     <view wx:if="{{error}}" class="notice error">{{error}}</view>
     <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
   </block>
   <view wx:if="{{isSettlement && error}}" class="notice error">{{error}}</view>
-  <button wx:if="{{id}}" class="text-button delete-button" bindtap="remove" disabled="{{busy}}">{{isSettlement ? '删除并撤销结算' : '删除这笔账'}}</button>
-  <view class="bottom-space"></view>
+  <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">{{isSettlement ? '删除并撤销结算' : '删除这笔账'}}</button>
+  <view class="page-end"></view>
 </view>

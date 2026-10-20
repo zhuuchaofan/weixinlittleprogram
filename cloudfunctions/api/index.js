@@ -111,6 +111,9 @@ exports.main = async (event, context) => {
     },
     expenses: createRecordRepository(db, 'expenses'),
     todos: createRecordRepository(db, 'todos'),
+    dishes: createRecordRepository(db, 'dishes'),
+    wishes: createRecordRepository(db, 'wishes'),
+    dates: createRecordRepository(db, 'dates'),
   });
   return route(event, openid);
 };

@@ -1,25 +1,26 @@
 const { publicRecord } = require('./records');
 const expenses = require('./expenses');
 const todos = require('./todos');
+const { DISH_FIELDS, WISH_FIELDS, DATE_FIELDS } = require('./collections');
 
 const EXPORT_VERSION = 1;
 
 /** 全部数据导出为可重新解析的 JSON 对象；不包含 openid。 */
-function createExportHandler({
-  expenseRepository,
-  todoRepository,
-  requireMembership,
-  now,
-}) {
+function createExportHandler({ repositories, requireMembership, now }) {
+  const sections = [
+    ['expenses', expenses.FIELDS],
+    ['todos', todos.FIELDS],
+    ['dishes', DISH_FIELDS],
+    ['wishes', WISH_FIELDS],
+    ['dates', DATE_FIELDS],
+  ];
   return {
     async 'data.export'(openid) {
       const household = await requireMembership(openid);
-      const [expenseRows, todoRows] = await Promise.all([
-        expenseRepository.listAll(household._id),
-        todoRepository.listAll(household._id),
-      ]);
-      const sortTs = (a, b) => a.ts - b.ts;
-      return {
+      const rows = await Promise.all(
+        sections.map(([name]) => repositories[name].listAll(household._id)),
+      );
+      const result = {
         version: EXPORT_VERSION,
         exportedAt: new Date(now()).toISOString(),
         household: {
@@ -30,13 +31,13 @@ function createExportHandler({
             name: m.name,
           })),
         },
-        expenses: expenseRows
-          .sort(sortTs)
-          .map((r) => publicRecord(r, household, expenses.FIELDS)),
-        todos: todoRows
-          .sort(sortTs)
-          .map((r) => publicRecord(r, household, todos.FIELDS)),
       };
+      sections.forEach(([name, fields], index) => {
+        result[name] = rows[index]
+          .sort((a, b) => a.ts - b.ts)
+          .map((record) => publicRecord(record, household, fields));
+      });
+      return result;
     },
   };
 }

@@ -6,31 +6,37 @@
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
   <block wx:if="{{archive}}">
-    <view class="summary">
-      <view><text class="stat serif">{{archive.summary.guests}}</text><text class="small">到场人数</text></view>
-      <view><text class="stat serif">{{archive.summary.responses}}</text><text class="small">回复</text></view>
-      <view><text class="stat serif">{{archive.messages.length}}</text><text class="small">祝福</text></view>
+    <view class="card stats">
+      <view class="stat-item"><view class="stat serif">{{archive.summary.guests}}</view><view class="small muted">到场人数</view></view>
+      <view class="stat-item"><view class="stat serif">{{archive.summary.responses}}</view><view class="small muted">回复</view></view>
+      <view class="stat-item"><view class="stat serif">{{archive.messages.length}}</view><view class="small muted">祝福</view></view>
     </view>
 
     <view class="section">
-      <view class="section-title">祝福</view>
+      <view class="section-head"><view class="section-title">祝福</view></view>
       <view wx:if="{{!archive.messages.length}}" class="empty">没有祝福记录。</view>
-      <view wx:for="{{archive.messages}}" wx:key="index" class="record">
-        <view class="record-text">{{item.message}}</view>
-        <view class="inline small muted"><text>{{item.signature || '未署名'}}</text><text>{{item.updatedAt}}</text></view>
+      <view wx:for="{{archive.messages}}" wx:key="index" class="card message">
+        <view class="message-text">{{item.message}}</view>
+        <view class="inline row-sub"><text>— {{item.signature || '未署名'}}</text><text>{{item.updatedAt}}</text></view>
       </view>
     </view>
 
     <view class="section">
-      <view class="section-title">到场登记</view>
-      <view class="small muted">{{archive.summary.attending}} 份到场 · {{archive.summary.declined}} 份遥寄祝福</view>
+      <view class="section-head">
+        <view class="section-title">到场登记</view>
+        <text class="small muted">{{archive.summary.attending}} 份到场 · {{archive.summary.declined}} 份遥寄</text>
+      </view>
       <view wx:if="{{!archive.rsvps.length}}" class="empty">没有登记记录。</view>
-      <view wx:for="{{archive.rsvps}}" wx:key="index" class="record">
-        <view class="inline"><text class="record-name">{{item.guestName}}</text><text class="tag">{{item.attending ? '到场 · ' + item.partySize + ' 人' : '遥寄祝福'}}</text></view>
-        <view wx:if="{{item.note}}" class="record-text">{{item.note}}</view>
-        <view class="small muted">{{item.updatedAt}}</view>
+      <view wx:else class="list">
+        <view wx:for="{{archive.rsvps}}" wx:key="index" class="list-row rsvp-row">
+          <view class="row-main">
+            <view class="inline"><text class="row-title">{{item.guestName}}</text><text class="tag">{{item.attending ? '到场 · ' + item.partySize + ' 人' : '遥寄祝福'}}</text></view>
+            <view wx:if="{{item.note}}" class="rsvp-note">{{item.note}}</view>
+            <view class="row-sub">{{item.updatedAt}}</view>
+          </view>
+        </view>
       </view>
     </view>
   </block>
-  <view class="bottom-space"></view>
+  <view class="page-end"></view>
 </view>

@@ -1,33 +1,39 @@
 <view class="page">
-  <view class="tabs">
-    <view wx:for="{{kinds}}" wx:key="value" class="tab {{kind === item.value ? 'tab-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKind">{{item.label}}</view>
+  <view class="segmented">
+    <view wx:for="{{kinds}}" wx:key="value" class="segment {{kind === item.value ? 'segment-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKind">{{item.label}}</view>
   </view>
 
-  <view class="composer">
+  <view class="card composer">
     <input value="{{text}}" maxlength="60" placeholder="添加一条…" confirm-type="done" bindinput="inputText" bindconfirm="add" />
-    <view class="inline composer-row">
-      <view class="who-chips">
+    <view class="composer-row">
+      <view class="chips">
         <view class="chip {{who === 'a' ? 'chip-on' : ''}}" data-value="a" bindtap="chooseWho">{{names.a}}</view>
         <view class="chip {{who === 'b' ? 'chip-on' : ''}}" data-value="b" bindtap="chooseWho">{{names.b}}</view>
         <view class="chip {{who === 'both' ? 'chip-on' : ''}}" data-value="both" bindtap="chooseWho">一起</view>
       </view>
-      <button class="primary add" bindtap="add" disabled="{{busy}}">添加</button>
+      <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
     </view>
   </view>
 
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">刷新</button></view>
   <view wx:if="{{loading && !all.length}}" class="status">正在读取…</view>
-  <view wx:elif="{{!open.length && !done.length}}" class="empty">这里还空着。</view>
+  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap">这里还空着。</view>
 
-  <view wx:for="{{open}}" wx:key="id" class="item">
-    <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="完成 {{item.text}}"><view class="box"></view></view>
-    <view class="item-main" data-id="{{item.id}}" bindtap="open"><view>{{item.text}}</view><view class="small muted">{{item.whoText}}</view></view>
+  <view wx:if="{{open.length}}" class="list list-gap">
+    <view wx:for="{{open}}" wx:key="id" class="list-row todo-row">
+      <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="完成 {{item.text}}"><view class="box"></view></view>
+      <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active"><view class="row-title">{{item.text}}</view><view class="row-sub">{{item.whoText}}</view></view>
+    </view>
   </view>
 
-  <view wx:if="{{done.length}}" class="done-title small muted">已完成 {{done.length}}</view>
-  <view wx:for="{{done}}" wx:key="id" class="item item-done">
-    <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="box box-on">✓</view></view>
-    <view class="item-main" data-id="{{item.id}}" bindtap="open"><view class="struck">{{item.text}}</view><view class="small muted">{{item.whoText}}</view></view>
-  </view>
-  <view class="bottom-space"></view>
+  <block wx:if="{{done.length}}">
+    <view class="list-label">已完成 {{done.length}}</view>
+    <view class="list">
+      <view wx:for="{{done}}" wx:key="id" class="list-row todo-row todo-done">
+        <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="box box-on">✓</view></view>
+        <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active"><view class="row-title struck">{{item.text}}</view><view class="row-sub">{{item.whoText}}</view></view>
+      </view>
+    </view>
+  </block>
+  <view class="page-end"></view>
 </view>

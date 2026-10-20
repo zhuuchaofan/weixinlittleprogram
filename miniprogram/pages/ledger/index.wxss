@@ -1,17 +1,16 @@
-.month-bar { margin-bottom: 12rpx; }
-.month-arrow { width: 96rpx; min-height: 96rpx; font-size: 48rpx; color: var(--accent); padding: 0; }
-.month-arrow[disabled] { background: transparent; color: var(--line); }
-.month-text { font-size: 40rpx; }
-.summary-card { padding: 32rpx; border: 1rpx solid var(--line); background: #fcf9f4; border-radius: 6rpx; }
-.total { font-size: 64rpx; color: var(--accent); line-height: 1.3; margin: 6rpx 0 12rpx; }
-.paid { font-size: 26rpx; color: var(--muted); }
-.suggestion { margin: 22rpx 0; padding: 18rpx 22rpx; background: #efe1d5; color: var(--accent); font-size: 28rpx; }
-.suggestion.settled { background: #e6ece0; color: #4e6b45; }
-.add-button { margin: 32rpx 0 12rpx; }
-.row { display: flex; align-items: center; gap: 20rpx; min-height: 120rpx; padding: 18rpx 8rpx; border-bottom: 1rpx solid var(--line); }
-.row-active { background: #eee3d4; }
-.row-main { flex: 1; min-width: 0; }
-.row-title { font-size: 30rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row-amount { font-size: 36rpx; flex-shrink: 0; }
-.row-settlement .row-title, .row-settlement .row-amount { color: var(--muted); }
-.bottom-space { height: 80rpx; }
+.month-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
+.month-arrow { width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 48rpx; color: var(--accent); }
+.month-arrow-active { background: var(--sunken); }
+.month-arrow-off { color: var(--line); }
+.month-text { font-size: 38rpx; white-space: nowrap; }
+.total { font-size: 72rpx; color: var(--accent); line-height: 1.25; margin: 4rpx 0 20rpx; }
+.paid { display: flex; gap: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--line); }
+.paid-item { flex: 1; min-width: 0; }
+.paid-value { font-size: 32rpx; margin-top: 4rpx; }
+.suggestion { margin: 24rpx 0 20rpx; padding: 18rpx 24rpx; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent); font-size: 28rpx; }
+.suggestion-ok { background: var(--ok-soft); color: var(--ok); margin-bottom: 0; }
+.add-button { margin: 28rpx 0 8rpx; }
+.cat-badge { width: 64rpx; height: 64rpx; flex-shrink: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 26rpx; }
+.amount { font-size: 34rpx; }
+.row-settlement .cat-badge { background: var(--ok-soft); color: var(--ok); }
+.row-settlement .row-title, .row-settlement .amount { color: var(--muted); }

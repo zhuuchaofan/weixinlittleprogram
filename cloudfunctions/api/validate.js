@@ -74,4 +74,42 @@ function todo(payload) {
   };
 }
 
-module.exports = { CATEGORIES, expense, todo, month, id, isDate };
+const DISH_TAGS = ['在家做', '外食', '外卖'];
+
+function dish(payload) {
+  return {
+    name: text(payload?.name, { field: '菜名', min: 1, max: 20 }),
+    tag: oneOf(payload.tag, DISH_TAGS, '请选择在家做、外食或外卖。'),
+  };
+}
+
+function wish(payload) {
+  return {
+    title: text(payload?.title, { field: '地点或活动', min: 1, max: 30 }),
+    why: text(payload.why, { field: '想去的理由', max: 100 }),
+    plan: text(payload.plan, { field: '计划', max: 200 }),
+  };
+}
+
+function anniversary(payload) {
+  if (!isDate(payload?.date))
+    throw new ApiError('VALIDATION', '请选择有效的日期。');
+  return {
+    title: text(payload.title, { field: '名称', min: 1, max: 20 }),
+    date: payload.date,
+    yearly: payload.yearly === true,
+  };
+}
+
+module.exports = {
+  CATEGORIES,
+  DISH_TAGS,
+  expense,
+  todo,
+  dish,
+  wish,
+  anniversary,
+  month,
+  id,
+  isDate,
+};

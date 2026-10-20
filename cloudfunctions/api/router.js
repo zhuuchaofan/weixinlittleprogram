@@ -4,6 +4,7 @@ const { createArchiveHandler } = require('./archive');
 const { createExpenseHandler } = require('./expenses');
 const { createTodoHandler } = require('./todos');
 const { createExportHandler } = require('./export');
+const { createCollectionHandlers } = require('./collections');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
 function createRouter({
@@ -11,6 +12,9 @@ function createRouter({
   archive,
   expenses,
   todos,
+  dishes,
+  wishes,
+  dates,
   now = () => Date.now(),
 }) {
   const household = createHouseholdHandler({ repository: households, now });
@@ -20,9 +24,15 @@ function createRouter({
     ...createArchiveHandler({ repository: archive, requireMembership }),
     ...createExpenseHandler({ repository: expenses, requireMembership, now }),
     ...createTodoHandler({ repository: todos, requireMembership, now }),
+    ...createCollectionHandlers({
+      dishes,
+      wishes,
+      dates,
+      requireMembership,
+      now,
+    }),
     ...createExportHandler({
-      expenseRepository: expenses,
-      todoRepository: todos,
+      repositories: { expenses, todos, dishes, wishes, dates },
       requireMembership,
       now,
     }),

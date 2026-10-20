@@ -1,7 +1,61 @@
 <view class="page">
-  <view class="kicker">小家 / 吃啥</view>
-  <view class="title">吃啥</view>
-  <view wx:if="{{loading}}" class="status">正在确认小家…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="retry">重试</button></view>
-  <view wx:if="{{ready}}" class="empty">随机抽、菜单管理，下一阶段开放。</view>
+  <view class="segmented">
+    <view class="segment {{filter === '' ? 'segment-on' : ''}}" data-value="" bindtap="chooseFilter">全部</view>
+    <view wx:for="{{tags}}" wx:key="*this" class="segment {{filter === item ? 'segment-on' : ''}}" data-value="{{item}}" bindtap="chooseFilter">{{item}}</view>
+  </view>
+
+  <view class="card draw-card">
+    <block wx:if="{{picked}}">
+      <view class="small muted">今天就吃</view>
+      <view class="picked-name serif">{{picked.name}}</view>
+      <text class="tag">{{picked.tag}}</text>
+    </block>
+    <block wx:else>
+      <view class="draw-icon serif">?</view>
+      <view class="small muted">从「{{filter || '全部'}}」的 {{visible.length}} 道里随机抽一个</view>
+    </block>
+    <button class="primary draw-button" bindtap="draw">{{picked ? '再抽一次' : '随机抽一个'}}</button>
+  </view>
+
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
+
+  <view wx:if="{{aiEnabled}}" class="section">
+    <view class="section-head"><view class="section-title">让 AI 推荐</view></view>
+    <view class="card">
+      <input value="{{aiText}}" maxlength="60" placeholder="例如：今天很冷，想吃清淡的" bindinput="inputAi" />
+      <button class="secondary ai-button" bindtap="askAi" loading="{{aiBusy}}" disabled="{{aiBusy}}">让 AI 推荐</button>
+    </view>
+    <view wx:if="{{aiItems.length}}" class="list list-gap">
+      <view wx:for="{{aiItems}}" wx:key="name" class="list-row">
+        <view class="row-main"><view class="row-title">{{item.name}}</view><view class="row-sub">{{item.tag}} · {{item.why}}</view></view>
+        <button class="text-button" data-index="{{index}}" bindtap="keepAi">加入菜单</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head">
+      <view class="section-title">菜单</view>
+      <text class="small muted">{{dishes.length}} 道</text>
+    </view>
+    <view class="card composer">
+      <input value="{{name}}" maxlength="20" placeholder="加一道菜" confirm-type="done" bindinput="inputName" bindconfirm="add" />
+      <view class="composer-row">
+        <view class="chips">
+          <view wx:for="{{tags}}" wx:key="*this" class="chip {{tag === item ? 'chip-on' : ''}}" data-value="{{item}}" bindtap="chooseTag">{{item}}</view>
+        </view>
+        <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
+      </view>
+    </view>
+    <view wx:if="{{loading && !dishes.length}}" class="status">正在读取…</view>
+    <view wx:elif="{{!visible.length}}" class="empty list-gap">{{filter ? '这一类还没有菜。' : '还没有菜，先加几道常吃的吧。'}}</view>
+    <view wx:else class="list list-gap">
+      <view wx:for="{{visible}}" wx:key="id" class="list-row" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
+        <view class="row-main row-title">{{item.name}}</view>
+        <text class="tag">{{item.tag}}</text>
+        <text class="chevron">›</text>
+      </view>
+    </view>
+  </view>
+  <view class="page-end"></view>
 </view>

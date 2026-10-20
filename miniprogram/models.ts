@@ -88,3 +88,56 @@ export interface Todo extends TodoInput {
   done: boolean;
   byRole: MemberRole | '';
 }
+
+export type DishTag = '在家做' | '外食' | '外卖';
+
+export interface DishInput {
+  name: string;
+  tag: DishTag;
+}
+
+export interface WishInput {
+  title: string;
+  why: string;
+  plan: string;
+}
+
+export interface AnniversaryInput {
+  title: string;
+  date: string;
+  yearly: boolean;
+}
+
+interface RecordMeta {
+  id: string;
+  ts: number;
+  byRole: MemberRole | '';
+}
+
+export type Dish = DishInput & RecordMeta;
+export type Wish = WishInput & RecordMeta;
+
+export interface Anniversary extends AnniversaryInput, RecordMeta {
+  /** 下一次（每年重复）或原日期（不重复），YYYY-MM-DD。 */
+  nextDate: string;
+  /** 未到：剩余天数；已过（不重复）：已经过去的天数。 */
+  days: number;
+  passed: boolean;
+  /** 每年重复时，下一次是第几周年。 */
+  years: number;
+}
+
+export type AiScene = 'food' | 'weekend';
+
+export interface AiFoodItem {
+  name: string;
+  tag: DishTag;
+  why: string;
+}
+
+export interface AiWeekendItem {
+  title: string;
+  why: string;
+  plan: string;
+  cost: string;
+}

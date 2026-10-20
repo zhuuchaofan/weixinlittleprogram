@@ -79,11 +79,17 @@ const NOW = Date.parse('2026-10-20T04:00:00Z');
 async function setup() {
   const expenses = memoryRecords('e');
   const todos = memoryRecords('t');
+  const dishes = memoryRecords('d');
+  const wishes = memoryRecords('w');
+  const dates = memoryRecords('n');
   const route = createRouter({
     households: memoryHouseholds(),
     archive: {},
     expenses,
     todos,
+    dishes,
+    wishes,
+    dates,
     now: () => NOW,
   });
   const call = (openid, action, payload) => route({ action, payload }, openid);
@@ -93,7 +99,7 @@ async function setup() {
     code: created.data.inviteCode,
   });
   await call('X', 'household.create', { name: '别人家' });
-  return { call, expenses, todos };
+  return { call, expenses, todos, dishes, wishes, dates };
 }
 
 const expense = (overrides = {}) => ({
@@ -328,4 +334,128 @@ test('导出：JSON 文本能完整解析回全部记录，且不含 openid', as
   ]);
   const other = await call('X', 'data.export');
   assert.equal(other.data.expenses.length, 0);
+});
+
+test('吃啥：菜单增删改，标签只能是在家做 / 外食 / 外卖', async () => {
+  const { call } = await setup();
+  assert.equal(
+    (await call('A', 'dish.add', { name: '拉面', tag: '夜宵' })).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('A', 'dish.add', { name: '', tag: '外食' })).code,
+    'VALIDATION',
+  );
+  const ramen = await call('A', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('B', 'dish.add', { name: '咖喱饭', tag: '在家做' });
+  const edited = await call('B', 'dish.update', {
+    id: ramen.data.id,
+    tag: '外卖',
+  });
+  assert.deepEqual([edited.data.name, edited.data.tag], ['拉面', '外卖']);
+  assert.equal((await call('A', 'dish.list')).data.length, 2);
+  assert.equal(
+    (await call('X', 'dish.remove', { id: ramen.data.id })).code,
+    'NOT_FOUND',
+  );
+  assert.equal(
+    (await call('A', 'dish.remove', { id: ramen.data.id })).ok,
+    true,
+  );
+  assert.deepEqual(
+    (await call('B', 'dish.list')).data.map((d) => d.name),
+    ['咖喱饭'],
+  );
+});
+
+test('周末：收藏想去的地方，可编辑与删除', async () => {
+  const { call } = await setup();
+  const wish = await call('A', 'wish.add', {
+    title: '镰仓',
+    why: '看海',
+    plan: '',
+  });
+  assert.equal(wish.ok, true);
+  const edited = await call('B', 'wish.update', {
+    id: wish.data.id,
+    plan: '江之电一日券',
+  });
+  assert.deepEqual(
+    [edited.data.title, edited.data.why, edited.data.plan],
+    ['镰仓', '看海', '江之电一日券'],
+  );
+  assert.equal(
+    (await call('A', 'wish.add', { title: 'x'.repeat(31) })).code,
+    'VALIDATION',
+  );
+  assert.equal((await call('B', 'wish.list')).data.length, 1);
+  assert.equal((await call('B', 'wish.remove', { id: wish.data.id })).ok, true);
+});
+
+test('纪念日：列表带倒数，按剩余天数排序，已过的不重复日期放最后', async () => {
+  const { call } = await setup();
+  // 今天 2026-10-20（UTC+8）
+  await call('A', 'date.add', {
+    title: '结婚纪念日',
+    date: '2025-11-03',
+    yearly: true,
+  });
+  await call('A', 'date.add', {
+    title: '答谢宴',
+    date: '2026-09-28',
+    yearly: false,
+  });
+  await call('B', 'date.add', {
+    title: '生日',
+    date: '1995-10-20',
+    yearly: true,
+  });
+  await call('B', 'date.add', {
+    title: '去北海道',
+    date: '2027-01-10',
+    yearly: false,
+  });
+  assert.equal(
+    (await call('A', 'date.add', { title: '坏日期', date: '2026-02-30' })).code,
+    'VALIDATION',
+  );
+  const list = (await call('A', 'date.list')).data;
+  assert.deepEqual(
+    list.map((d) => [d.title, d.days, d.passed, d.nextDate]),
+    [
+      ['生日', 0, false, '2026-10-20'],
+      ['结婚纪念日', 14, false, '2026-11-03'],
+      ['去北海道', 82, false, '2027-01-10'],
+      ['答谢宴', 22, true, '2026-09-28'],
+    ],
+  );
+  assert.equal(list[0].years, 31);
+  assert.equal(list[1].years, 1);
+});
+
+test('导出包含吃啥、周末、纪念日', async () => {
+  const { call } = await setup();
+  await call('A', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('A', 'wish.add', { title: '镰仓' });
+  await call('A', 'date.add', {
+    title: '结婚纪念日',
+    date: '2025-11-03',
+    yearly: true,
+  });
+  const parsed = JSON.parse(
+    JSON.stringify((await call('B', 'data.export')).data),
+  );
+  assert.deepEqual(
+    [parsed.dishes.length, parsed.wishes.length, parsed.dates.length],
+    [1, 1, 1],
+  );
+  assert.deepEqual(Object.keys(parsed.dates[0]).sort(), [
+    'byRole',
+    'date',
+    'id',
+    'title',
+    'ts',
+    'yearly',
+  ]);
+  assert.equal(/"[AB]"/.test(JSON.stringify(parsed)), false);
 });

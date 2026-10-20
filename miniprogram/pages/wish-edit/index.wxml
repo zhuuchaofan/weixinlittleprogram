@@ -1,0 +1,9 @@
+<view class="page">
+  <view class="field"><text class="field-label">地方或活动</text><input value="{{title}}" maxlength="30" data-field="title" bindinput="input" placeholder="例如：镰仓看海" /></view>
+  <view class="field"><text class="field-label">为什么想去</text><textarea value="{{why}}" maxlength="100" data-field="why" bindinput="input" placeholder="可不填" /></view>
+  <view class="field"><text class="field-label">怎么安排</text><textarea value="{{plan}}" maxlength="200" data-field="plan" bindinput="input" placeholder="可不填，例如交通、预算" /></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
+  <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
+  <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">删除这条</button>
+  <view class="page-end"></view>
+</view>

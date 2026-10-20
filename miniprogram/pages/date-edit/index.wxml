@@ -1,0 +1,14 @@
+<view class="page">
+  <view class="field"><text class="field-label">名称</text><input value="{{title}}" maxlength="20" bindinput="inputTitle" placeholder="例如：结婚纪念日" /></view>
+  <view class="field">
+    <text class="field-label">日期</text>
+    <picker mode="date" value="{{date}}" bindchange="pickDate"><view class="picker-value">{{date}}</view></picker>
+  </view>
+  <view class="card yearly">
+    <view class="row-main"><view>每年重复</view><view class="row-sub">生日、纪念日打开；一次性的计划关闭</view></view>
+    <switch checked="{{yearly}}" bindchange="toggleYearly" color="#7a3e3c" aria-label="每年重复" />
+  </view>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
+  <button class="primary save" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
+  <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">删除这个纪念日</button>
+</view>

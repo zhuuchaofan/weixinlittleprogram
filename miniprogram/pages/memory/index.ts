@@ -1,7 +1,9 @@
-import type { Household } from '../../models';
+import type { Anniversary, Household } from '../../models';
 import { requireHousehold, updateHousehold } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
+import { dateService } from '../../services/collections';
+import { shortDate } from '../../utils/date';
 
 Page({
   data: {
@@ -11,6 +13,8 @@ Page({
     error: '',
     message: '',
     household: null as Household | null,
+    dates: [] as Array<Anniversary & { label: string; dateText: string }>,
+    datesError: '',
     myName: '',
     city: '',
   },
@@ -21,12 +25,42 @@ Page({
     this.setData({ loading: true, error: '' });
     try {
       const household = await requireHousehold();
-      if (household) this.show(household);
+      if (household) {
+        this.show(household);
+        void this.loadDates();
+      }
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
       this.setData({ loading: false });
     }
+  },
+  async loadDates() {
+    try {
+      const dates = await dateService.list();
+      this.setData({
+        datesError: '',
+        dates: dates.map((item) => ({
+          ...item,
+          dateText: shortDate(item.nextDate),
+          label: item.passed
+            ? `已经 ${item.days} 天`
+            : item.days === 0
+              ? '就是今天'
+              : `还有 ${item.days} 天`,
+        })),
+      });
+    } catch (error) {
+      this.setData({ datesError: errorMessage(error) });
+    }
+  },
+  addDate() {
+    wx.navigateTo({ url: '/pages/date-edit/index' });
+  },
+  openDate(event: WechatMiniprogram.TouchEvent) {
+    wx.navigateTo({
+      url: `/pages/date-edit/index?id=${event.currentTarget.dataset.id}`,
+    });
   },
   show(household: Household) {
     this.setData({

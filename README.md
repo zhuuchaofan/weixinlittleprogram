@@ -11,7 +11,18 @@
   - 记账（M1–M3）：记一笔（整数日元、9 个分类、日期、付款人、分摊方式）、按月汇总与结算建议、记为已结算（删除结算记录即撤销）、编辑与删除。
   - 清单（T1–T2）：购物 / 待办 / 家务，指派给某人或一起，勾选、编辑、删除。
   - 导出（G2）：「纪念」→「复制全部数据」，复制为带版本号的 JSON。
-- 吃啥、周末两个 tab 仍为占位。
+- 阶段 3：
+  - 吃啥（F1）：菜单增删改（在家做 / 外食 / 外卖），按类型筛选后随机抽一个，尽量不连续抽到同一道。
+  - 周末（W1）：收藏想去的地方（地点、理由、计划），可编辑删除。
+  - 纪念日（D1）：在「纪念」页，倒数天数，可每年重复（显示第几年）；不重复且已过的显示「已经 N 天」。
+  - AI 占位：云函数 `ai-suggest` 始终返回 `{ disabled: true, items: [] }`，页面据此隐藏「让 AI 推荐」与周末条件筛选。
+- 导出包含记账、清单、菜单、周末收藏、纪念日。
+
+### 方案之外的约定
+
+- 纪念日 2 月 29 日在平年按 2 月 28 日计算。
+- `ai-suggest` 额外接受 `probe: true`：只回答是否可用、不生成内容，小程序进入「吃啥」「周末」时用它决定是否显示 AI 按钮。函数未部署或调用失败时同样视为不可用。
+- 周末的「条件筛选」（时长、心情、预算、交通）是给 AI 的输入，AI 不可用时与按钮一起隐藏。
 
 ### 记账规则的落地细节
 
@@ -26,11 +37,12 @@
    │ wx.cloud.callFunction({ name: 'api' })
    ▼
 云函数 api：所有读写的唯一入口，按 openid 校验 household 成员
+云函数 ai-suggest：AI 接口占位，暂时总是 disabled
    ▼
 CloudBase 数据库：所有集合禁止客户端直接读写
 ```
 
-- `cloudfunctions/api/router.js`：action 分发；`household.js`：小家；`expenses.js` + `ledger.js`：记账与结算规则；`todos.js`：清单；`export.js`：导出；`archive.js`：答谢宴归档只读。
+- `cloudfunctions/api/router.js`：action 分发；`household.js`：小家；`expenses.js` + `ledger.js`：记账与结算规则；`todos.js`：清单；`export.js`：导出；`collections.js` + `crud.js`：吃啥、周末、纪念日；`anniversary.js`：纪念日倒数；`archive.js`：答谢宴归档只读。
 - 每条业务记录都带 `householdId`、`ts`、`by`（openid），读写都限定在本小家内。
 - 返回给小程序的数据不包含 openid。
 - 日期按中国时区（UTC+8）展示。

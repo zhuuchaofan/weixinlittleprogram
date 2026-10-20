@@ -1,4 +1,4 @@
-import type { Split, TodoKind } from '../models';
+import type { DishTag, Split, TodoKind } from '../models';
 
 // 与云函数 cloudfunctions/api/validate.js 保持一致。
 export const CATEGORIES = [
@@ -25,3 +25,5 @@ export const TODO_KINDS: Array<{ value: TodoKind; label: string }> = [
   { value: 'todo', label: '待办' },
   { value: 'chore', label: '家务' },
 ];
+
+export const DISH_TAGS: DishTag[] = ['在家做', '外食', '外卖'];

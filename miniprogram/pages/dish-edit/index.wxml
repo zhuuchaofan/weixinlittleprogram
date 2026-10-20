@@ -1,0 +1,14 @@
+<view class="page">
+  <block wx:if="{{id}}">
+    <view class="field"><text class="field-label">菜名</text><input value="{{name}}" maxlength="20" bindinput="inputName" /></view>
+    <view class="field">
+      <text class="field-label">类型</text>
+      <view class="segmented"><view wx:for="{{tags}}" wx:key="*this" class="segment {{tag === item ? 'segment-on' : ''}}" data-value="{{item}}" bindtap="chooseTag">{{item}}</view></view>
+    </view>
+  </block>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
+  <block wx:if="{{id}}">
+    <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
+    <button class="danger-button" bindtap="remove" disabled="{{busy}}">从菜单删除</button>
+  </block>
+</view>

@@ -79,10 +79,9 @@ Page({
     });
   },
   changeMonth(event: WechatMiniprogram.TouchEvent) {
-    const month = shiftMonth(
-      this.data.month,
-      Number(event.currentTarget.dataset.delta),
-    );
+    const delta = Number(event.currentTarget.dataset.delta);
+    if (delta > 0 && this.data.isCurrentMonth) return;
+    const month = shiftMonth(this.data.month, delta);
     this.setData({
       month,
       monthText: monthLabel(month),

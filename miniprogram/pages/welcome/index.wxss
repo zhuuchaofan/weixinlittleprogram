@@ -1,1 +1,4 @@
-.gap { height: 24rpx; }
+.hero { padding: 48rpx 0 56rpx; }
+.form-title { margin-bottom: 24rpx; }
+.code-input { letter-spacing: 8rpx; }
+.back { margin: 12rpx auto 0; }

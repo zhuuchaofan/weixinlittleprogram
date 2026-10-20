@@ -1,18 +1,12 @@
-.tabs { display: flex; border: 1rpx solid var(--line); border-radius: 6rpx; overflow: hidden; }
-.tab { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; background: #fcf9f4; }
-.tab-on { background: var(--accent); color: #fff9ee; }
-.composer { margin: 28rpx 0; }
-.composer-row { margin-top: 16rpx; }
-.who-chips { display: flex; gap: 12rpx; flex: 1; min-width: 0; }
-.chip { min-height: 88rpx; padding: 0 22rpx; display: flex; align-items: center; border: 1rpx solid var(--line); background: #fcf9f4; border-radius: 6rpx; font-size: 26rpx; }
-.chip-on { background: #efe1d5; border-color: var(--accent); color: var(--accent); }
-.add { width: 160rpx; flex-shrink: 0; }
-.item { display: flex; align-items: stretch; border-bottom: 1rpx solid var(--line); min-height: 112rpx; }
-.check { width: 96rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.box { width: 44rpx; height: 44rpx; border: 2rpx solid var(--accent); border-radius: 6rpx; display: flex; align-items: center; justify-content: center; color: #fff9ee; font-size: 28rpx; }
+.composer { margin-top: 24rpx; padding: 24rpx; }
+.composer-row { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 20rpx; }
+.composer-row .chips { gap: 12rpx; min-width: 0; flex: 1; }
+.composer-row .chip { padding: 0 22rpx; }
+.list-gap { margin-top: 32rpx; }
+.todo-row { padding: 0 20rpx 0 0; align-items: stretch; gap: 0; }
+.check { width: 96rpx; min-height: 112rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.box { width: 44rpx; height: 44rpx; border: 2rpx solid var(--accent); border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #fff9ee; font-size: 26rpx; }
 .box-on { background: var(--accent); }
-.item-main { flex: 1; min-width: 0; padding: 16rpx 8rpx; display: flex; flex-direction: column; justify-content: center; }
-.item-done { opacity: 0.7; }
+.todo-main { display: flex; flex-direction: column; justify-content: center; padding: 16rpx 0; }
+.todo-done { opacity: 0.75; }
 .struck { text-decoration: line-through; color: var(--muted); }
-.done-title { margin-top: 36rpx; padding-bottom: 8rpx; }
-.bottom-space { height: 80rpx; }

@@ -1,0 +1,2 @@
+.yearly { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 28rpx; }
+.save { margin-top: 40rpx; }

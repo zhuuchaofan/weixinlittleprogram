@@ -8,7 +8,10 @@
     "pages/welcome/index",
     "pages/archive/index",
     "pages/expense-edit/index",
-    "pages/todo-edit/index"
+    "pages/todo-edit/index",
+    "pages/dish-edit/index",
+    "pages/wish-edit/index",
+    "pages/date-edit/index"
   ],
   "window": {
     "navigationBarTitleText": "小家",
