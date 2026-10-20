@@ -1,0 +1,4 @@
+.chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.chip { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; border: 1rpx solid var(--line); background: #fcf9f4; border-radius: 6rpx; }
+.chip-on { background: var(--accent); border-color: var(--accent); color: #fff9ee; }
+.delete-button { margin: 36rpx auto 0; display: flex; }

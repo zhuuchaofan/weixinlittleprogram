@@ -6,3 +6,4 @@ project.config.json
 artifacts/
 *.log
 .DS_Store
+Claude outputs/

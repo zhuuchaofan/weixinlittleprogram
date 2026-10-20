@@ -6,7 +6,9 @@
     "pages/weekend/index",
     "pages/memory/index",
     "pages/welcome/index",
-    "pages/archive/index"
+    "pages/archive/index",
+    "pages/expense-edit/index",
+    "pages/todo-edit/index"
   ],
   "window": {
     "navigationBarTitleText": "小家",
@@ -21,11 +23,26 @@
     "backgroundColor": "#FBF7F0",
     "borderStyle": "black",
     "list": [
-      { "pagePath": "pages/ledger/index", "text": "记账" },
-      { "pagePath": "pages/lists/index", "text": "清单" },
-      { "pagePath": "pages/food/index", "text": "吃啥" },
-      { "pagePath": "pages/weekend/index", "text": "周末" },
-      { "pagePath": "pages/memory/index", "text": "纪念" }
+      {
+        "pagePath": "pages/ledger/index",
+        "text": "记账"
+      },
+      {
+        "pagePath": "pages/lists/index",
+        "text": "清单"
+      },
+      {
+        "pagePath": "pages/food/index",
+        "text": "吃啥"
+      },
+      {
+        "pagePath": "pages/weekend/index",
+        "text": "周末"
+      },
+      {
+        "pagePath": "pages/memory/index",
+        "text": "纪念"
+      }
     ]
   },
   "style": "v2",

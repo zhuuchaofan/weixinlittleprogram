@@ -1,0 +1,27 @@
+<view class="page">
+  <block wx:if="{{id}}">
+    <view class="field">
+      <text class="field-label">内容</text>
+      <input value="{{text}}" maxlength="60" bindinput="inputText" />
+    </view>
+    <view class="field">
+      <text class="field-label">清单</text>
+      <view class="chips">
+        <view wx:for="{{kinds}}" wx:key="value" class="chip {{kind === item.value ? 'chip-on' : ''}}" data-field="kind" data-value="{{item.value}}" bindtap="choose">{{item.label}}</view>
+      </view>
+    </view>
+    <view class="field">
+      <text class="field-label">谁来做</text>
+      <view class="chips">
+        <view class="chip {{who === 'a' ? 'chip-on' : ''}}" data-field="who" data-value="a" bindtap="choose">{{names.a}}</view>
+        <view class="chip {{who === 'b' ? 'chip-on' : ''}}" data-field="who" data-value="b" bindtap="choose">{{names.b}}</view>
+        <view class="chip {{who === 'both' ? 'chip-on' : ''}}" data-field="who" data-value="both" bindtap="choose">一起</view>
+      </view>
+    </view>
+  </block>
+  <view wx:if="{{error}}" class="notice error">{{error}}</view>
+  <block wx:if="{{id}}">
+    <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
+    <button class="text-button delete-button" bindtap="remove" disabled="{{busy}}">删除这条</button>
+  </block>
+</view>

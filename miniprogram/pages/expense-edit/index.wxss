@@ -1,0 +1,10 @@
+.amount-input { font-size: 56rpx; height: 120rpx; }
+.chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.chip { min-height: 88rpx; min-width: 128rpx; padding: 0 26rpx; display: flex; align-items: center; justify-content: center; border: 1rpx solid var(--line); background: #fcf9f4; border-radius: 6rpx; font-size: 28rpx; }
+.chip-wide { flex: 1; }
+.chip-on { background: var(--accent); border-color: var(--accent); color: #fff9ee; }
+.picker-value { height: 96rpx; line-height: 96rpx; padding: 0 22rpx; border: 1rpx solid var(--line); background: #fcf9f4; border-radius: 6rpx; }
+.split { min-height: 104rpx; padding: 18rpx 22rpx; border: 1rpx solid var(--line); background: #fcf9f4; border-radius: 6rpx; margin-bottom: 14rpx; }
+.split-on { border-color: var(--accent); box-shadow: inset 6rpx 0 0 var(--accent); }
+.delete-button { margin: 36rpx auto 0; display: flex; }
+.bottom-space { height: 80rpx; }

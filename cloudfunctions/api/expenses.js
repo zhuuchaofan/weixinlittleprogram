@@ -1,0 +1,85 @@
+const { ApiError } = require('./errors');
+const validate = require('./validate');
+const { SETTLEMENT, summarize, settlementRecord } = require('./ledger');
+const { todayKey, lastDayOfMonth } = require('./dates');
+const { publicRecord, requireRecord } = require('./records');
+
+const FIELDS = ['amount', 'note', 'cat', 'date', 'payer', 'split'];
+
+function byDateDesc(a, b) {
+  return b.date.localeCompare(a.date) || b.ts - a.ts;
+}
+
+/** repository: listMonth(householdId, month)、listAll(householdId)、get、insert、update、remove */
+function createExpenseHandler({ repository, requireMembership, now }) {
+  const view = (record, household) => publicRecord(record, household, FIELDS);
+
+  async function monthView(household, month) {
+    const records = (await repository.listMonth(household._id, month)).sort(
+      byDateDesc,
+    );
+    return {
+      month,
+      records: records.map((record) => view(record, household)),
+      summary: summarize(records),
+    };
+  }
+
+  return {
+    async 'expense.list'(openid, payload) {
+      const household = await requireMembership(openid);
+      return monthView(household, validate.month(payload.month));
+    },
+    async 'expense.add'(openid, payload) {
+      const household = await requireMembership(openid);
+      const record = {
+        ...validate.expense(payload),
+        householdId: household._id,
+        ts: now(),
+        by: openid,
+      };
+      const id = await repository.insert(record);
+      return view({ ...record, _id: id }, household);
+    },
+    async 'expense.update'(openid, payload) {
+      const household = await requireMembership(openid);
+      const id = validate.id(payload.id);
+      const existing = await requireRecord(repository, household, id);
+      if (existing.cat === SETTLEMENT)
+        throw new ApiError(
+          'VALIDATION',
+          '结算记录不能修改，可以删除后重新结算。',
+        );
+      const fields = validate.expense(payload);
+      await repository.update(household._id, id, fields);
+      return view({ ...existing, ...fields }, household);
+    },
+    async 'expense.remove'(openid, payload) {
+      const household = await requireMembership(openid);
+      const id = validate.id(payload.id);
+      await requireRecord(repository, household, id);
+      await repository.remove(household._id, id);
+      return null;
+    },
+    async 'expense.settle'(openid, payload) {
+      const household = await requireMembership(openid);
+      const month = validate.month(payload.month);
+      const records = await repository.listMonth(household._id, month);
+      const today = todayKey(now());
+      // 结算记录必须落在该月内，才能把该月的 net 归零。
+      const date = today.startsWith(month) ? today : lastDayOfMonth(month);
+      const settlement = settlementRecord(records, date);
+      if (!settlement)
+        throw new ApiError('ALREADY_SETTLED', '本月已经结清了。');
+      await repository.insert({
+        ...settlement,
+        householdId: household._id,
+        ts: now(),
+        by: openid,
+      });
+      return monthView(household, month);
+    },
+  };
+}
+
+module.exports = { createExpenseHandler, FIELDS };

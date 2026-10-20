@@ -1,11 +1,13 @@
 import type { Household } from '../../models';
 import { requireHousehold, updateHousehold } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
+import { exportAllText } from '../../services/export';
 
 Page({
   data: {
     loading: true,
     busy: false,
+    exporting: false,
     error: '',
     message: '',
     household: null as Household | null,
@@ -54,6 +56,21 @@ Page({
       this.setData({ error: errorMessage(error) });
     } finally {
       this.setData({ busy: false });
+    }
+  },
+  async exportData() {
+    if (this.data.exporting) return;
+    this.setData({ exporting: true, error: '', message: '' });
+    try {
+      const text = await exportAllText();
+      await wx.setClipboardData({ data: text });
+      this.setData({
+        message: '全部数据已复制，可以粘贴到备忘录或文件里保存。',
+      });
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+    } finally {
+      this.setData({ exporting: false });
     }
   },
   copyCode() {

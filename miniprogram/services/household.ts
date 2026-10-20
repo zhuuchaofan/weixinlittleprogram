@@ -44,3 +44,10 @@ export async function requireHousehold(): Promise<Household | null> {
   if (!household) wx.reLaunch({ url: '/pages/welcome/index' });
   return household;
 }
+
+/** 角色 → 显示名。 */
+export function memberNames(household: Household): { a: string; b: string } {
+  const name = (role: 'a' | 'b') =>
+    household.members.find((member) => member.role === role)?.name || '对方';
+  return { a: name('a'), b: name('b') };
+}

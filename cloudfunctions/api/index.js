@@ -8,11 +8,12 @@ const {
 const PAGE_SIZE = 100;
 const MAX_PAGES = 20;
 
-async function listAll(db, collectionName) {
+async function listAll(db, collectionName, where = {}) {
   const collection = db.collection(collectionName);
   const rows = [];
   for (let page = 0; page < MAX_PAGES; page++) {
     const result = await collection
+      .where(where)
       .orderBy('_id', 'asc')
       .skip(page * PAGE_SIZE)
       .limit(PAGE_SIZE)
@@ -62,6 +63,37 @@ function createHouseholdRepository(db) {
   };
 }
 
+/** 业务记录集合：所有读写都限定在 householdId 之内。 */
+function createRecordRepository(db, collectionName) {
+  const collection = db.collection(collectionName);
+  const _ = db.command;
+  return {
+    listAll: (householdId) => listAll(db, collectionName, { householdId }),
+    listMonth: (householdId, month) =>
+      listAll(db, collectionName, {
+        householdId,
+        date: _.gte(`${month}-01`).and(_.lte(`${month}-31`)),
+      }),
+    async get(householdId, id) {
+      const result = await collection
+        .where({ _id: id, householdId })
+        .limit(1)
+        .get();
+      return result.data[0] || null;
+    },
+    async insert(doc) {
+      const result = await collection.add(doc);
+      return result.id;
+    },
+    async update(householdId, id, fields) {
+      await collection.where({ _id: id, householdId }).update(fields);
+    },
+    async remove(householdId, id) {
+      await collection.where({ _id: id, householdId }).remove();
+    },
+  };
+}
+
 exports.main = async (event, context) => {
   const { openid, envId } = invocationFromContext(
     context,
@@ -77,6 +109,8 @@ exports.main = async (event, context) => {
       listRsvps: () => listAll(db, 'rsvps'),
       listMessages: () => listAll(db, 'guest_messages'),
     },
+    expenses: createRecordRepository(db, 'expenses'),
+    todos: createRecordRepository(db, 'todos'),
   });
   return route(event, openid);
 };

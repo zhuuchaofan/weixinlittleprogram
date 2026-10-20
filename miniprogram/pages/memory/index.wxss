@@ -3,3 +3,5 @@
 .member { min-height: 88rpx; border-top: 1rpx solid var(--line); }
 .entry { min-height: 120rpx; padding: 20rpx 24rpx; border: 1rpx solid var(--line); background: #fcf9f4; margin-bottom: 24rpx; }
 .entry-arrow { color: var(--accent); font-size: 48rpx; }
+.export-button { margin-top: 20rpx; }
+.bottom-space { height: 80rpx; }

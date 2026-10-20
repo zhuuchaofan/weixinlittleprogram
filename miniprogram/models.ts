@@ -40,3 +40,51 @@ export interface Archive {
     guests: number;
   };
 }
+
+export type Payer = 'a' | 'b';
+export type Split = 'half' | 'self' | 'other';
+
+export interface ExpenseInput {
+  amount: number;
+  note: string;
+  cat: string;
+  date: string;
+  payer: Payer;
+  split: Split;
+}
+
+export interface Expense extends ExpenseInput {
+  id: string;
+  ts: number;
+  byRole: MemberRole | '';
+}
+
+export interface LedgerSummary {
+  sharedTotal: number;
+  paid: { a: number; b: number };
+  net: number;
+  settled: boolean;
+  suggestion: { from: Payer; to: Payer; amount: number } | null;
+}
+
+export interface LedgerMonth {
+  month: string;
+  records: Expense[];
+  summary: LedgerSummary;
+}
+
+export type TodoKind = 'shop' | 'todo' | 'chore';
+export type TodoWho = 'a' | 'b' | 'both';
+
+export interface TodoInput {
+  text: string;
+  kind: TodoKind;
+  who: TodoWho;
+}
+
+export interface Todo extends TodoInput {
+  id: string;
+  ts: number;
+  done: boolean;
+  byRole: MemberRole | '';
+}

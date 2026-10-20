@@ -1,15 +1,30 @@
 const { ApiError, failure } = require('./errors');
 const { createHouseholdHandler } = require('./household');
 const { createArchiveHandler } = require('./archive');
+const { createExpenseHandler } = require('./expenses');
+const { createTodoHandler } = require('./todos');
+const { createExportHandler } = require('./export');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
-function createRouter({ households, archive, now }) {
+function createRouter({
+  households,
+  archive,
+  expenses,
+  todos,
+  now = () => Date.now(),
+}) {
   const household = createHouseholdHandler({ repository: households, now });
+  const requireMembership = household.requireMembership;
   const actions = {
     ...household.actions,
-    ...createArchiveHandler({
-      repository: archive,
-      requireMembership: household.requireMembership,
+    ...createArchiveHandler({ repository: archive, requireMembership }),
+    ...createExpenseHandler({ repository: expenses, requireMembership, now }),
+    ...createTodoHandler({ repository: todos, requireMembership, now }),
+    ...createExportHandler({
+      expenseRepository: expenses,
+      todoRepository: todos,
+      requireMembership,
+      now,
     }),
   };
   return async function route(event, openid) {

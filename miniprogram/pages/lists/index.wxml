@@ -1,7 +1,33 @@
 <view class="page">
-  <view class="kicker">小家 / 清单</view>
-  <view class="title">清单</view>
-  <view wx:if="{{loading}}" class="status">正在确认小家…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="retry">重试</button></view>
-  <view wx:if="{{ready}}" class="empty">购物、待办、家务，下一阶段开放。</view>
+  <view class="tabs">
+    <view wx:for="{{kinds}}" wx:key="value" class="tab {{kind === item.value ? 'tab-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKind">{{item.label}}</view>
+  </view>
+
+  <view class="composer">
+    <input value="{{text}}" maxlength="60" placeholder="添加一条…" confirm-type="done" bindinput="inputText" bindconfirm="add" />
+    <view class="inline composer-row">
+      <view class="who-chips">
+        <view class="chip {{who === 'a' ? 'chip-on' : ''}}" data-value="a" bindtap="chooseWho">{{names.a}}</view>
+        <view class="chip {{who === 'b' ? 'chip-on' : ''}}" data-value="b" bindtap="chooseWho">{{names.b}}</view>
+        <view class="chip {{who === 'both' ? 'chip-on' : ''}}" data-value="both" bindtap="chooseWho">一起</view>
+      </view>
+      <button class="primary add" bindtap="add" disabled="{{busy}}">添加</button>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">刷新</button></view>
+  <view wx:if="{{loading && !all.length}}" class="status">正在读取…</view>
+  <view wx:elif="{{!open.length && !done.length}}" class="empty">这里还空着。</view>
+
+  <view wx:for="{{open}}" wx:key="id" class="item">
+    <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="完成 {{item.text}}"><view class="box"></view></view>
+    <view class="item-main" data-id="{{item.id}}" bindtap="open"><view>{{item.text}}</view><view class="small muted">{{item.whoText}}</view></view>
+  </view>
+
+  <view wx:if="{{done.length}}" class="done-title small muted">已完成 {{done.length}}</view>
+  <view wx:for="{{done}}" wx:key="id" class="item item-done">
+    <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="box box-on">✓</view></view>
+    <view class="item-main" data-id="{{item.id}}" bindtap="open"><view class="struck">{{item.text}}</view><view class="small muted">{{item.whoText}}</view></view>
+  </view>
+  <view class="bottom-space"></view>
 </view>

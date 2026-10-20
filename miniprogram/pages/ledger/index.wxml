@@ -1,7 +1,33 @@
 <view class="page">
-  <view class="kicker">小家 / 记账</view>
-  <view class="title">记账</view>
-  <view wx:if="{{loading}}" class="status">正在确认小家…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="retry">重试</button></view>
-  <view wx:if="{{ready}}" class="empty">记一笔、月度汇总与结算，下一阶段开放。</view>
+  <view class="month-bar inline">
+    <button class="month-arrow" data-delta="-1" bindtap="changeMonth" aria-label="上个月">‹</button>
+    <view class="month-text serif">{{monthText}}</view>
+    <button class="month-arrow" data-delta="1" bindtap="changeMonth" disabled="{{isCurrentMonth}}" aria-label="下个月">›</button>
+  </view>
+
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+
+  <view wx:if="{{summary}}" class="summary-card">
+    <view class="small muted">本月共同支出</view>
+    <view class="total serif">{{summaryText.total}}</view>
+    <view class="paid inline">
+      <text>{{names.a}} 付 {{summaryText.a}}</text>
+      <text>{{names.b}} 付 {{summaryText.b}}</text>
+    </view>
+    <view class="suggestion {{summary.settled ? 'settled' : ''}}">{{summaryText.suggestion}}</view>
+    <button wx:if="{{!summary.settled}}" class="secondary" bindtap="settle" loading="{{busy}}" disabled="{{busy}}">记为已结算</button>
+  </view>
+
+  <button class="primary add-button" bindtap="add">记一笔</button>
+
+  <view wx:if="{{loading && !records.length}}" class="status">正在读取…</view>
+  <view wx:elif="{{summary && !records.length}}" class="empty">这个月还没有记账。</view>
+  <view wx:for="{{records}}" wx:key="id" class="row {{item.isSettlement ? 'row-settlement' : ''}}" data-id="{{item.id}}" bindtap="open" hover-class="row-active">
+    <view class="row-main">
+      <view class="row-title">{{item.note || item.cat}}</view>
+      <view class="small muted">{{item.dateText}} · {{item.cat}} · {{item.payerName}}付 · {{item.splitText}}</view>
+    </view>
+    <view class="row-amount serif">{{item.amountText}}</view>
+  </view>
+  <view class="bottom-space"></view>
 </view>
