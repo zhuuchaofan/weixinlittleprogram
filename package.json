@@ -4,7 +4,8 @@
   "private": true,
   "description": "小家：两人共用的微信小程序",
   "scripts": {
-    "setup": "node scripts/setup.mjs",
+    "setup": "node scripts/setup.mjs && node scripts/contract.mjs",
+    "contract": "node scripts/contract.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint miniprogram cloudfunctions scripts tests",
     "format": "prettier --write .",

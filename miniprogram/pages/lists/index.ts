@@ -11,7 +11,7 @@ import {
   updateTodo,
 } from '../../services/todos';
 import { errorMessage } from '../../services/cloud';
-import { TODO_KINDS } from '../../config/options';
+import { LENGTHS, TODO_KINDS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 
 type Row = Todo & { subText: string };
@@ -29,6 +29,7 @@ function toRow(todo: Todo): Row {
 
 Page({
   data: {
+    limits: LENGTHS,
     kinds: TODO_KINDS,
     kind: 'shop' as TodoKind,
     names: { a: '', b: '' },

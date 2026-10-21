@@ -7,13 +7,14 @@ import {
   updateExpense,
 } from '../../services/ledger';
 import { errorMessage } from '../../services/cloud';
-import { CATEGORIES, SETTLEMENT, SPLITS } from '../../config/options';
+import { CATEGORIES, LENGTHS, SETTLEMENT, SPLITS } from '../../config/options';
 import { formatTimestamp, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 
 Page({
   data: {
+    limits: LENGTHS,
     id: '',
     isSettlement: false,
     categories: CATEGORIES,

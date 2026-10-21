@@ -7,7 +7,7 @@
   </view>
 
   <view class="card composer">
-    <input value="{{text}}" maxlength="60" placeholder="添加一条…" confirm-type="done" bindinput="inputText" bindconfirm="add" />
+    <input value="{{text}}" maxlength="{{limits.todoText}}" placeholder="添加一条…" confirm-type="done" bindinput="inputText" bindconfirm="add" />
     <view class="composer-row">
       <view class="chips">
         <view class="chip {{who === 'a' ? 'chip-on' : ''}}" data-value="a" bindtap="chooseWho">{{names.a}}</view>

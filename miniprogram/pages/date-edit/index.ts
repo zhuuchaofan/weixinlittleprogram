@@ -2,9 +2,11 @@ import { dateService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { todayKey } from '../../utils/date';
 import { confirmAction } from '../../utils/confirm';
+import { LENGTHS } from '../../config/options';
 
 Page({
   data: {
+    limits: LENGTHS,
     id: '',
     title: '',
     date: todayKey(),

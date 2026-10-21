@@ -39,7 +39,7 @@
       <text class="small muted">{{dishes.length}} 道</text>
     </view>
     <view class="card composer">
-      <input value="{{name}}" maxlength="20" placeholder="加一道菜" confirm-type="done" bindinput="inputName" bindconfirm="add" />
+      <input value="{{name}}" maxlength="{{limits.dishName}}" placeholder="加一道菜" confirm-type="done" bindinput="inputName" bindconfirm="add" />
       <view class="composer-row">
         <view class="chips">
           <view wx:for="{{tags}}" wx:key="*this" class="chip {{tag === item ? 'chip-on' : ''}}" data-value="{{item}}" bindtap="chooseTag">{{item}}</view>

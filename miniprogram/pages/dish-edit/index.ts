@@ -1,11 +1,12 @@
 import type { DishTag } from '../../models';
 import { dishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
-import { DISH_TAGS } from '../../config/options';
+import { DISH_TAGS, LENGTHS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 
 Page({
   data: {
+    limits: LENGTHS,
     id: '',
     tags: DISH_TAGS,
     name: '',

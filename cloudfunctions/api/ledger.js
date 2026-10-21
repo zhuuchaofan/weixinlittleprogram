@@ -8,7 +8,7 @@
  */
 const crypto = require('node:crypto');
 
-const SETTLEMENT = '结算';
+const { settlement: SETTLEMENT } = require('./contract.json');
 
 function monthOf(record) {
   return String(record.date).slice(0, 7);

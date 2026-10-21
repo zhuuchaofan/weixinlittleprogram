@@ -1,9 +1,18 @@
 import { wishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { confirmAction } from '../../utils/confirm';
+import { LENGTHS } from '../../config/options';
 
 Page({
-  data: { id: '', title: '', why: '', plan: '', busy: false, error: '' },
+  data: {
+    limits: LENGTHS,
+    id: '',
+    title: '',
+    why: '',
+    plan: '',
+    busy: false,
+    error: '',
+  },
   async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) return;
     let wish;

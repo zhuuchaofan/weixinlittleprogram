@@ -2,7 +2,7 @@
   <block wx:if="{{id}}">
     <view class="field">
       <text class="field-label">内容</text>
-      <input value="{{text}}" maxlength="60" bindinput="inputText" />
+      <input value="{{text}}" maxlength="{{limits.todoText}}" bindinput="inputText" />
     </view>
     <view class="field">
       <text class="field-label">清单</text>

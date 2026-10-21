@@ -2,11 +2,12 @@ import type { TodoKind, TodoWho } from '../../models';
 import { getHousehold, memberNames } from '../../services/household';
 import { getTodo, removeTodo, updateTodo } from '../../services/todos';
 import { errorMessage } from '../../services/cloud';
-import { TODO_KINDS } from '../../config/options';
+import { LENGTHS, TODO_KINDS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 
 Page({
   data: {
+    limits: LENGTHS,
     id: '',
     kinds: TODO_KINDS,
     names: { a: '', b: '' },
