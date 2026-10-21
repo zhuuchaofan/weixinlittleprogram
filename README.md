@@ -50,6 +50,8 @@ CloudBase 数据库：所有集合禁止客户端直接读写
 - 每条业务记录都带 `householdId`、`ts`、`by`（openid），读写都限定在本小家内。
 - 返回给小程序的数据不包含 openid。
 - 日期按中国时区（UTC+8）展示。
+- 分类、标签、字段长度等前后端共用的规则只在 `shared/contract.json` 写一份，副本由 `npm run contract` 生成（`cloudfunctions/api/contract.json`、`miniprogram/config/contract.ts`），测试会发现漏同步。
+- 日常读取（列表、按月账目）超过 2000 条时返回 `TOO_MANY`，不会静默少数据；导出按 `count()` 读完整，结果带各集合 `counts`。
 
 ## 使用
 
@@ -60,6 +62,8 @@ CloudBase 数据库：所有集合禁止客户端直接读写
 ## 常用命令
 
 ```powershell
+npm run setup          # 干净副本：生成本地配置、同步契约、安装云函数依赖（SDK 测试需要）
+npm run contract       # 改了 shared/contract.json 之后运行，同步到云函数与小程序
 npm run check          # TypeScript、ESLint、自动测试
 npm run check:native   # 本机微信 WXML/WXSS 编译器检查（需要 Windows 上的开发者工具）
 ```
