@@ -48,6 +48,9 @@ function memoryRecords(prefix) {
     async listAll(householdId) {
       return own(householdId).map((d) => ({ ...d }));
     },
+    async readComplete(householdId) {
+      return own(householdId).map((d) => ({ ...d }));
+    },
     async listMonth(householdId, month) {
       return own(householdId)
         .filter((d) => d.date.slice(0, 7) === month)
