@@ -143,6 +143,11 @@ test('记一笔：校验整数日元、分类、日期、付款人与分摊', as
     { date: '2026-02-30' },
     { payer: 'c' },
     { split: 'all' },
+    { split: 'ratio' },
+    { split: 'ratio', ratio: 60.5 },
+    { split: 'ratio', ratio: '60' },
+    { split: 'ratio', ratio: -1 },
+    { split: 'ratio', ratio: 101 },
     { note: 'x'.repeat(41) },
   ])
     assert.equal(
@@ -686,4 +691,74 @@ test('吃啥：菜品与店家，店家没有「在家做」，旧记录当作�
     'shop',
   ]);
   assert.equal(dish.ok, true);
+});
+
+test('按比例分摊：保存比例、参与结算，改回其他方式后不再带 ratio', async () => {
+  const { call, expenses } = await setup();
+  const added = await call(
+    'A',
+    'expense.add',
+    expense({ amount: 1000, split: 'ratio', ratio: 60 }),
+  );
+  assert.equal(added.ok, true, added.message);
+  assert.equal(added.data.ratio, 60);
+  assert.equal(expenses.docs.get(added.data.id).ratio, 60);
+
+  // 非比例分摊的 ratio 一律忽略
+  const half = await call(
+    'A',
+    'expense.add',
+    expense({ amount: 1000, split: 'half', ratio: 60 }),
+  );
+  assert.equal(half.ok, true);
+  assert.equal('ratio' in half.data, false);
+  assert.equal(expenses.docs.get(half.data.id).ratio, null);
+
+  // A 付 1000 按 6:4（B 欠 400），A 付 1000 平摊（B 欠 500）
+  const month = await call('B', 'expense.list', { month: '2026-10' });
+  assert.equal(month.data.summary.net, 900);
+  assert.deepEqual(month.data.summary.suggestion, {
+    from: 'b',
+    to: 'a',
+    amount: 900,
+  });
+  assert.equal(
+    month.data.records.find((r) => r.id === added.data.id).ratio,
+    60,
+  );
+
+  // 编辑：改成 7:3，再改回平摊
+  const edited = await call(
+    'B',
+    'expense.update',
+    expense({ id: added.data.id, amount: 1000, split: 'ratio', ratio: 70 }),
+  );
+  assert.equal(edited.data.ratio, 70);
+  assert.equal(
+    (await call('A', 'expense.list', { month: '2026-10' })).data.summary.net,
+    300 + 500,
+  );
+  const back = await call(
+    'B',
+    'expense.update',
+    expense({ id: added.data.id, amount: 1000, split: 'half' }),
+  );
+  assert.equal('ratio' in back.data, false);
+  assert.equal(expenses.docs.get(added.data.id).ratio, null);
+  assert.equal(
+    (await call('A', 'expense.list', { month: '2026-10' })).data.summary.net,
+    1000,
+  );
+
+  // 结算后归零，导出里按比例的记录带 ratio，其余不带
+  await call(
+    'A',
+    'expense.update',
+    expense({ id: added.data.id, amount: 1000, split: 'ratio', ratio: 60 }),
+  );
+  const settled = await call('A', 'expense.settle', { month: '2026-10' });
+  assert.equal(settled.data.summary.settled, true);
+  const exported = (await call('A', 'data.export')).data.expenses;
+  assert.equal(exported.find((r) => r.id === added.data.id).ratio, 60);
+  assert.equal(exported.find((r) => r.id === half.data.id).ratio, undefined);
 });
