@@ -20,6 +20,16 @@
     </block>
   </view>
 
+  <view wx:if="{{categories.length}}" class="card categories">
+    <view class="small muted">按分类</view>
+    <view wx:for="{{categories}}" wx:key="cat" class="cat-row" aria-label="{{item.cat}} {{item.amountText}}，占 {{item.percent}}%">
+      <view class="cat-name">{{item.cat}}</view>
+      <view class="cat-track"><view class="cat-bar" style="width: {{item.width}}%"></view></view>
+      <view class="cat-percent small muted">{{item.percent}}%</view>
+      <view class="cat-amount">{{item.amountText}}</view>
+    </view>
+  </view>
+
   <button class="primary add-button" bindtap="add">记一笔</button>
 
   <view class="section-head">

@@ -11,6 +11,25 @@ import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 
+type CategoryRow = {
+  cat: string;
+  amountText: string;
+  percent: number;
+  width: number;
+};
+
+/** 占比四舍五入到整数；条的长度相对最大的一类，最大的一类占满。 */
+function categoryRows(summary: LedgerSummary): CategoryRow[] {
+  const total = summary.sharedTotal;
+  const top = summary.byCategory[0]?.amount || 0;
+  return summary.byCategory.map(({ cat, amount }) => ({
+    cat,
+    amountText: formatYuan(amount),
+    percent: total ? Math.round((amount * 100) / total) : 0,
+    width: top ? Math.max(2, Math.round((amount * 100) / top)) : 0,
+  }));
+}
+
 type Row = Expense & {
   amountText: string;
   dateText: string;
@@ -35,6 +54,7 @@ Page({
     records: [] as Row[],
     summary: null as LedgerSummary | null,
     summaryText: { total: '', a: '', b: '', suggestion: '' },
+    categories: [] as CategoryRow[],
   },
   onShow() {
     void this.load();
@@ -68,6 +88,7 @@ Page({
     this.setData({
       names,
       summary,
+      categories: categoryRows(summary),
       summaryText: {
         total: formatYuan(summary.sharedTotal),
         a: formatYuan(summary.paid.a),
@@ -98,6 +119,7 @@ Page({
       isCurrentMonth: month === todayKey().slice(0, 7),
       records: [],
       summary: null,
+      categories: [],
     });
     void this.load();
   },
