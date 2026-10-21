@@ -2,6 +2,7 @@ const { ApiError } = require('./errors');
 
 // 分类、标签、字段长度来自 shared/contract.json（npm run contract 同步到这里）。
 const CONTRACT = require('./contract.json');
+const { normalizeCategory } = require('./ledger');
 
 const { categories: CATEGORIES, lengths: LENGTHS } = CONTRACT;
 // 金额以「分」为单位的整数存储，避免浮点误差；上限 1000 万元。
@@ -68,7 +69,7 @@ function expense(payload) {
   return {
     amount,
     note: text(payload.note, { field: '备注', max: LENGTHS.expenseNote }),
-    cat: oneOf(payload.cat, CATEGORIES, '请选择分类。'),
+    cat: oneOf(normalizeCategory(payload.cat), CATEGORIES, '请选择分类。'),
     date: payload.date,
     payer: oneOf(payload.payer, CONTRACT.payers, '请选择付款人。'),
     split: oneOf(payload.split, CONTRACT.splits, '请选择分摊方式。'),

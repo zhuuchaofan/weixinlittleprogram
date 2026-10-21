@@ -10,7 +10,16 @@
  */
 const crypto = require('node:crypto');
 
-const { settlement: SETTLEMENT, categories } = require('./contract.json');
+const {
+  settlement: SETTLEMENT,
+  categories,
+  categoryAliases,
+} = require('./contract.json');
+
+/** 改名前存下的分类（如「食费」）按新名称处理；数据库里的旧记录不用迁移。 */
+function normalizeCategory(cat) {
+  return Object.hasOwn(categoryAliases, cat) ? categoryAliases[cat] : cat;
+}
 
 function monthOf(record) {
   return String(record.date).slice(0, 7);
@@ -40,7 +49,8 @@ function summarize(records) {
   const byCat = new Map();
   for (const record of shared) {
     paid[record.payer] += record.amount;
-    byCat.set(record.cat, (byCat.get(record.cat) || 0) + record.amount);
+    const cat = normalizeCategory(record.cat);
+    byCat.set(cat, (byCat.get(cat) || 0) + record.amount);
   }
   // 金额相同时按契约里的分类顺序，结果稳定。
   const byCategory = [...byCat]
@@ -99,6 +109,7 @@ function settlementId(householdId, month, records) {
 module.exports = {
   SETTLEMENT,
   settlementId,
+  normalizeCategory,
   monthOf,
   credit,
   netOf,

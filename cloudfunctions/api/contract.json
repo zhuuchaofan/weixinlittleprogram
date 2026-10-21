@@ -1,6 +1,6 @@
 {
   "categories": [
-    "食费",
+    "吃饭",
     "日用",
     "房租",
     "水电网",
@@ -11,6 +11,7 @@
     "其他"
   ],
   "settlement": "结算",
+  "categoryAliases": { "食费": "吃饭" },
   "payers": ["a", "b"],
   "splits": ["half", "other", "self", "ratio"],
   "ratio": { "min": 0, "max": 100 },

@@ -4,9 +4,10 @@ const {
   summarize,
   settlementRecord,
   netOf,
+  normalizeCategory,
 } = require('../cloudfunctions/api/ledger');
 
-const r = (payer, amount, split = 'half', cat = '食费') => ({
+const r = (payer, amount, split = 'half', cat = '吃饭') => ({
   payer,
   amount,
   split,
@@ -73,8 +74,8 @@ test('绝对值小于 1 视为已结清', () => {
 
 test('分类统计：与共同支出同口径，排除结算和「自己的」，按金额从大到小', () => {
   const records = [
-    r('a', 3000, 'half', '食费'),
-    r('b', 1000, 'other', '食费'),
+    r('a', 3000, 'half', '吃饭'),
+    r('b', 1000, 'other', '吃饭'),
     r('a', 5000, 'half', '房租'),
     r('b', 800, 'self', '娱乐'), // 自己的，不计
     r('a', 500, 'half', '交通'),
@@ -84,7 +85,7 @@ test('分类统计：与共同支出同口径，排除结算和「自己的」�
   const settlement = settlementRecord(records, '2026-10-20');
   assert.deepEqual(summary.byCategory, [
     { cat: '房租', amount: 5000 },
-    { cat: '食费', amount: 4000 },
+    { cat: '吃饭', amount: 4000 },
     { cat: '日用', amount: 500 },
     { cat: '交通', amount: 500 },
   ]);
@@ -98,6 +99,22 @@ test('分类统计：与共同支出同口径，排除结算和「自己的」�
     '结算记录不计入分类',
   );
   assert.deepEqual(summarize([]).byCategory, []);
+});
+
+test('分类改名：旧分类「食费」按「吃饭」统计', () => {
+  const summary = summarize([
+    r('a', 1000, 'half', '食费'),
+    r('b', 500, 'half', '吃饭'),
+    r('a', 200, 'half', '日用'),
+  ]);
+  assert.deepEqual(summary.byCategory, [
+    { cat: '吃饭', amount: 1500 },
+    { cat: '日用', amount: 200 },
+  ]);
+  assert.equal(normalizeCategory('食费'), '吃饭');
+  assert.equal(normalizeCategory('吃饭'), '吃饭');
+  assert.equal(normalizeCategory('结算'), '结算');
+  assert.equal(normalizeCategory('toString'), 'toString');
 });
 
 test('按比例分摊：credit = round(amount × (100 − ratio) / 100)，付款人承担 ratio%', () => {

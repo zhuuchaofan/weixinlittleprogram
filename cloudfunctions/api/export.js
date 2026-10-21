@@ -16,7 +16,7 @@ const EXPORT_VERSION = 1;
  */
 function createExportHandler({ repositories, requireMembership, now }) {
   const sections = [
-    ['expenses', expenses.FIELDS],
+    ['expenses', expenses.FIELDS, expenses.withCategory],
     ['todos', todos.FIELDS],
     ['dishes', DISH_FIELDS, withDishKind],
     ['wishes', WISH_FIELDS],

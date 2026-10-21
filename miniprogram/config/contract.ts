@@ -1,7 +1,7 @@
 // 由 scripts/contract.mjs 从 shared/contract.json 生成，不要手改。
 export const CONTRACT = {
   "categories": [
-    "食费",
+    "吃饭",
     "日用",
     "房租",
     "水电网",
@@ -12,6 +12,9 @@ export const CONTRACT = {
     "其他"
   ],
   "settlement": "结算",
+  "categoryAliases": {
+    "食费": "吃饭"
+  },
   "payers": [
     "a",
     "b"
