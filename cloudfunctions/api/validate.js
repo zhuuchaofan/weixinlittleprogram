@@ -79,15 +79,24 @@ function todo(payload) {
 }
 
 const DISH_TAGS = CONTRACT.dishTags;
+const DISH_KINDS = CONTRACT.dishKinds;
 
+/** 菜单里的一条：菜品（dish）或店家（shop）；没有 kind 的旧记录当作菜品。店家没有「在家做」。 */
 function dish(payload) {
+  const kind = oneOf(payload.kind ?? 'dish', DISH_KINDS, '请选择菜品或店家。');
+  const shop = kind === 'shop';
   return {
     name: text(payload?.name, {
-      field: '菜名',
+      field: '名称',
       min: 1,
       max: LENGTHS.dishName,
     }),
-    tag: oneOf(payload.tag, DISH_TAGS, '请选择在家做、外食或外卖。'),
+    kind,
+    tag: oneOf(
+      payload.tag,
+      shop ? CONTRACT.shopTags : DISH_TAGS,
+      shop ? '店家请选择外食或外卖。' : '请选择在家做、外食或外卖。',
+    ),
   };
 }
 

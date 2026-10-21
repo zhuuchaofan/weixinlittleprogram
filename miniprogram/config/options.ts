@@ -1,4 +1,11 @@
-import type { DishTag, Payer, Split, TodoKind, TodoWho } from '../models';
+import type {
+  DishKind,
+  DishTag,
+  Payer,
+  Split,
+  TodoKind,
+  TodoWho,
+} from '../models';
 import { CONTRACT } from './contract';
 
 // 取值来自 shared/contract.json（npm run contract 生成 contract.ts）。
@@ -27,6 +34,24 @@ export const TODO_KINDS: Array<{ value: TodoKind; label: string }> =
   }));
 
 export const DISH_TAGS: DishTag[] = [...CONTRACT.dishTags];
+
+const DISH_KIND_LABELS: Record<DishKind, string> = {
+  dish: '菜品',
+  shop: '店家',
+};
+export const DISH_KINDS: Array<{ value: DishKind; label: string }> =
+  CONTRACT.dishKinds.map((value: DishKind) => ({
+    value,
+    label: DISH_KIND_LABELS[value],
+  }));
+const SHOP_TAGS: DishTag[] = [...CONTRACT.shopTags];
+/** 某一类能选的标签：店家没有「在家做」。 */
+export function tagsForKind(kind: DishKind | ''): DishTag[] {
+  return kind === 'shop' ? SHOP_TAGS : DISH_TAGS;
+}
+export function kindLabel(kind: DishKind): string {
+  return DISH_KIND_LABELS[kind];
+}
 // 只用于编译期核对契约取值与 models.ts 一致。
 export const PAYERS: Payer[] = [...CONTRACT.payers];
 export const TODO_WHO: TodoWho[] = [...CONTRACT.todoWho];

@@ -607,3 +607,83 @@ test('按 id 取单条：编辑页缓存未命中时使用，只能取本小家�
   }
   assert.equal(added.date.days > 0, true, '纪念日单条也带倒数');
 });
+
+test('吃啥：菜品与店家，店家没有「在家做」，旧记录当作菜品', async () => {
+  const { call, dishes } = await setup();
+  for (const bad of [
+    { name: '一兰', kind: 'shop', tag: '在家做' },
+    { name: '一兰', kind: 'restaurant', tag: '外食' },
+    { name: '一兰', kind: 'shop', tag: '夜宵' },
+  ])
+    assert.equal(
+      (await call('A', 'dish.add', bad)).code,
+      'VALIDATION',
+      JSON.stringify(bad),
+    );
+
+  // 不带 kind（旧版小程序）按菜品保存
+  const legacyClient = await call('A', 'dish.add', {
+    name: '咖喱饭',
+    tag: '在家做',
+  });
+  assert.equal(legacyClient.data.kind, 'dish');
+  const dish = await call('A', 'dish.add', {
+    name: '寿喜烧',
+    kind: 'dish',
+    tag: '外食',
+  });
+  const shop = await call('B', 'dish.add', {
+    name: '一兰拉面',
+    kind: 'shop',
+    tag: '外食',
+  });
+  assert.equal(shop.ok, true, shop.message);
+  assert.equal(shop.data.kind, 'shop');
+
+  // 数据库里已有、没有 kind 字段的旧记录
+  const oldId = await dishes.insert({
+    householdId: dishes.docs.get(shop.data.id).householdId,
+    name: '拉面',
+    tag: '外食',
+    ts: NOW - 1000,
+    by: 'A',
+  });
+  const list = (await call('A', 'dish.list')).data;
+  assert.equal(list.length, 4);
+  assert.deepEqual(Object.fromEntries(list.map((d) => [d.name, d.kind])), {
+    咖喱饭: 'dish',
+    寿喜烧: 'dish',
+    一兰拉面: 'shop',
+    拉面: 'dish',
+  });
+  assert.equal((await call('B', 'dish.get', { id: oldId })).data.kind, 'dish');
+
+  // 只改标签时旧记录保持菜品；菜品改成店家，同时标签不能是在家做
+  assert.equal(
+    (await call('B', 'dish.update', { id: oldId, tag: '外卖' })).data.kind,
+    'dish',
+  );
+  assert.equal(
+    (await call('A', 'dish.update', { id: legacyClient.data.id, kind: 'shop' }))
+      .code,
+    'VALIDATION',
+    '在家做的菜品不能直接变成店家',
+  );
+  const moved = await call('A', 'dish.update', {
+    id: legacyClient.data.id,
+    kind: 'shop',
+    tag: '外卖',
+  });
+  assert.deepEqual([moved.data.kind, moved.data.tag], ['shop', '外卖']);
+
+  // 导出里每条都有 kind
+  const exported = (await call('B', 'data.export')).data.dishes;
+  assert.equal(exported.length, 4);
+  assert.deepEqual(exported.map((d) => d.kind).sort(), [
+    'dish',
+    'dish',
+    'shop',
+    'shop',
+  ]);
+  assert.equal(dish.ok, true);
+});
