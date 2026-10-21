@@ -4,11 +4,12 @@
  * - credit：split === 'other' 时为 amount，否则为 amount / 2。
  * - net：payer 为 a 加 credit，为 b 减 credit；split === 'self' 不计入。
  * - net > 0：b 应付给 a；net < 0：a 应付给 b；|net| < 1 分视为已结清，结算金额四舍五入到分。
+ * - 分类统计（byCategory）与共同支出口径相同，按金额从大到小。
  * - 月份由 date 前 7 位（YYYY-MM）决定。
  */
 const crypto = require('node:crypto');
 
-const { settlement: SETTLEMENT } = require('./contract.json');
+const { settlement: SETTLEMENT, categories } = require('./contract.json');
 
 function monthOf(record) {
   return String(record.date).slice(0, 7);
@@ -32,12 +33,25 @@ function summarize(records) {
     (record) => record.cat !== SETTLEMENT && record.split !== 'self',
   );
   const paid = { a: 0, b: 0 };
-  for (const record of shared) paid[record.payer] += record.amount;
+  const byCat = new Map();
+  for (const record of shared) {
+    paid[record.payer] += record.amount;
+    byCat.set(record.cat, (byCat.get(record.cat) || 0) + record.amount);
+  }
+  // 金额相同时按契约里的分类顺序，结果稳定。
+  const byCategory = [...byCat]
+    .map(([cat, amount]) => ({ cat, amount }))
+    .sort(
+      (x, y) =>
+        y.amount - x.amount ||
+        categories.indexOf(x.cat) - categories.indexOf(y.cat),
+    );
   const net = netOf(records);
   const settled = Math.abs(net) < 1;
   return {
     sharedTotal: paid.a + paid.b,
     paid,
+    byCategory,
     net,
     settled,
     suggestion: settled

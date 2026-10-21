@@ -64,6 +64,8 @@ export interface Expense extends ExpenseInput {
 export interface LedgerSummary {
   sharedTotal: number;
   paid: { a: number; b: number };
+  /** 共同支出按分类汇总（不含结算和「自己的」），金额从大到小。 */
+  byCategory: Array<{ cat: string; amount: number }>;
   net: number;
   settled: boolean;
   suggestion: { from: Payer; to: Payer; amount: number } | null;

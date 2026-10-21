@@ -70,3 +70,32 @@ test('绝对值小于 1 视为已结清', () => {
   assert.equal(summarize([r('a', 2)]).settled, false); // net 1
   assert.equal(summarize([]).settled, true);
 });
+
+test('分类统计：与共同支出同口径，排除结算和「自己的」，按金额从大到小', () => {
+  const records = [
+    r('a', 3000, 'half', '食费'),
+    r('b', 1000, 'other', '食费'),
+    r('a', 5000, 'half', '房租'),
+    r('b', 800, 'self', '娱乐'), // 自己的，不计
+    r('a', 500, 'half', '交通'),
+    r('b', 500, 'half', '日用'), // 与交通同额，按分类顺序日用在前
+  ];
+  const summary = summarize(records);
+  const settlement = settlementRecord(records, '2026-10-20');
+  assert.deepEqual(summary.byCategory, [
+    { cat: '房租', amount: 5000 },
+    { cat: '食费', amount: 4000 },
+    { cat: '日用', amount: 500 },
+    { cat: '交通', amount: 500 },
+  ]);
+  assert.equal(
+    summary.byCategory.reduce((sum, item) => sum + item.amount, 0),
+    summary.sharedTotal,
+  );
+  assert.deepEqual(
+    summarize([...records, settlement]).byCategory,
+    summary.byCategory,
+    '结算记录不计入分类',
+  );
+  assert.deepEqual(summarize([]).byCategory, []);
+});
