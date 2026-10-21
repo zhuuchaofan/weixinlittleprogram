@@ -56,24 +56,27 @@ CloudBase 数据库（集合权限设为仅云函数可读写）
 
 ## 5. 数据模型
 
-| 集合       | 字段                                                      | 说明                                         |
-| ---------- | --------------------------------------------------------- | -------------------------------------------- |
-| households | members[{openid, role, name}], inviteCode, city, currency | 默认 city 为东京，currency 为 JPY，可修改    |
-| expenses   | amount, note, cat, date, payer, split                     | payer 为 a 或 b；split 为 half、self、other  |
-| todos      | text, kind, who, done                                     | kind 为 shop、todo、chore；who 为 a、b、both |
-| dishes     | name, tag                                                 | tag 为 在家做、外食、外卖                    |
-| wishes     | title, why, plan                                          | 周末想去的地方                               |
-| dates      | title, date, yearly                                       | 纪念日                                       |
-| memories   | date, title, note                                         | 回忆时间线                                   |
+| 集合       | 字段                                                      | 说明                                                                                                               |
+| ---------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| households | members[{openid, role, name}], inviteCode, city, currency | 默认 city 为东京，currency 为 JPY，可修改                                                                          |
+| expenses   | amount, note, cat, date, payer, split, ratio              | payer 为 a 或 b；split 为 half、self、other、ratio；ratio 为 0–100 的整数，只在 split 为 ratio 时有值，其余为 null |
+| todos      | text, kind, who, done                                     | kind 为 shop、todo、chore；who 为 a、b、both                                                                       |
+| dishes     | name, tag                                                 | tag 为 在家做、外食、外卖                                                                                          |
+| wishes     | title, why, plan                                          | 周末想去的地方                                                                                                     |
+| dates      | title, date, yearly                                       | 纪念日                                                                                                             |
+| memories   | date, title, note                                         | 回忆时间线                                                                                                         |
 
 以上集合都带 `householdId`、`ts`、`by`。
 
-P1 阶段计划新增：expenses.ratio、expenses.recurId；todos.due、todos.repeat；meals（date、name）；memories.photo；wishes.link、wishes.note。
+P1 阶段计划新增：expenses.recurId；todos.due、todos.repeat；meals（date、name）；memories.photo；wishes.link、wishes.note。
 
 ### 记账规则（必须按这个实现）
 
 - 共同支出统计时，排除 `cat === "结算"` 和 `split === "self"` 的记录。
-- 每条记录的 credit：`split === "other"` 时为 amount，否则为 amount / 2。
+- 每条记录的 credit（对方欠付款人的金额）：
+  - `split === "other"` 时为 amount；
+  - `split === "ratio"` 时为 round(amount × (100 − ratio) / 100)，其中 ratio 是付款人自己承担的百分比（整数 0–100，例如 6:4 记为 60），四舍五入到分（金额单位为分，恰好半分时进位）；
+  - 其余（half）为 amount / 2。
 - net 的累加：payer 为 a 时加 credit，为 b 时减 credit。
 - net 大于 0 表示 b 应付给 a；小于 0 表示 a 应付给 b；绝对值小于 1 视为已结清。
 - 记为已结算：新增一条记录，amount 为 round(|net|)，payer 为欠款方，split 为 other，cat 为 结算，note 为 结算。
@@ -91,7 +94,7 @@ P1 阶段计划新增：expenses.ratio、expenses.recurId；todos.due、todos.re
 | M2  | 记账 | 月度汇总与结算建议                               | P0     | 原型有 |
 | M3  | 记账 | 编辑和撤销已记账目                               | P0     | 待做   |
 | M4  | 记账 | 分类统计：本月各分类占比                         | P1     | 已完成 |
-| M5  | 记账 | 自定义分摊比例，如 6:4                           | P1     | 待做   |
+| M5  | 记账 | 自定义分摊比例，如 6:4                           | P1     | 已完成 |
 | M6  | 记账 | 定期支出：房租、水电、订阅                       | P1     | 待做   |
 | M8  | 记账 | 导出 CSV                                         | P1     | 待做   |
 | M7  | 记账 | 月度预算与超支提示                               | P2     | 待做   |

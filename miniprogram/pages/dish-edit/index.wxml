@@ -1,6 +1,10 @@
 <view class="page">
   <block wx:if="{{id}}">
-    <view class="field"><text class="field-label">菜名</text><input value="{{name}}" maxlength="{{limits.dishName}}" bindinput="inputName" /></view>
+    <view class="field">
+      <text class="field-label">是什么</text>
+      <view class="segmented"><view wx:for="{{kinds}}" wx:key="value" class="segment {{kind === item.value ? 'segment-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKind">{{item.label}}</view></view>
+    </view>
+    <view class="field"><text class="field-label">{{kind === 'shop' ? '店名' : '菜名'}}</text><input value="{{name}}" maxlength="{{limits.dishName}}" bindinput="inputName" /></view>
     <view class="field">
       <text class="field-label">类型</text>
       <view class="segmented"><view wx:for="{{tags}}" wx:key="*this" class="segment {{tag === item ? 'segment-on' : ''}}" data-value="{{item}}" bindtap="chooseTag">{{item}}</view></view>

@@ -1,7 +1,12 @@
 const { publicRecord } = require('./records');
 const expenses = require('./expenses');
 const todos = require('./todos');
-const { DISH_FIELDS, WISH_FIELDS, DATE_FIELDS } = require('./collections');
+const {
+  DISH_FIELDS,
+  withDishKind,
+  WISH_FIELDS,
+  DATE_FIELDS,
+} = require('./collections');
 
 const EXPORT_VERSION = 1;
 
@@ -13,7 +18,7 @@ function createExportHandler({ repositories, requireMembership, now }) {
   const sections = [
     ['expenses', expenses.FIELDS, expenses.withCategory],
     ['todos', todos.FIELDS],
-    ['dishes', DISH_FIELDS],
+    ['dishes', DISH_FIELDS, withDishKind],
     ['wishes', WISH_FIELDS],
     ['dates', DATE_FIELDS],
   ];
@@ -38,11 +43,11 @@ function createExportHandler({ repositories, requireMembership, now }) {
         },
         counts: {},
       };
-      sections.forEach(([name, fields], index) => {
+      sections.forEach(([name, fields, normalize = (view) => view], index) => {
         result.counts[name] = rows[index].length;
         result[name] = rows[index]
           .sort((a, b) => a.ts - b.ts)
-          .map((record) => publicRecord(record, household, fields));
+          .map((record) => normalize(publicRecord(record, household, fields)));
       });
       return result;
     },

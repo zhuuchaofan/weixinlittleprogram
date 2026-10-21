@@ -13,7 +13,7 @@ const { publicRecord, requireRecord } = require('./records');
 /** 旧分类名换成新名称（见 ledger.normalizeCategory）。 */
 const withCategory = (view) => ({ ...view, cat: normalizeCategory(view.cat) });
 
-const FIELDS = ['amount', 'note', 'cat', 'date', 'payer', 'split'];
+const FIELDS = ['amount', 'note', 'cat', 'date', 'payer', 'split', 'ratio'];
 
 function byDateDesc(a, b) {
   return b.date.localeCompare(a.date) || b.ts - a.ts;

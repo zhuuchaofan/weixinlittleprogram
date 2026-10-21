@@ -1,7 +1,8 @@
 /**
  * 记账规则（docs/PLAN.md 第 5 节）。金额单位为「分」（人民币）：
  * - 共同支出统计排除 cat === '结算' 与 split === 'self'。
- * - credit：split === 'other' 时为 amount，否则为 amount / 2。
+ * - credit：split === 'other' 时为 amount；split === 'ratio' 时为 round(amount × (100 − ratio) / 100)，
+ *   ratio 是付款人承担的百分比（整数 0–100）；否则为 amount / 2。
  * - net：payer 为 a 加 credit，为 b 减 credit；split === 'self' 不计入。
  * - net > 0：b 应付给 a；net < 0：a 应付给 b；|net| < 1 分视为已结清，结算金额四舍五入到分。
  * - 分类统计（byCategory）与共同支出口径相同，按金额从大到小。
@@ -25,7 +26,10 @@ function monthOf(record) {
 }
 
 function credit(record) {
-  return record.split === 'other' ? record.amount : record.amount / 2;
+  if (record.split === 'other') return record.amount;
+  if (record.split === 'ratio')
+    return Math.round((record.amount * (100 - record.ratio)) / 100);
+  return record.amount / 2;
 }
 
 function netOf(records) {
