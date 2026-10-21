@@ -5,9 +5,13 @@ const {
   summarize,
   settlementRecord,
   settlementId,
+  normalizeCategory,
 } = require('./ledger');
 const { todayKey, lastDayOfMonth } = require('./dates');
 const { publicRecord, requireRecord } = require('./records');
+
+/** 旧分类名换成新名称（见 ledger.normalizeCategory）。 */
+const withCategory = (view) => ({ ...view, cat: normalizeCategory(view.cat) });
 
 const FIELDS = ['amount', 'note', 'cat', 'date', 'payer', 'split'];
 
@@ -17,7 +21,8 @@ function byDateDesc(a, b) {
 
 /** repository: listMonth(householdId, month)、listAll(householdId)、get、insert、insertWithId(id, doc) -> 是否插入、update、remove */
 function createExpenseHandler({ repository, requireMembership, now }) {
-  const view = (record, household) => publicRecord(record, household, FIELDS);
+  const view = (record, household) =>
+    withCategory(publicRecord(record, household, FIELDS));
 
   async function monthView(household, month) {
     const records = (await repository.listMonth(household._id, month)).sort(
@@ -92,4 +97,4 @@ function createExpenseHandler({ repository, requireMembership, now }) {
   };
 }
 
-module.exports = { createExpenseHandler, FIELDS };
+module.exports = { createExpenseHandler, FIELDS, withCategory };

@@ -125,7 +125,7 @@ async function setup() {
 const expense = (overrides = {}) => ({
   amount: 1200,
   note: '超市',
-  cat: '食费',
+  cat: '吃饭',
   date: '2026-10-05',
   payer: 'a',
   split: 'half',
@@ -606,4 +606,59 @@ test('按 id 取单条：编辑页缓存未命中时使用，只能取本小家�
     );
   }
   assert.equal(added.date.days > 0, true, '纪念日单条也带倒数');
+});
+
+test('分类改名：旧记录的「食费」读出来是「吃饭」，旧版小程序提交「食费」也能保存', async () => {
+  const { call, expenses } = await setup();
+  const added = await call('A', 'expense.add', expense({ amount: 500 }));
+  const hid = expenses.docs.get(added.data.id).householdId;
+  // 数据库里改名前存下的记录
+  const oldId = await expenses.insert({
+    householdId: hid,
+    amount: 1000,
+    note: '',
+    cat: '食费',
+    date: '2026-10-06',
+    payer: 'b',
+    split: 'half',
+    ts: NOW - 1000,
+    by: 'B',
+  });
+  const month = await call('A', 'expense.list', { month: '2026-10' });
+  assert.deepEqual(
+    month.data.records.map((r) => r.cat),
+    ['吃饭', '吃饭'],
+  );
+  assert.deepEqual(month.data.summary.byCategory, [
+    { cat: '吃饭', amount: 1500 },
+  ]);
+  assert.equal(
+    (await call('A', 'expense.get', { id: oldId })).data.cat,
+    '吃饭',
+  );
+
+  // 编辑旧记录：页面带回「吃饭」；旧版小程序仍可能提交「食费」
+  for (const cat of ['吃饭', '食费']) {
+    const updated = await call(
+      'A',
+      'expense.update',
+      expense({ id: oldId, amount: 1200, cat, payer: 'b' }),
+    );
+    assert.equal(updated.ok, true, updated.message);
+    assert.equal(updated.data.cat, '吃饭');
+    assert.equal(expenses.docs.get(oldId).cat, '吃饭', '保存后存成新名称');
+  }
+  assert.equal(
+    (await call('A', 'expense.add', expense({ cat: '食费' }))).data.cat,
+    '吃饭',
+  );
+  assert.equal(
+    (await call('A', 'expense.add', expense({ cat: '饭' }))).code,
+    'VALIDATION',
+  );
+  const exported = (await call('B', 'data.export')).data.expenses;
+  assert.equal(
+    exported.every((r) => r.cat === '吃饭'),
+    true,
+  );
 });
