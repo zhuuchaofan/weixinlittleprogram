@@ -83,7 +83,7 @@
 
 ## 阶段 4A-2～4A-6
 
-1. 先合并 4A-1，再重新部署 `cloudfunctions/api`（新增 `contract.json`、`paging.js` 与各类 `*.get`）。无新集合。
+1. 重新部署 `cloudfunctions/api`（新增 `contract.json`、`paging.js` 与各类 `*.get`）。无新集合。
 2. 开发者工具打开前确认 `miniprogram/config/contract.ts` 存在（已提交在仓库里）。
 3. 上传体验版，版本号 0.7.0。
 
