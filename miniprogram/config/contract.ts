@@ -36,8 +36,16 @@ export const CONTRACT = {
     "b",
     "both"
   ],
+  "dishKinds": [
+    "dish",
+    "shop"
+  ],
   "dishTags": [
     "在家做",
+    "外食",
+    "外卖"
+  ],
+  "shopTags": [
     "外食",
     "外卖"
   ],

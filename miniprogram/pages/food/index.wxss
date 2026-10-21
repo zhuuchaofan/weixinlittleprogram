@@ -8,3 +8,5 @@
 .composer-row .chips { gap: 12rpx; min-width: 0; flex: 1; }
 .composer-row .chip { padding: 0 22rpx; }
 .list-gap { margin-top: 24rpx; }
+.tag-filter { margin-top: 16rpx; }
+.composer-kind { margin-bottom: 20rpx; }

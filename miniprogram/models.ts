@@ -96,9 +96,12 @@ export interface Todo extends TodoInput {
 }
 
 export type DishTag = '在家做' | '外食' | '外卖';
+/** 菜单里的一条是菜品还是店家。 */
+export type DishKind = 'dish' | 'shop';
 
 export interface DishInput {
   name: string;
+  kind: DishKind;
   tag: DishTag;
 }
 

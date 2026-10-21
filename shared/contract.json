@@ -16,7 +16,9 @@
   "ratio": { "min": 0, "max": 100 },
   "todoKinds": ["shop", "todo", "chore"],
   "todoWho": ["a", "b", "both"],
+  "dishKinds": ["dish", "shop"],
   "dishTags": ["在家做", "外食", "外卖"],
+  "shopTags": ["外食", "外卖"],
   "maxAmount": 1000000000,
   "lengths": {
     "expenseNote": 40,
