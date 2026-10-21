@@ -27,6 +27,7 @@ Page({
     date: todayKey(),
     today: todayKey(),
     recordedText: '',
+    editedText: '',
     payer: 'a' as Payer,
     split: 'half' as Split,
     busy: false,
@@ -64,6 +65,12 @@ Page({
         (household ? byPartner(record.byRole, household, '') || '我' : '') +
         ' 记录于 ' +
         formatTimestamp(record.ts),
+      editedText:
+        household && record.editedAt
+          ? (byPartner(record.editedByRole || '', household, '') || '我') +
+            ' 修改于 ' +
+            formatTimestamp(record.editedAt)
+          : '',
     });
   },
   inputAmount(event: WechatMiniprogram.Input) {

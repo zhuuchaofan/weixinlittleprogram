@@ -43,6 +43,7 @@
   </block>
   <view wx:if="{{isSettlement && error}}" class="notice error">{{error}}</view>
   <view wx:if="{{recordedText}}" class="recorded small muted">{{recordedText}}</view>
+  <view wx:if="{{editedText}}" class="small muted edited">{{editedText}}</view>
   <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">{{isSettlement ? '删除并撤销结算' : '删除这笔账'}}</button>
   <view class="page-end"></view>
 </view>

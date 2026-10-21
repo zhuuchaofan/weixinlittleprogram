@@ -59,6 +59,9 @@ export interface Expense extends ExpenseInput {
   id: string;
   ts: number;
   byRole: MemberRole | '';
+  /** 被修改过才有：最后一次修改的时间和人。 */
+  editedAt?: number;
+  editedByRole?: MemberRole | '';
 }
 
 export interface LedgerSummary {
