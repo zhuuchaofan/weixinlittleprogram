@@ -42,6 +42,22 @@ function id(value) {
   return value;
 }
 
+/** 付款人承担的百分比：整数，范围来自契约；只有按比例分摊时才有值。 */
+function ratio(payload) {
+  const { min, max } = CONTRACT.ratio;
+  if (payload.split !== 'ratio') return null;
+  if (
+    !Number.isInteger(payload.ratio) ||
+    payload.ratio < min ||
+    payload.ratio > max
+  )
+    throw new ApiError(
+      'VALIDATION',
+      `请填写 ${min}–${max} 的整数，表示付款人承担的百分比。`,
+    );
+  return payload.ratio;
+}
+
 /** 金额只接受正整数（单位：分）。 */
 function expense(payload) {
   const amount = payload?.amount;
@@ -56,6 +72,7 @@ function expense(payload) {
     date: payload.date,
     payer: oneOf(payload.payer, CONTRACT.payers, '请选择付款人。'),
     split: oneOf(payload.split, CONTRACT.splits, '请选择分摊方式。'),
+    ratio: ratio(payload),
   };
 }
 

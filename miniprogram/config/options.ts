@@ -6,11 +6,13 @@ import { CONTRACT } from './contract';
 export const CATEGORIES: string[] = [...CONTRACT.categories];
 export const SETTLEMENT: string = CONTRACT.settlement;
 export const LENGTHS = CONTRACT.lengths;
+export const RATIO_RANGE = CONTRACT.ratio;
 
 const SPLIT_TEXT: Record<Split, { label: string; hint: string }> = {
   half: { label: '两人平摊', hint: '对方承担一半' },
   other: { label: '全算对方', hint: '替对方付的，对方承担全部' },
   self: { label: '自己的', hint: '不分摊，不计入共同支出' },
+  ratio: { label: '按比例', hint: '自己定付款人承担几成，例如 6:4' },
 };
 export const SPLITS: Array<{ value: Split; label: string; hint: string }> =
   CONTRACT.splits.map((value: Split) => ({ value, ...SPLIT_TEXT[value] }));

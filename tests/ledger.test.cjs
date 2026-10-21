@@ -99,3 +99,27 @@ test('分类统计：与共同支出同口径，排除结算和「自己的」�
   );
   assert.deepEqual(summarize([]).byCategory, []);
 });
+
+test('按比例分摊：credit = round(amount × (100 − ratio) / 100)，付款人承担 ratio%', () => {
+  const ratio = (payer, amount, value) => ({
+    ...r(payer, amount, 'ratio'),
+    ratio: value,
+  });
+  // 6:4：A 付 1000，A 承担 60%，B 欠 400
+  assert.equal(netOf([ratio('a', 1000, 60)]), 400);
+  // B 付 1000，B 承担 60%：A 欠 B 400
+  assert.equal(netOf([ratio('b', 1000, 60)]), -400);
+  // 0% 等同「全算对方」，100% 等同「自己的」（但仍计入共同支出总额）
+  assert.equal(netOf([ratio('a', 1000, 0)]), netOf([r('a', 1000, 'other')]));
+  assert.equal(netOf([ratio('a', 1000, 100)]), 0);
+  assert.equal(summarize([ratio('a', 1000, 100)]).sharedTotal, 1000);
+  // 50% 与平摊一致（整数金额）
+  assert.equal(netOf([ratio('a', 1000, 50)]), netOf([r('a', 1000)]));
+  // 四舍五入到分：801 × 30 / 100 = 240.3 → 240；1005 × 30 / 100 = 301.5 → 302
+  assert.equal(netOf([ratio('a', 801, 70)]), 240);
+  assert.equal(netOf([ratio('a', 1005, 70)]), 302);
+  // 结算后归零
+  const records = [ratio('a', 1234, 65), r('b', 800)];
+  const settlement = settlementRecord(records, '2026-10-20');
+  assert.equal(summarize([...records, settlement]).settled, true);
+});

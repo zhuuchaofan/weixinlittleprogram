@@ -9,7 +9,7 @@ const {
 const { todayKey, lastDayOfMonth } = require('./dates');
 const { publicRecord, requireRecord } = require('./records');
 
-const FIELDS = ['amount', 'note', 'cat', 'date', 'payer', 'split'];
+const FIELDS = ['amount', 'note', 'cat', 'date', 'payer', 'split', 'ratio'];
 
 function byDateDesc(a, b) {
   return b.date.localeCompare(a.date) || b.ts - a.ts;

@@ -19,8 +19,13 @@ export const CONTRACT = {
   "splits": [
     "half",
     "other",
-    "self"
+    "self",
+    "ratio"
   ],
+  "ratio": {
+    "min": 0,
+    "max": 100
+  },
   "todoKinds": [
     "shop",
     "todo",
