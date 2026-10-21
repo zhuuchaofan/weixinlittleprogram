@@ -4,11 +4,13 @@ import { confirmAction } from '../../utils/confirm';
 
 Page({
   data: { id: '', title: '', why: '', plan: '', busy: false, error: '' },
-  onLoad(options: Record<string, string | undefined>) {
+  async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) return;
-    const wish = wishService.cached(options.id);
-    if (!wish) {
-      this.setData({ error: '没有找到这条收藏，请返回刷新后重试。' });
+    let wish;
+    try {
+      wish = await wishService.get(options.id);
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
       return;
     }
     this.setData({

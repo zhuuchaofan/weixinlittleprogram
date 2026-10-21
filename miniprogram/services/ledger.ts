@@ -1,7 +1,7 @@
 import type { Expense, ExpenseInput, LedgerMonth } from '../models';
 import { callApi } from './cloud';
 
-// 最近一次读取的记录，编辑页按 id 取用，避免再请求一次。
+// 最近一次读取的记录，编辑页按 id 取用；没有缓存时（如跨页跳转进入）再向云端取。
 const recent = new Map<string, Expense>();
 
 function remember(month: LedgerMonth): LedgerMonth {
@@ -13,8 +13,12 @@ export async function listMonth(month: string): Promise<LedgerMonth> {
   return remember(await callApi<LedgerMonth>('expense.list', { month }));
 }
 
-export function cachedExpense(id: string): Expense | undefined {
-  return recent.get(id);
+export async function getExpense(id: string): Promise<Expense> {
+  const hit = recent.get(id);
+  if (hit) return hit;
+  const record = await callApi<Expense>('expense.get', { id });
+  recent.set(record.id, record);
+  return record;
 }
 
 export function addExpense(input: ExpenseInput): Promise<Expense> {

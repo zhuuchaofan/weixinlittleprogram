@@ -2,7 +2,7 @@ import type { ExpenseInput, Household, Payer, Split } from '../../models';
 import { byPartner, getHousehold, memberNames } from '../../services/household';
 import {
   addExpense,
-  cachedExpense,
+  getExpense,
   removeExpense,
   updateExpense,
 } from '../../services/ledger';
@@ -41,9 +41,11 @@ Page({
       this.setData({ error: errorMessage(error) });
     }
     if (!options.id) return;
-    const record = cachedExpense(options.id);
-    if (!record) {
-      this.setData({ error: '没有找到这条记录，请返回刷新后重试。' });
+    let record;
+    try {
+      record = await getExpense(options.id);
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
       return;
     }
     wx.setNavigationBarTitle({ title: '编辑账目' });

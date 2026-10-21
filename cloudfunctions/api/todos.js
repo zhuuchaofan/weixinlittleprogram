@@ -14,6 +14,11 @@ function createTodoHandler({ repository, requireMembership, now }) {
       records.sort((a, b) => Number(a.done) - Number(b.done) || b.ts - a.ts);
       return records.map((record) => view(record, household));
     },
+    async 'todo.get'(openid, payload) {
+      const household = await requireMembership(openid);
+      const id = validate.id(payload.id);
+      return view(await requireRecord(repository, household, id), household);
+    },
     async 'todo.add'(openid, payload) {
       const household = await requireMembership(openid);
       const record = {

@@ -35,6 +35,11 @@ function createExpenseHandler({ repository, requireMembership, now }) {
       const household = await requireMembership(openid);
       return monthView(household, validate.month(payload.month));
     },
+    async 'expense.get'(openid, payload) {
+      const household = await requireMembership(openid);
+      const id = validate.id(payload.id);
+      return view(await requireRecord(repository, household, id), household);
+    },
     async 'expense.add'(openid, payload) {
       const household = await requireMembership(openid);
       const record = {

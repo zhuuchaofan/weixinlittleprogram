@@ -13,13 +13,17 @@ Page({
     busy: false,
     error: '',
   },
-  onLoad(options: Record<string, string | undefined>) {
-    const dish = options.id ? dishService.cached(options.id) : undefined;
-    if (!dish) {
+  async onLoad(options: Record<string, string | undefined>) {
+    if (!options.id) {
       this.setData({ error: '没有找到这道菜，请返回刷新后重试。' });
       return;
     }
-    this.setData({ id: dish.id, name: dish.name, tag: dish.tag });
+    try {
+      const dish = await dishService.get(options.id);
+      this.setData({ id: dish.id, name: dish.name, tag: dish.tag });
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+    }
   },
   inputName(event: WechatMiniprogram.Input) {
     this.setData({ name: event.detail.value });

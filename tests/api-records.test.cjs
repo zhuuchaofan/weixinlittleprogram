@@ -377,6 +377,13 @@ test('导出：JSON 文本能完整解析回全部记录，且不含 openid', as
   assert.equal(parsed.version, 1);
   assert.equal(parsed.expenses.length, 2);
   assert.equal(parsed.todos.length, 1);
+  assert.deepEqual(parsed.counts, {
+    expenses: 2,
+    todos: 1,
+    dishes: 0,
+    wishes: 0,
+    dates: 0,
+  });
   assert.deepEqual(
     parsed.household.members.map((m) => m.name),
     ['超凡', '佳益'],
@@ -564,4 +571,39 @@ test('清除已完成：只删本小家、本类型、已完成的条目', async
     ],
   );
   assert.equal(todos.docs.has(other.data.id), true, '其他小家的不受影响');
+});
+
+test('按 id 取单条：编辑页缓存未命中时使用，只能取本小家的记录', async () => {
+  const { call } = await setup();
+  const added = {
+    expense: (await call('A', 'expense.add', expense())).data,
+    todo: (
+      await call('A', 'todo.add', { text: '买牛奶', kind: 'shop', who: 'a' })
+    ).data,
+    dish: (await call('A', 'dish.add', { name: '咖喱', tag: '在家做' })).data,
+    wish: (await call('A', 'wish.add', { title: '镰仓', why: '', plan: '' }))
+      .data,
+    date: (
+      await call('A', 'date.add', {
+        title: '结婚纪念日',
+        date: '2025-09-28',
+        yearly: true,
+      })
+    ).data,
+  };
+  for (const [prefix, record] of Object.entries(added)) {
+    const got = await call('B', `${prefix}.get`, { id: record.id });
+    assert.equal(got.ok, true, prefix);
+    assert.deepEqual(got.data, record, prefix);
+    assert.equal(
+      (await call('X', `${prefix}.get`, { id: record.id })).code,
+      'NOT_FOUND',
+      `${prefix}：别的小家取不到`,
+    );
+    assert.equal(
+      (await call('B', `${prefix}.get`, { id: 'missing' })).code,
+      'NOT_FOUND',
+    );
+  }
+  assert.equal(added.date.days > 0, true, '纪念日单条也带倒数');
 });

@@ -9,8 +9,13 @@ export async function listTodos(): Promise<Todo[]> {
   return todos;
 }
 
-export function cachedTodo(id: string): Todo | undefined {
-  return recent.get(id);
+/** 先取列表缓存，没有时（如跨页跳转进入）再向云端取。 */
+export async function getTodo(id: string): Promise<Todo> {
+  const hit = recent.get(id);
+  if (hit) return hit;
+  const todo = await callApi<Todo>('todo.get', { id });
+  recent.set(todo.id, todo);
+  return todo;
 }
 
 export function addTodo(input: TodoInput): Promise<Todo> {

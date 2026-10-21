@@ -1,6 +1,6 @@
 import type { TodoKind, TodoWho } from '../../models';
 import { getHousehold, memberNames } from '../../services/household';
-import { cachedTodo, removeTodo, updateTodo } from '../../services/todos';
+import { getTodo, removeTodo, updateTodo } from '../../services/todos';
 import { errorMessage } from '../../services/cloud';
 import { TODO_KINDS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
@@ -17,18 +17,18 @@ Page({
     error: '',
   },
   async onLoad(options: Record<string, string | undefined>) {
-    const todo = options.id ? cachedTodo(options.id) : undefined;
-    if (!todo) {
+    if (!options.id) {
       this.setData({ error: '没有找到这条内容，请返回刷新后重试。' });
       return;
     }
-    this.setData({
-      id: todo.id,
-      text: todo.text,
-      kind: todo.kind,
-      who: todo.who,
-    });
     try {
+      const todo = await getTodo(options.id);
+      this.setData({
+        id: todo.id,
+        text: todo.text,
+        kind: todo.kind,
+        who: todo.who,
+      });
       const household = await getHousehold();
       if (household) this.setData({ names: memberNames(household) });
     } catch (error) {
