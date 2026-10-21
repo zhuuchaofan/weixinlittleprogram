@@ -1,6 +1,6 @@
 const { ApiError } = require('./errors');
 
-/** 对外只返回业务字段，`by` 换成角色，不暴露 openid。 */
+/** 对外只返回业务字段，`by` 换成角色，不暴露 openid；值为 null 的可选字段（如 ratio）不返回。 */
 function publicRecord(record, household, fields) {
   const author = household.members.find(
     (member) => member.openid === record.by,
@@ -10,7 +10,9 @@ function publicRecord(record, household, fields) {
     ts: record.ts,
     byRole: author ? author.role : '',
   };
-  for (const field of fields) result[field] = record[field];
+  for (const field of fields)
+    if (record[field] !== null && record[field] !== undefined)
+      result[field] = record[field];
   return result;
 }
 
