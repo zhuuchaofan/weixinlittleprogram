@@ -2,7 +2,7 @@ const validate = require('./validate');
 const { publicRecord, requireRecord } = require('./records');
 
 /**
- * 一类业务记录的增删改查：`${prefix}.list/add/update/remove`。
+ * 一类业务记录的增删改查：`${prefix}.list/get/add/update/remove`。
  * 更新时把已有字段与传入字段合并后整体校验，只改部分字段也安全。
  */
 function createCrudHandler({
@@ -22,6 +22,11 @@ function createCrudHandler({
       const household = await requireMembership(openid);
       const records = await repository.listAll(household._id);
       return records.map((record) => view(record, household)).sort(sort);
+    },
+    async [`${prefix}.get`](openid, payload) {
+      const household = await requireMembership(openid);
+      const id = validate.id(payload.id);
+      return view(await requireRecord(repository, household, id), household);
     },
     async [`${prefix}.add`](openid, payload) {
       const household = await requireMembership(openid);

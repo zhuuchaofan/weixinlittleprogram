@@ -16,7 +16,7 @@
     </view>
     <view class="field">
       <text class="field-label">备注</text>
-      <input value="{{note}}" maxlength="40" placeholder="可不填" bindinput="inputNote" />
+      <input value="{{note}}" maxlength="{{limits.expenseNote}}" placeholder="可不填" bindinput="inputNote" />
     </view>
     <view class="field">
       <text class="field-label">日期</text>

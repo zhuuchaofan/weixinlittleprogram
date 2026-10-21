@@ -48,6 +48,9 @@ function memoryRecords(prefix) {
     async listAll(householdId) {
       return own(householdId).map((d) => ({ ...d }));
     },
+    async readComplete(householdId) {
+      return own(householdId).map((d) => ({ ...d }));
+    },
     async listMonth(householdId, month) {
       return own(householdId)
         .filter((d) => d.date.slice(0, 7) === month)
@@ -61,6 +64,11 @@ function memoryRecords(prefix) {
       const id = prefix + ++seq;
       docs.set(id, { ...doc, _id: id });
       return id;
+    },
+    async insertWithId(id, doc) {
+      if (docs.has(id)) return false;
+      docs.set(id, { ...doc, _id: id });
+      return true;
     },
     async update(householdId, id, fields) {
       const d = docs.get(id);
@@ -219,6 +227,46 @@ test('两人各记 5 笔：B 能读到 A 的记录，月度汇总与结算与手
   );
 });
 
+test('结算并发：两人同时结算只产生一条结算记录，撤销后可重新结算', async () => {
+  const { call, expenses } = await setup();
+  await call('A', 'expense.add', expense({ amount: 3000 }));
+  await call('B', 'expense.add', expense({ amount: 1000, payer: 'b' }));
+  const settlements = () =>
+    [...expenses.docs.values()].filter((d) => d.cat === '结算');
+
+  const [first, second] = await Promise.all([
+    call('A', 'expense.settle', { month: '2026-10' }),
+    call('B', 'expense.settle', { month: '2026-10' }),
+  ]);
+  assert.deepEqual(
+    [first.ok, second.ok, second.code].sort(),
+    [false, true, 'ALREADY_SETTLED'].sort(),
+  );
+  assert.equal(settlements().length, 1);
+  const list = await call('A', 'expense.list', { month: '2026-10' });
+  assert.equal(list.data.summary.settled, true);
+
+  // 撤销后两人再同时结算，仍只有一条，_id 与第一次相同
+  const id = settlements()[0]._id;
+  assert.match(id, /^settle_2026-10_[0-9a-f]{24}$/);
+  await call('B', 'expense.remove', { id });
+  const again = await Promise.all([
+    call('B', 'expense.settle', { month: '2026-10' }),
+    call('A', 'expense.settle', { month: '2026-10' }),
+  ]);
+  assert.equal(again.filter((r) => r.ok).length, 1);
+  assert.equal(settlements().length, 1);
+  assert.equal(settlements()[0]._id, id);
+
+  // 结算后又记一笔，账目变了，可以再结算一次
+  await call('A', 'expense.add', expense({ amount: 500 }));
+  assert.equal(
+    (await call('A', 'expense.settle', { month: '2026-10' })).ok,
+    true,
+  );
+  assert.equal(settlements().length, 2);
+});
+
 test('编辑与删除：只能操作本小家的记录', async () => {
   const { call } = await setup();
   const { data } = await call('A', 'expense.add', expense());
@@ -329,6 +377,13 @@ test('导出：JSON 文本能完整解析回全部记录，且不含 openid', as
   assert.equal(parsed.version, 1);
   assert.equal(parsed.expenses.length, 2);
   assert.equal(parsed.todos.length, 1);
+  assert.deepEqual(parsed.counts, {
+    expenses: 2,
+    todos: 1,
+    dishes: 0,
+    wishes: 0,
+    dates: 0,
+  });
   assert.deepEqual(
     parsed.household.members.map((m) => m.name),
     ['超凡', '佳益'],
@@ -516,4 +571,39 @@ test('清除已完成：只删本小家、本类型、已完成的条目', async
     ],
   );
   assert.equal(todos.docs.has(other.data.id), true, '其他小家的不受影响');
+});
+
+test('按 id 取单条：编辑页缓存未命中时使用，只能取本小家的记录', async () => {
+  const { call } = await setup();
+  const added = {
+    expense: (await call('A', 'expense.add', expense())).data,
+    todo: (
+      await call('A', 'todo.add', { text: '买牛奶', kind: 'shop', who: 'a' })
+    ).data,
+    dish: (await call('A', 'dish.add', { name: '咖喱', tag: '在家做' })).data,
+    wish: (await call('A', 'wish.add', { title: '镰仓', why: '', plan: '' }))
+      .data,
+    date: (
+      await call('A', 'date.add', {
+        title: '结婚纪念日',
+        date: '2025-09-28',
+        yearly: true,
+      })
+    ).data,
+  };
+  for (const [prefix, record] of Object.entries(added)) {
+    const got = await call('B', `${prefix}.get`, { id: record.id });
+    assert.equal(got.ok, true, prefix);
+    assert.deepEqual(got.data, record, prefix);
+    assert.equal(
+      (await call('X', `${prefix}.get`, { id: record.id })).code,
+      'NOT_FOUND',
+      `${prefix}：别的小家取不到`,
+    );
+    assert.equal(
+      (await call('B', `${prefix}.get`, { id: 'missing' })).code,
+      'NOT_FOUND',
+    );
+  }
+  assert.equal(added.date.days > 0, true, '纪念日单条也带倒数');
 });

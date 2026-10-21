@@ -2,18 +2,19 @@ import type { ExpenseInput, Household, Payer, Split } from '../../models';
 import { byPartner, getHousehold, memberNames } from '../../services/household';
 import {
   addExpense,
-  cachedExpense,
+  getExpense,
   removeExpense,
   updateExpense,
 } from '../../services/ledger';
 import { errorMessage } from '../../services/cloud';
-import { CATEGORIES, SETTLEMENT, SPLITS } from '../../config/options';
+import { CATEGORIES, LENGTHS, SETTLEMENT, SPLITS } from '../../config/options';
 import { formatTimestamp, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 
 Page({
   data: {
+    limits: LENGTHS,
     id: '',
     isSettlement: false,
     categories: CATEGORIES,
@@ -41,9 +42,11 @@ Page({
       this.setData({ error: errorMessage(error) });
     }
     if (!options.id) return;
-    const record = cachedExpense(options.id);
-    if (!record) {
-      this.setData({ error: '没有找到这条记录，请返回刷新后重试。' });
+    let record;
+    try {
+      record = await getExpense(options.id);
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
       return;
     }
     wx.setNavigationBarTitle({ title: '编辑账目' });

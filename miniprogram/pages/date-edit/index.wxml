@@ -1,5 +1,5 @@
 <view class="page">
-  <view class="field"><text class="field-label">名称</text><input value="{{title}}" maxlength="20" bindinput="inputTitle" placeholder="例如：结婚纪念日" /></view>
+  <view class="field"><text class="field-label">名称</text><input value="{{title}}" maxlength="{{limits.dateTitle}}" bindinput="inputTitle" placeholder="例如：结婚纪念日" /></view>
   <view class="field">
     <text class="field-label">日期</text>
     <picker mode="date" value="{{date}}" bindchange="pickDate"><view class="picker-value">{{date}}</view></picker>

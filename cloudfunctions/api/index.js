@@ -4,25 +4,7 @@ const {
   invocationFromContext,
   cloudConfigForInvocation,
 } = require('./invocation');
-
-const PAGE_SIZE = 100;
-const MAX_PAGES = 20;
-
-async function listAll(db, collectionName, where = {}) {
-  const collection = db.collection(collectionName);
-  const rows = [];
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const result = await collection
-      .where(where)
-      .orderBy('_id', 'asc')
-      .skip(page * PAGE_SIZE)
-      .limit(PAGE_SIZE)
-      .get();
-    rows.push(...result.data);
-    if (result.data.length < PAGE_SIZE) break;
-  }
-  return rows;
-}
+const { listAll, readComplete } = require('./paging');
 
 function createHouseholdRepository(db) {
   const collection = db.collection('households');
@@ -68,12 +50,13 @@ function createRecordRepository(db, collectionName) {
   const collection = db.collection(collectionName);
   const _ = db.command;
   return {
-    listAll: (householdId) => listAll(db, collectionName, { householdId }),
+    listAll: (householdId) => listAll(collection, { householdId }),
     listMonth: (householdId, month) =>
-      listAll(db, collectionName, {
+      listAll(collection, {
         householdId,
         date: _.gte(`${month}-01`).and(_.lte(`${month}-31`)),
       }),
+    readComplete: (householdId) => readComplete(collection, { householdId }),
     async get(householdId, id) {
       const result = await collection
         .where({ _id: id, householdId })
@@ -84,6 +67,17 @@ function createRecordRepository(db, collectionName) {
     async insert(doc) {
       const result = await collection.add(doc);
       return result.id;
+    },
+    async insertWithId(id, doc) {
+      try {
+        await collection.add({ ...doc, _id: id });
+        return true;
+      } catch (error) {
+        // 主键冲突的错误码随 SDK 版本变化，以「该 _id 已存在」为准。
+        const existing = await collection.where({ _id: id }).limit(1).get();
+        if (existing.data.length > 0) return false;
+        throw error;
+      }
     },
     async update(householdId, id, fields) {
       await collection.where({ _id: id, householdId }).update(fields);
@@ -110,8 +104,8 @@ exports.main = async (event, context) => {
   const route = createRouter({
     households: createHouseholdRepository(db),
     archive: {
-      listRsvps: () => listAll(db, 'rsvps'),
-      listMessages: () => listAll(db, 'guest_messages'),
+      listRsvps: () => listAll(db.collection('rsvps')),
+      listMessages: () => listAll(db.collection('guest_messages')),
     },
     expenses: createRecordRepository(db, 'expenses'),
     todos: createRecordRepository(db, 'todos'),

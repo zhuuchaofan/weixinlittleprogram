@@ -1,18 +1,11 @@
 const { ApiError } = require('./errors');
 
-const CATEGORIES = [
-  '食费',
-  '日用',
-  '房租',
-  '水电网',
-  '交通',
-  '娱乐',
-  '旅行',
-  '猫咪',
-  '其他',
-];
+// 分类、标签、字段长度来自 shared/contract.json（npm run contract 同步到这里）。
+const CONTRACT = require('./contract.json');
+
+const { categories: CATEGORIES, lengths: LENGTHS } = CONTRACT;
 // 金额以「分」为单位的整数存储，避免浮点误差；上限 1000 万元。
-const MAX_AMOUNT = 1000000000;
+const MAX_AMOUNT = CONTRACT.maxAmount;
 
 function text(value, { field, min = 0, max }) {
   const result = typeof value === 'string' ? value.trim() : '';
@@ -58,15 +51,15 @@ function expense(payload) {
     throw new ApiError('VALIDATION', '请选择有效的日期。');
   return {
     amount,
-    note: text(payload.note, { field: '备注', max: 40 }),
+    note: text(payload.note, { field: '备注', max: LENGTHS.expenseNote }),
     cat: oneOf(payload.cat, CATEGORIES, '请选择分类。'),
     date: payload.date,
-    payer: oneOf(payload.payer, ['a', 'b'], '请选择付款人。'),
-    split: oneOf(payload.split, ['half', 'self', 'other'], '请选择分摊方式。'),
+    payer: oneOf(payload.payer, CONTRACT.payers, '请选择付款人。'),
+    split: oneOf(payload.split, CONTRACT.splits, '请选择分摊方式。'),
   };
 }
 
-const TODO_KINDS = ['shop', 'todo', 'chore'];
+const TODO_KINDS = CONTRACT.todoKinds;
 
 function todoKind(value) {
   return oneOf(value, TODO_KINDS, '请选择清单类型。');
@@ -74,27 +67,39 @@ function todoKind(value) {
 
 function todo(payload) {
   return {
-    text: text(payload?.text, { field: '内容', min: 1, max: 60 }),
+    text: text(payload?.text, {
+      field: '内容',
+      min: 1,
+      max: LENGTHS.todoText,
+    }),
     kind: todoKind(payload.kind),
-    who: oneOf(payload.who, ['a', 'b', 'both'], '请选择负责人。'),
+    who: oneOf(payload.who, CONTRACT.todoWho, '请选择负责人。'),
     done: payload.done === true,
   };
 }
 
-const DISH_TAGS = ['在家做', '外食', '外卖'];
+const DISH_TAGS = CONTRACT.dishTags;
 
 function dish(payload) {
   return {
-    name: text(payload?.name, { field: '菜名', min: 1, max: 20 }),
+    name: text(payload?.name, {
+      field: '菜名',
+      min: 1,
+      max: LENGTHS.dishName,
+    }),
     tag: oneOf(payload.tag, DISH_TAGS, '请选择在家做、外食或外卖。'),
   };
 }
 
 function wish(payload) {
   return {
-    title: text(payload?.title, { field: '地点或活动', min: 1, max: 30 }),
-    why: text(payload.why, { field: '想去的理由', max: 100 }),
-    plan: text(payload.plan, { field: '计划', max: 200 }),
+    title: text(payload?.title, {
+      field: '地点或活动',
+      min: 1,
+      max: LENGTHS.wishTitle,
+    }),
+    why: text(payload.why, { field: '想去的理由', max: LENGTHS.wishWhy }),
+    plan: text(payload.plan, { field: '计划', max: LENGTHS.wishPlan }),
   };
 }
 
@@ -102,7 +107,11 @@ function anniversary(payload) {
   if (!isDate(payload?.date))
     throw new ApiError('VALIDATION', '请选择有效的日期。');
   return {
-    title: text(payload.title, { field: '名称', min: 1, max: 20 }),
+    title: text(payload.title, {
+      field: '名称',
+      min: 1,
+      max: LENGTHS.dateTitle,
+    }),
     date: payload.date,
     yearly: payload.yearly === true,
   };

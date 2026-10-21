@@ -5,7 +5,7 @@ import {
   requireHousehold,
 } from '../../services/household';
 import { listMonth, settleMonth } from '../../services/ledger';
-import { errorMessage } from '../../services/cloud';
+import { ApiError, errorMessage } from '../../services/cloud';
 import { SETTLEMENT, SPLITS } from '../../config/options';
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
@@ -123,6 +123,12 @@ Page({
       this.show(this.data.names, result.records, result.summary);
       wx.showToast({ title: '已记为结算', icon: 'success' });
     } catch (error) {
+      if (error instanceof ApiError && error.code === 'ALREADY_SETTLED') {
+        // 对方刚刚结算过：重新读取，显示那条结算记录。
+        wx.showToast({ title: '本月已经结清了', icon: 'none' });
+        void this.load();
+        return;
+      }
       this.setData({ error: errorMessage(error) });
     } finally {
       this.setData({ busy: false });

@@ -3,12 +3,13 @@ import { requireHousehold } from '../../services/household';
 import { dishService } from '../../services/collections';
 import { aiAvailable, aiSuggest } from '../../services/ai';
 import { errorMessage } from '../../services/cloud';
-import { DISH_TAGS } from '../../config/options';
+import { DISH_TAGS, LENGTHS } from '../../config/options';
 
 let loadVersion = 0;
 
 Page({
   data: {
+    limits: LENGTHS,
     tags: DISH_TAGS,
     filter: '' as DishTag | '',
     dishes: [] as Dish[],

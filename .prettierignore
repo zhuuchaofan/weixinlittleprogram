@@ -8,3 +8,4 @@ docs/legacy-wedding
 *.wxml
 *.wxss
 Claude outputs
+miniprogram/config/contract.ts

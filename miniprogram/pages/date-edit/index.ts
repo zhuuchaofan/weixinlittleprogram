@@ -2,9 +2,11 @@ import { dateService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { todayKey } from '../../utils/date';
 import { confirmAction } from '../../utils/confirm';
+import { LENGTHS } from '../../config/options';
 
 Page({
   data: {
+    limits: LENGTHS,
     id: '',
     title: '',
     date: todayKey(),
@@ -12,11 +14,13 @@ Page({
     busy: false,
     error: '',
   },
-  onLoad(options: Record<string, string | undefined>) {
+  async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) return;
-    const item = dateService.cached(options.id);
-    if (!item) {
-      this.setData({ error: '没有找到这个纪念日，请返回刷新后重试。' });
+    let item;
+    try {
+      item = await dateService.get(options.id);
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
       return;
     }
     this.setData({

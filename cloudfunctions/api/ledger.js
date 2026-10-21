@@ -6,7 +6,9 @@
  * - net > 0：b 应付给 a；net < 0：a 应付给 b；|net| < 1 分视为已结清，结算金额四舍五入到分。
  * - 月份由 date 前 7 位（YYYY-MM）决定。
  */
-const SETTLEMENT = '结算';
+const crypto = require('node:crypto');
+
+const { settlement: SETTLEMENT } = require('./contract.json');
 
 function monthOf(record) {
   return String(record.date).slice(0, 7);
@@ -62,8 +64,23 @@ function settlementRecord(records, date) {
   };
 }
 
+/**
+ * 结算记录的确定性 _id：同一小家、同一月、同一份账目只会算出同一个 _id，
+ * 两人同时结算时第二次插入会主键冲突。撤销结算后账目回到原样，可用同一 _id 重新结算。
+ */
+function settlementId(householdId, month, records) {
+  const ids = records.map((record) => record._id).sort();
+  const hash = crypto
+    .createHash('sha256')
+    .update([householdId, ...ids].join('\n'))
+    .digest('hex')
+    .slice(0, 24);
+  return `settle_${month}_${hash}`;
+}
+
 module.exports = {
   SETTLEMENT,
+  settlementId,
   monthOf,
   credit,
   netOf,
