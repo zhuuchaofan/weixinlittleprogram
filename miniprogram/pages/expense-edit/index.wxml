@@ -38,6 +38,11 @@
         </view>
       </view>
     </view>
+    <view wx:if="{{split === 'ratio'}}" class="field">
+      <text class="field-label">付款人承担（%）</text>
+      <input type="number" maxlength="3" value="{{ratioText}}" placeholder="例如 60，表示 6:4" bindinput="inputRatio" />
+      <view wx:if="{{ratioHint}}" class="row-sub ratio-hint">{{ratioHint}}</view>
+    </view>
     <view wx:if="{{error}}" class="notice error">{{error}}</view>
     <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
   </block>

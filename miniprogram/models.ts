@@ -44,7 +44,7 @@ export interface Archive {
 }
 
 export type Payer = 'a' | 'b';
-export type Split = 'half' | 'self' | 'other';
+export type Split = 'half' | 'self' | 'other' | 'ratio';
 
 export interface ExpenseInput {
   amount: number;
@@ -53,6 +53,8 @@ export interface ExpenseInput {
   date: string;
   payer: Payer;
   split: Split;
+  /** 付款人承担的百分比（整数 0–100），只在 split 为 ratio 时有。 */
+  ratio?: number;
 }
 
 export interface Expense extends ExpenseInput {
@@ -97,9 +99,12 @@ export interface Todo extends TodoInput {
 }
 
 export type DishTag = '在家做' | '外食' | '外卖';
+/** 菜单里的一条是菜品还是店家。 */
+export type DishKind = 'dish' | 'shop';
 
 export interface DishInput {
   name: string;
+  kind: DishKind;
   tag: DishTag;
 }
 

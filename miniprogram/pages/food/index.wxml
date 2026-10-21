@@ -1,18 +1,22 @@
 <view class="page">
   <view class="segmented">
-    <view class="segment {{filter === '' ? 'segment-on' : ''}}" data-value="" bindtap="chooseFilter">全部</view>
-    <view wx:for="{{tags}}" wx:key="*this" class="segment {{filter === item ? 'segment-on' : ''}}" data-value="{{item}}" bindtap="chooseFilter">{{item}}</view>
+    <view class="segment {{kindFilter === '' ? 'segment-on' : ''}}" data-value="" bindtap="chooseKindFilter">全部</view>
+    <view wx:for="{{kinds}}" wx:key="value" class="segment {{kindFilter === item.value ? 'segment-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKindFilter">{{item.label}}</view>
+  </view>
+  <view class="segmented tag-filter">
+    <view class="segment {{filter === '' ? 'segment-on' : ''}}" data-value="" bindtap="chooseFilter">不限</view>
+    <view wx:for="{{filterTags}}" wx:key="*this" class="segment {{filter === item ? 'segment-on' : ''}}" data-value="{{item}}" bindtap="chooseFilter">{{item}}</view>
   </view>
 
   <view class="card draw-card">
     <block wx:if="{{picked}}">
       <view class="small muted">今天就吃</view>
       <view class="picked-name serif">{{picked.name}}</view>
-      <text class="tag">{{picked.tag}}</text>
+      <text class="tag">{{picked.kindText}} · {{picked.tag}}</text>
     </block>
     <block wx:else>
       <view class="draw-icon serif">?</view>
-      <view class="small muted">从「{{filter || '全部'}}」的 {{visible.length}} 道里随机抽一个</view>
+      <view class="small muted">从「{{scopeText}}」的 {{visible.length}} 个里随机抽一个</view>
     </block>
     <button class="primary draw-button" bindtap="draw">{{picked ? '再抽一次' : '随机抽一个'}}</button>
   </view>
@@ -36,10 +40,13 @@
   <view class="section">
     <view class="section-head">
       <view class="section-title">菜单</view>
-      <text class="small muted">{{dishes.length}} 道</text>
+      <text class="small muted">{{dishes.length}} 个</text>
     </view>
     <view class="card composer">
-      <input value="{{name}}" maxlength="{{limits.dishName}}" placeholder="加一道菜" confirm-type="done" bindinput="inputName" bindconfirm="add" />
+      <view class="segmented composer-kind">
+        <view wx:for="{{kinds}}" wx:key="value" class="segment {{kind === item.value ? 'segment-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKind">{{item.label}}</view>
+      </view>
+      <input value="{{name}}" maxlength="{{limits.dishName}}" placeholder="{{kind === 'shop' ? '加一家店' : '加一道菜'}}" confirm-type="done" bindinput="inputName" bindconfirm="add" />
       <view class="composer-row">
         <view class="chips">
           <view wx:for="{{tags}}" wx:key="*this" class="chip {{tag === item ? 'chip-on' : ''}}" data-value="{{item}}" bindtap="chooseTag">{{item}}</view>
@@ -48,11 +55,11 @@
       </view>
     </view>
     <view wx:if="{{loading && !dishes.length}}" class="status">正在读取…</view>
-    <view wx:elif="{{!visible.length}}" class="empty list-gap">{{filter ? '这一类还没有菜。' : '还没有菜，先加几道常吃的吧。'}}</view>
+    <view wx:elif="{{!visible.length}}" class="empty list-gap">{{(kindFilter || filter) ? '这一类还没有。' : '还没有记录，先加几道常吃的菜或常去的店吧。'}}</view>
     <view wx:else class="list list-gap">
       <view wx:for="{{visible}}" wx:key="id" class="list-row" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
         <view class="row-main row-title">{{item.name}}</view>
-        <text class="tag">{{item.tag}}</text>
+        <text class="tag">{{item.kindText}} · {{item.tag}}</text>
         <text class="chevron">›</text>
       </view>
     </view>

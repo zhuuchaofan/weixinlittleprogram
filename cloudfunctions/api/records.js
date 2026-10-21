@@ -2,7 +2,7 @@ const { ApiError } = require('./errors');
 
 /**
  * 对外只返回业务字段，`by` / `editedBy` 换成角色，不暴露 openid；
- * 被修改过的记录带 editedAt 与 editedByRole。
+ * 被修改过的记录带 editedAt 与 editedByRole；值为 null 的可选字段（如 ratio）不返回。
  */
 function publicRecord(record, household, fields) {
   const author = household.members.find(
@@ -20,7 +20,9 @@ function publicRecord(record, household, fields) {
     result.editedAt = record.editedAt;
     result.editedByRole = editor.role;
   }
-  for (const field of fields) result[field] = record[field];
+  for (const field of fields)
+    if (record[field] !== null && record[field] !== undefined)
+      result[field] = record[field];
   return result;
 }
 

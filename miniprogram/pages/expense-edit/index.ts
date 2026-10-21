@@ -7,10 +7,24 @@ import {
   updateExpense,
 } from '../../services/ledger';
 import { errorMessage } from '../../services/cloud';
-import { CATEGORIES, LENGTHS, SETTLEMENT, SPLITS } from '../../config/options';
+import {
+  CATEGORIES,
+  LENGTHS,
+  RATIO_RANGE,
+  SETTLEMENT,
+  SPLITS,
+} from '../../config/options';
 import { formatTimestamp, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
+
+/** 付款人承担的百分比：只接受范围内的整数，否则返回 null。 */
+function parseRatio(text: string): number | null {
+  const trimmed = text.trim();
+  if (!/^\d{1,3}$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  return value >= RATIO_RANGE.min && value <= RATIO_RANGE.max ? value : null;
+}
 
 Page({
   data: {
@@ -30,6 +44,8 @@ Page({
     editedText: '',
     payer: 'a' as Payer,
     split: 'half' as Split,
+    ratioText: '60',
+    ratioHint: '',
     busy: false,
     error: '',
   },
@@ -61,6 +77,7 @@ Page({
       date: record.date,
       payer: record.payer,
       split: record.split,
+      ratioText: record.ratio === undefined ? '60' : String(record.ratio),
       recordedText:
         (household ? byPartner(record.byRole, household, '') || '我' : '') +
         ' 记录于 ' +
@@ -72,9 +89,33 @@ Page({
             formatTimestamp(record.editedAt)
           : '',
     });
+    this.refreshRatioHint();
   },
   inputAmount(event: WechatMiniprogram.Input) {
     this.setData({ amountText: event.detail.value });
+    this.refreshRatioHint();
+  },
+  inputRatio(event: WechatMiniprogram.Input) {
+    this.setData({ ratioText: event.detail.value });
+    this.refreshRatioHint();
+  },
+  /** 按比例分摊时说明两人各承担多少；输入不合法时留空，保存时再提示。 */
+  refreshRatioHint() {
+    const ratio = parseRatio(this.data.ratioText);
+    const amount = parseYuan(this.data.amountText);
+    if (this.data.split !== 'ratio' || ratio === null) {
+      this.setData({ ratioHint: '' });
+      return;
+    }
+    const names = this.data.names;
+    const payer = names[this.data.payer];
+    const other = names[this.data.payer === 'a' ? 'b' : 'a'];
+    const owed = amount ? Math.round((amount * (100 - ratio)) / 100) : null;
+    this.setData({
+      ratioHint:
+        `${payer}承担 ${ratio}%，${other}承担 ${100 - ratio}%` +
+        (owed === null ? '' : `（${other}应付 ${formatYuan(owed)}）`),
+    });
   },
   inputNote(event: WechatMiniprogram.Input) {
     this.setData({ note: event.detail.value });
@@ -88,6 +129,7 @@ Page({
       value: string;
     };
     this.setData({ [field]: value });
+    this.refreshRatioHint();
   },
   async save() {
     if (this.data.busy || this.data.isSettlement) return;
@@ -104,6 +146,16 @@ Page({
       payer: this.data.payer,
       split: this.data.split,
     };
+    if (input.split === 'ratio') {
+      const ratio = parseRatio(this.data.ratioText);
+      if (ratio === null) {
+        this.setData({
+          error: `请填写 ${RATIO_RANGE.min}–${RATIO_RANGE.max} 的整数，表示付款人承担的百分比。`,
+        });
+        return;
+      }
+      input.ratio = ratio;
+    }
     this.setData({ busy: true, error: '' });
     try {
       if (this.data.id) await updateExpense(this.data.id, input);

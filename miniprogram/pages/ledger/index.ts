@@ -104,7 +104,11 @@ Page({
         dateText: shortDate(record.date),
         payerName: names[record.payer],
         splitText:
-          record.cat === SETTLEMENT ? '结算' : splitLabel(record.split),
+          record.cat === SETTLEMENT
+            ? '结算'
+            : record.split === 'ratio' && record.ratio !== undefined
+              ? `按比例 ${record.ratio}:${100 - record.ratio}`
+              : splitLabel(record.split),
         isSettlement: record.cat === SETTLEMENT,
         byText: household ? byPartner(record.byRole, household, '记') : '',
         // 只提示对方改过的，自己改自己的不用提醒。

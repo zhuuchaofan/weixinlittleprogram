@@ -3,7 +3,10 @@ const { createCrudHandler } = require('./crud');
 const { countdown } = require('./anniversary');
 const { todayKey } = require('./dates');
 
-const DISH_FIELDS = ['name', 'tag'];
+const DISH_FIELDS = ['name', 'kind', 'tag'];
+
+/** 没有 kind 的旧记录当作菜品。 */
+const withDishKind = (view) => ({ ...view, kind: view.kind || 'dish' });
 const WISH_FIELDS = ['title', 'why', 'plan'];
 const DATE_FIELDS = ['title', 'date', 'yearly'];
 
@@ -23,6 +26,7 @@ function createCollectionHandlers({
       repository: dishes,
       check: validate.dish,
       fields: DISH_FIELDS,
+      present: withDishKind,
       sort: (a, b) => a.name.localeCompare(b.name, 'zh'),
     }),
     ...createCrudHandler({
@@ -51,6 +55,7 @@ function createCollectionHandlers({
 module.exports = {
   createCollectionHandlers,
   DISH_FIELDS,
+  withDishKind,
   WISH_FIELDS,
   DATE_FIELDS,
 };
