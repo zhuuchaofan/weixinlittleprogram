@@ -37,6 +37,7 @@ type Row = Expense & {
   splitText: string;
   isSettlement: boolean;
   byText: string;
+  editedText: string;
 };
 
 let loadVersion = 0;
@@ -110,6 +111,11 @@ Page({
               : splitLabel(record.split),
         isSettlement: record.cat === SETTLEMENT,
         byText: household ? byPartner(record.byRole, household, '记') : '',
+        // 只提示对方改过的，自己改自己的不用提醒。
+        editedText:
+          household && record.editedByRole
+            ? byPartner(record.editedByRole, household, '改过')
+            : '',
       })),
     });
   },

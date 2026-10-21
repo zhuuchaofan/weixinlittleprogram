@@ -5,4 +5,5 @@
 .radio-on { border: 12rpx solid var(--accent); }
 .settle-text { margin-top: 12rpx; }
 .recorded { text-align: center; margin-top: 32rpx; }
+.edited { text-align: center; margin-top: 8rpx; }
 .ratio-hint { margin-top: 12rpx; }

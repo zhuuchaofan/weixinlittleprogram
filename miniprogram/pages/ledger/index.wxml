@@ -43,7 +43,7 @@
       <view class="cat-badge">{{item.isSettlement ? '结' : item.cat[0]}}</view>
       <view class="row-main">
         <view class="row-title">{{item.note || item.cat}}</view>
-        <view class="row-sub">{{item.dateText}} · {{item.payerName}}付 · {{item.splitText}}<text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text></view>
+        <view class="row-sub">{{item.dateText}} · {{item.payerName}}付 · {{item.splitText}}<text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text><text wx:if="{{item.editedText}}" class="by-partner"> · {{item.editedText}}</text></view>
       </view>
       <view class="row-trail amount serif">{{item.amountText}}</view>
     </view>

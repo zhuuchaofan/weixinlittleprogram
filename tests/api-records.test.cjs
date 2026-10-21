@@ -668,6 +668,52 @@ test('分类改名：旧记录的「食费」读出来是「吃饭」，旧版�
   );
 });
 
+test('修改记录：对方改了账目会留下谁、什么时候改的，没改过的不带', async () => {
+  const { call, expenses } = await setup();
+  const added = await call('A', 'expense.add', expense({ amount: 1000 }));
+  assert.equal('editedAt' in added.data, false);
+  assert.equal('editedByRole' in added.data, false);
+
+  const edited = await call(
+    'B',
+    'expense.update',
+    expense({ id: added.data.id, amount: 1500 }),
+  );
+  assert.equal(edited.ok, true, edited.message);
+  assert.equal(edited.data.byRole, 'a', '记录人不变');
+  assert.equal(edited.data.editedByRole, 'b');
+  assert.equal(edited.data.editedAt, NOW);
+  assert.equal(expenses.docs.get(added.data.id).editedBy, 'B');
+  assert.equal(JSON.stringify(edited).includes('"B"'), false, '不暴露 openid');
+
+  // 列表、单条、导出都带修改记录
+  const month = await call('A', 'expense.list', { month: '2026-10' });
+  assert.equal(month.data.records[0].editedByRole, 'b');
+  assert.equal(
+    (await call('A', 'expense.get', { id: added.data.id })).data.editedAt,
+    NOW,
+  );
+  const exported = (await call('A', 'data.export')).data.expenses;
+  assert.equal(exported[0].editedByRole, 'b');
+  assert.equal(JSON.stringify(exported).includes('"B"'), false);
+
+  // 再由 A 自己改一次，记录换成最后一次
+  const again = await call(
+    'A',
+    'expense.update',
+    expense({ id: added.data.id, amount: 1600 }),
+  );
+  assert.equal(again.data.editedByRole, 'a');
+
+  // 另一条没改过的不受影响
+  const other = await call('A', 'expense.add', expense());
+  const list = (await call('B', 'expense.list', { month: '2026-10' })).data;
+  assert.equal(
+    list.records.find((r) => r.id === other.data.id).editedAt,
+    undefined,
+  );
+});
+
 test('吃啥：菜品与店家，店家没有「在家做」，旧记录当作菜品', async () => {
   const { call, dishes } = await setup();
   for (const bad of [

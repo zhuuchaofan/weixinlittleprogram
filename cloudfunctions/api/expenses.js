@@ -65,7 +65,12 @@ function createExpenseHandler({ repository, requireMembership, now }) {
           'VALIDATION',
           '结算记录不能修改，可以删除后重新结算。',
         );
-      const fields = validate.expense(payload);
+      const fields = {
+        ...validate.expense(payload),
+        // 记下最后一次是谁、什么时候改的：两人都能改，但改动留得下痕迹。
+        editedBy: openid,
+        editedAt: now(),
+      };
       await repository.update(household._id, id, fields);
       return view({ ...existing, ...fields }, household);
     },
