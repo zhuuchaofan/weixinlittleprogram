@@ -1,0 +1,3 @@
+# scripts/contract.mjs 生成的 TS 副本固定用 LF（脚本写出的就是 LF），否则 Windows 上检出为 CRLF，契约测试会误报不一致。
+# cloudfunctions/api/contract.json 是 shared/contract.json 的原样拷贝，换行跟随源文件，不在这里约束。
+miniprogram/config/contract.ts text eol=lf

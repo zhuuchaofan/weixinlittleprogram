@@ -7,17 +7,13 @@
 
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
-  <view class="card summary">
-    <view class="small muted">本月共同支出</view>
-    <view class="total serif">{{summary ? summaryText.total : '—'}}</view>
+  <view class="card spent">
+    <view class="small muted">本月合计支出</view>
+    <view class="total serif">{{summary ? spentText.total : '—'}}</view>
     <view class="paid">
-      <view class="paid-item"><view class="small muted">{{names.a}} 付</view><view class="paid-value">{{summary ? summaryText.a : '—'}}</view></view>
-      <view class="paid-item"><view class="small muted">{{names.b}} 付</view><view class="paid-value">{{summary ? summaryText.b : '—'}}</view></view>
+      <view class="paid-item"><view class="small muted">{{names.a}} 共付</view><view class="paid-value">{{summary ? spentText.a : '—'}}</view></view>
+      <view class="paid-item"><view class="small muted">{{names.b}} 共付</view><view class="paid-value">{{summary ? spentText.b : '—'}}</view></view>
     </view>
-    <block wx:if="{{summary}}">
-      <view class="suggestion {{summary.settled ? 'suggestion-ok' : ''}}">{{summaryText.suggestion}}</view>
-      <button wx:if="{{!summary.settled}}" class="secondary" bindtap="settle" loading="{{busy}}" disabled="{{busy}}">记为已结算</button>
-    </block>
   </view>
 
   <view wx:if="{{categories.length}}" class="card categories">
