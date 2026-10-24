@@ -4,12 +4,11 @@ import {
   memberNames,
   requireHousehold,
 } from '../../services/household';
-import { listMonth, settleMonth } from '../../services/ledger';
-import { ApiError, errorMessage } from '../../services/cloud';
-import { SETTLEMENT, SPLITS } from '../../config/options';
+import { listMonth } from '../../services/ledger';
+import { errorMessage } from '../../services/cloud';
+import { CATEGORIES, SETTLEMENT, SPLITS } from '../../config/options';
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
-import { confirmAction } from '../../utils/confirm';
 
 type CategoryRow = {
   cat: string;
@@ -18,16 +17,37 @@ type CategoryRow = {
   width: number;
 };
 
-/** 占比四舍五入到整数；条的长度相对最大的一类，最大的一类占满。 */
-function categoryRows(summary: LedgerSummary): CategoryRow[] {
-  const total = summary.sharedTotal;
-  const top = summary.byCategory[0]?.amount || 0;
-  return summary.byCategory.map(({ cat, amount }) => ({
+/** 合计支出与分类统计同一口径：每笔算在付款人头上，包含「自己的」，不含结算记录。 */
+function spending(records: Expense[]) {
+  const paid = { a: 0, b: 0 };
+  const byCat = new Map<string, number>();
+  for (const record of records) {
+    if (record.cat === SETTLEMENT) continue;
+    paid[record.payer] += record.amount;
+    byCat.set(record.cat, (byCat.get(record.cat) || 0) + record.amount);
+  }
+  const total = paid.a + paid.b;
+  // 金额相同时按契约里的分类顺序，结果稳定。
+  const sorted = [...byCat].sort(
+    (x, y) =>
+      y[1] - x[1] || CATEGORIES.indexOf(x[0]) - CATEGORIES.indexOf(y[0]),
+  );
+  const top = sorted[0]?.[1] || 0;
+  // 占比四舍五入到整数；条的长度相对最大的一类，最大的一类占满。
+  const categories: CategoryRow[] = sorted.map(([cat, amount]) => ({
     cat,
     amountText: formatYuan(amount),
     percent: total ? Math.round((amount * 100) / total) : 0,
     width: top ? Math.max(2, Math.round((amount * 100) / top)) : 0,
   }));
+  return {
+    categories,
+    spentText: {
+      total: formatYuan(total),
+      a: formatYuan(paid.a),
+      b: formatYuan(paid.b),
+    },
+  };
 }
 
 type Row = Expense & {
@@ -50,11 +70,10 @@ Page({
     isCurrentMonth: true,
     names: { a: '', b: '' },
     loading: true,
-    busy: false,
     error: '',
     records: [] as Row[],
     summary: null as LedgerSummary | null,
-    summaryText: { total: '', a: '', b: '', suggestion: '' },
+    spentText: { total: '', a: '', b: '' },
     categories: [] as CategoryRow[],
   },
   onShow() {
@@ -89,15 +108,7 @@ Page({
     this.setData({
       names,
       summary,
-      categories: categoryRows(summary),
-      summaryText: {
-        total: formatYuan(summary.sharedTotal),
-        a: formatYuan(summary.paid.a),
-        b: formatYuan(summary.paid.b),
-        suggestion: summary.suggestion
-          ? `${names[summary.suggestion.from]} 应付给 ${names[summary.suggestion.to]} ${formatYuan(summary.suggestion.amount)}`
-          : '本月已结清',
-      },
+      ...spending(records),
       records: records.map((record) => ({
         ...record,
         amountText: formatYuan(record.amount),
@@ -140,30 +151,5 @@ Page({
     wx.navigateTo({
       url: `/pages/expense-edit/index?id=${event.currentTarget.dataset.id}`,
     });
-  },
-  async settle() {
-    const summary = this.data.summary;
-    if (this.data.busy || !summary?.suggestion) return;
-    const ok = await confirmAction(
-      '记为已结算？',
-      `将新增一条结算记录：${this.data.summaryText.suggestion}。删除这条记录即可撤销。`,
-    );
-    if (!ok) return;
-    this.setData({ busy: true, error: '' });
-    try {
-      const result = await settleMonth(this.data.month);
-      this.show(this.data.names, result.records, result.summary);
-      wx.showToast({ title: '已记为结算', icon: 'success' });
-    } catch (error) {
-      if (error instanceof ApiError && error.code === 'ALREADY_SETTLED') {
-        // 对方刚刚结算过：重新读取，显示那条结算记录。
-        wx.showToast({ title: '本月已经结清了', icon: 'none' });
-        void this.load();
-        return;
-      }
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ busy: false });
-    }
   },
 });
