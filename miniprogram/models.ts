@@ -45,6 +45,9 @@ export interface Archive {
 
 export type Payer = 'a' | 'b';
 export type Split = 'half' | 'self' | 'other' | 'ratio';
+/** 支出 out、收入 in；收入只能是「自己的」。 */
+export type Flow = 'out' | 'in';
+export type BillApp = 'wechat' | 'alipay';
 
 export interface ExpenseInput {
   amount: number;
@@ -55,11 +58,14 @@ export interface ExpenseInput {
   split: Split;
   /** 付款人承担的百分比（整数 0–100），只在 split 为 ratio 时有。 */
   ratio?: number;
+  flow: Flow;
 }
 
 export interface Expense extends ExpenseInput {
   id: string;
   ts: number;
+  /** 截图导入的账目才有：来自哪个 App、原始商户名。 */
+  src?: { app: BillApp; merchant: string; time: string; key: string };
   byRole: MemberRole | '';
   /** 被修改过才有：最后一次修改的时间和人。 */
   editedAt?: number;
@@ -80,6 +86,45 @@ export interface LedgerMonth {
   month: string;
   records: Expense[];
   summary: LedgerSummary;
+}
+
+/** 截图上原始的一笔，查重和防止重复导入都靠它，确认页不改。 */
+export interface BillSource {
+  app: BillApp;
+  merchant: string;
+  time: string;
+  date: string;
+  amount: number;
+  flow: Flow;
+}
+
+export type BillStatus = 'imported' | 'likely' | 'possible' | 'partner' | 'new';
+
+/** 截图识别出的一笔，确认页可以改 amount、note、cat、date、flow。 */
+export interface BillItem {
+  amount: number;
+  flow: Flow;
+  date: string;
+  /** 日期由「今天 / 昨天 / 周三」推算，要核对。 */
+  dateGuessed: boolean;
+  time: string;
+  kind: string;
+  merchant: string;
+  note: string;
+  cat: string;
+  src: BillSource;
+  key: string;
+  /** 读不全时的说明，例如「金额没读出来」。 */
+  problem: string;
+  /** bill.match 之后才有。 */
+  status?: BillStatus;
+  match?: {
+    id: string;
+    date: string;
+    note: string;
+    amount: number;
+    byRole: MemberRole | '';
+  } | null;
 }
 
 export type TodoKind = 'shop' | 'todo' | 'chore';

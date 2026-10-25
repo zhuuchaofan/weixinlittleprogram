@@ -1,4 +1,4 @@
-import type { ExpenseInput, Household, Payer, Split } from '../../models';
+import type { ExpenseInput, Flow, Household, Payer, Split } from '../../models';
 import { byPartner, getHousehold, memberNames } from '../../services/household';
 import {
   addExpense,
@@ -9,10 +9,12 @@ import {
 import { errorMessage } from '../../services/cloud';
 import {
   CATEGORIES,
+  FLOWS,
   LENGTHS,
   RATIO_RANGE,
   SETTLEMENT,
   SPLITS,
+  billAppLabel,
 } from '../../config/options';
 import { formatTimestamp, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
@@ -33,6 +35,9 @@ Page({
     isSettlement: false,
     categories: CATEGORIES,
     splits: SPLITS,
+    flows: FLOWS,
+    flow: 'out' as Flow,
+    sourceText: '',
     names: { a: '', b: '' },
     amountText: '',
     settleText: '',
@@ -77,6 +82,10 @@ Page({
       date: record.date,
       payer: record.payer,
       split: record.split,
+      flow: record.flow,
+      sourceText: record.src
+        ? `从${billAppLabel(record.src.app)}截图导入${record.src.merchant ? '：' + record.src.merchant : ''}`
+        : '',
       ratioText: record.ratio === undefined ? '60' : String(record.ratio),
       recordedText:
         (household ? byPartner(record.byRole, household, '') || '我' : '') +
@@ -125,7 +134,7 @@ Page({
   },
   choose(event: WechatMiniprogram.TouchEvent) {
     const { field, value } = event.currentTarget.dataset as {
-      field: 'cat' | 'payer' | 'split';
+      field: 'cat' | 'payer' | 'split' | 'flow';
       value: string;
     };
     this.setData({ [field]: value });
@@ -138,13 +147,16 @@ Page({
       this.setData({ error: '请填写大于 0 的金额，最多两位小数。' });
       return;
     }
+    const flow = this.data.flow;
     const input: ExpenseInput = {
       amount,
       note: this.data.note.trim(),
       cat: this.data.cat,
       date: this.data.date,
       payer: this.data.payer,
-      split: this.data.split,
+      // 收入不分摊，只能是「自己的」。
+      split: flow === 'in' ? 'self' : this.data.split,
+      flow,
     };
     if (input.split === 'ratio') {
       const ratio = parseRatio(this.data.ratioText);

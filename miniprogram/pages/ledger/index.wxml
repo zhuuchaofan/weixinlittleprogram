@@ -30,7 +30,10 @@
     </view>
   </view>
 
-  <button class="primary add-button" bindtap="add">记一笔</button>
+  <view class="add-row">
+    <button class="primary" bindtap="add">记一笔</button>
+    <button class="secondary" bindtap="importScreenshots">截图记账</button>
+  </view>
 
   <view class="section-head">
     <view class="section-title">明细</view>
@@ -43,9 +46,9 @@
       <view class="cat-badge">{{item.isSettlement ? '结' : item.cat[0]}}</view>
       <view class="row-main">
         <view class="row-title">{{item.note || item.cat}}</view>
-        <view class="row-sub">{{item.dateText}} · {{item.payerName}}付 · {{item.splitText}}<text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text><text wx:if="{{item.editedText}}" class="by-partner"> · {{item.editedText}}</text></view>
+        <view class="row-sub">{{item.dateText}} · {{item.payerName}}{{item.isIncome ? '收' : '付'}} · {{item.splitText}}<text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text><text wx:if="{{item.editedText}}" class="by-partner"> · {{item.editedText}}</text><text wx:if="{{item.sourceText}}"> · {{item.sourceText}}</text></view>
       </view>
-      <view class="row-trail amount serif">{{item.amountText}}</view>
+      <view class="row-trail amount serif {{item.isIncome ? 'income' : ''}}">{{item.amountText}}</view>
     </view>
   </view>
   <view class="page-end"></view>

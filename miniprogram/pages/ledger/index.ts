@@ -5,8 +5,14 @@ import {
   requireHousehold,
 } from '../../services/household';
 import { listMonth, settleMonth } from '../../services/ledger';
+import { setPendingImages } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
-import { SETTLEMENT, SPLITS } from '../../config/options';
+import {
+  BILL_IMPORT,
+  SETTLEMENT,
+  SPLITS,
+  billAppLabel,
+} from '../../config/options';
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
@@ -38,6 +44,8 @@ type Row = Expense & {
   isSettlement: boolean;
   byText: string;
   editedText: string;
+  isIncome: boolean;
+  sourceText: string;
 };
 
 let loadVersion = 0;
@@ -100,15 +108,20 @@ Page({
       },
       records: records.map((record) => ({
         ...record,
-        amountText: formatYuan(record.amount),
+        amountText:
+          (record.flow === 'in' ? '+' : '') + formatYuan(record.amount),
+        isIncome: record.flow === 'in',
+        sourceText: record.src ? billAppLabel(record.src.app) + '导入' : '',
         dateText: shortDate(record.date),
         payerName: names[record.payer],
         splitText:
           record.cat === SETTLEMENT
             ? '结算'
-            : record.split === 'ratio' && record.ratio !== undefined
-              ? `按比例 ${record.ratio}:${100 - record.ratio}`
-              : splitLabel(record.split),
+            : record.flow === 'in'
+              ? '收入'
+              : record.split === 'ratio' && record.ratio !== undefined
+                ? `按比例 ${record.ratio}:${100 - record.ratio}`
+                : splitLabel(record.split),
         isSettlement: record.cat === SETTLEMENT,
         byText: household ? byPartner(record.byRole, household, '记') : '',
         // 只提示对方改过的，自己改自己的不用提醒。
@@ -135,6 +148,24 @@ Page({
   },
   add() {
     wx.navigateTo({ url: '/pages/expense-edit/index' });
+  },
+  /** 截图记账：从相册选微信 / 支付宝账单列表截图，到导入页识别和确认。 */
+  async importScreenshots() {
+    let paths: string[];
+    try {
+      const result = await wx.chooseMedia({
+        count: BILL_IMPORT.maxImages,
+        mediaType: ['image'],
+        sourceType: ['album'],
+        sizeType: ['original'],
+      });
+      paths = result.tempFiles.map((file) => file.tempFilePath);
+    } catch {
+      return; // 取消选择
+    }
+    if (!paths.length) return;
+    setPendingImages(paths);
+    wx.navigateTo({ url: '/pages/bill-import/index' });
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({

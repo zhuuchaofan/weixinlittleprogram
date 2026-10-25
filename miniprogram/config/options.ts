@@ -1,5 +1,7 @@
 import type {
+  BillApp,
   DishKind,
+  Flow,
   DishTag,
   Payer,
   Split,
@@ -14,6 +16,19 @@ export const CATEGORIES: string[] = [...CONTRACT.categories];
 export const SETTLEMENT: string = CONTRACT.settlement;
 export const LENGTHS = CONTRACT.lengths;
 export const RATIO_RANGE = CONTRACT.ratio;
+export const BILL_IMPORT = CONTRACT.billImport;
+
+const FLOW_LABELS: Record<Flow, string> = { out: '支出', in: '收入' };
+export const FLOWS: Array<{ value: Flow; label: string }> = CONTRACT.flows.map(
+  (value: Flow) => ({ value, label: FLOW_LABELS[value] }),
+);
+const BILL_APP_LABELS: Record<BillApp, string> = {
+  wechat: '微信',
+  alipay: '支付宝',
+};
+export function billAppLabel(app: BillApp): string {
+  return BILL_APP_LABELS[app] || '';
+}
 
 const SPLIT_TEXT: Record<Split, { label: string; hint: string }> = {
   half: { label: '两人平摊', hint: '对方承担一半' },

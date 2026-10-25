@@ -7,3 +7,4 @@
 .recorded { text-align: center; margin-top: 32rpx; }
 .edited { text-align: center; margin-top: 8rpx; }
 .ratio-hint { margin-top: 12rpx; }
+.flow-switch { margin-bottom: 24rpx; }
