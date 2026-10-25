@@ -2,6 +2,7 @@ const { ApiError, failure } = require('./errors');
 const { createHouseholdHandler } = require('./household');
 const { createArchiveHandler } = require('./archive');
 const { createExpenseHandler } = require('./expenses');
+const { createBillHandler } = require('./bills');
 const { createTodoHandler } = require('./todos');
 const { createExportHandler } = require('./export');
 const { createCollectionHandlers } = require('./collections');
@@ -15,6 +16,7 @@ function createRouter({
   dishes,
   wishes,
   dates,
+  vision = null,
   now = () => Date.now(),
 }) {
   const household = createHouseholdHandler({ repository: households, now });
@@ -23,6 +25,12 @@ function createRouter({
     ...household.actions,
     ...createArchiveHandler({ repository: archive, requireMembership }),
     ...createExpenseHandler({ repository: expenses, requireMembership, now }),
+    ...createBillHandler({
+      repository: expenses,
+      requireMembership,
+      now,
+      vision,
+    }),
     ...createTodoHandler({ repository: todos, requireMembership, now }),
     ...createCollectionHandlers({
       dishes,

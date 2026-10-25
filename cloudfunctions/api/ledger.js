@@ -1,6 +1,6 @@
 /**
  * 记账规则（docs/PLAN.md 第 5 节）。金额单位为「分」（人民币）：
- * - 共同支出统计排除 cat === '结算' 与 split === 'self'。
+ * - 共同支出统计排除 cat === '结算' 与 split === 'self'；收入（flow === 'in'）只能是 self，同样不计入。
  * - credit：split === 'other' 时为 amount；split === 'ratio' 时为 round(amount × (100 − ratio) / 100)，
  *   ratio 是付款人承担的百分比（整数 0–100）；否则为 amount / 2。
  * - net：payer 为 a 加 credit，为 b 减 credit；split === 'self' 不计入。
@@ -32,10 +32,15 @@ function credit(record) {
   return record.amount / 2;
 }
 
+/** 是否参与分摊：「自己的」和收入都不参与。 */
+function isShared(record) {
+  return record.split !== 'self' && record.flow !== 'in';
+}
+
 function netOf(records) {
   let net = 0;
   for (const record of records) {
-    if (record.split === 'self') continue;
+    if (!isShared(record)) continue;
     net += record.payer === 'a' ? credit(record) : -credit(record);
   }
   return net;
@@ -43,7 +48,7 @@ function netOf(records) {
 
 function summarize(records) {
   const shared = records.filter(
-    (record) => record.cat !== SETTLEMENT && record.split !== 'self',
+    (record) => record.cat !== SETTLEMENT && isShared(record),
   );
   const paid = { a: 0, b: 0 };
   const byCat = new Map();

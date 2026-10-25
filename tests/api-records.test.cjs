@@ -398,6 +398,7 @@ test('导出：JSON 文本能完整解析回全部记录，且不含 openid', as
     'byRole',
     'cat',
     'date',
+    'flow',
     'id',
     'note',
     'payer',

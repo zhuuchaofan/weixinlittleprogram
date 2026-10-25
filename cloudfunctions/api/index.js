@@ -5,6 +5,7 @@ const {
   cloudConfigForInvocation,
 } = require('./invocation');
 const { listAll, readComplete } = require('./paging');
+const { createVision } = require('./vision');
 
 function createHouseholdRepository(db) {
   const collection = db.collection('households');
@@ -112,6 +113,7 @@ exports.main = async (event, context) => {
     dishes: createRecordRepository(db, 'dishes'),
     wishes: createRecordRepository(db, 'wishes'),
     dates: createRecordRepository(db, 'dates'),
+    vision: createVision(),
   });
   return route(event, openid);
 };

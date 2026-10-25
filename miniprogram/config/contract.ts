@@ -25,6 +25,18 @@ export const CONTRACT = {
     "self",
     "ratio"
   ],
+  "flows": [
+    "out",
+    "in"
+  ],
+  "billApps": [
+    "wechat",
+    "alipay"
+  ],
+  "billImport": {
+    "maxImages": 9,
+    "maxItems": 100
+  },
   "ratio": {
     "min": 0,
     "max": 100
