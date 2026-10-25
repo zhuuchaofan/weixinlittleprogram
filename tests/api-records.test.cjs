@@ -864,3 +864,39 @@ test('按比例分摊：保存比例、参与结算，改回其他方式后不�
   assert.equal(exported.find((r) => r.id === added.data.id).ratio, 60);
   assert.equal(exported.find((r) => r.id === half.data.id).ratio, undefined);
 });
+
+test('只记账：两人分摊默认关闭，可以打开；spending 统计所有支出，不含结算和收入', async () => {
+  const { call } = await setup();
+  assert.equal((await call('A', 'household.get')).data.splitting, false);
+  assert.equal(
+    (await call('A', 'household.update', { splitting: 'yes' })).code,
+    'VALIDATION',
+  );
+  await call('A', 'expense.add', expense({ amount: 1000, split: 'half' }));
+  await call(
+    'B',
+    'expense.add',
+    expense({ amount: 300, payer: 'b', split: 'self', cat: '交通' }),
+  );
+  await call(
+    'B',
+    'expense.add',
+    expense({ amount: 5000, payer: 'b', split: 'self', flow: 'in' }),
+  );
+  await call('A', 'expense.settle', { month: '2026-10' });
+  const month = await call('A', 'expense.list', { month: '2026-10' });
+  assert.deepEqual(month.data.summary.spending, {
+    total: 1300,
+    paid: { a: 1000, b: 300 },
+    byCategory: [
+      { cat: '吃饭', amount: 1000 },
+      { cat: '交通', amount: 300 },
+    ],
+  });
+  // 共同支出口径不变
+  assert.equal(month.data.summary.sharedTotal, 1000);
+
+  const on = await call('B', 'household.update', { splitting: true });
+  assert.equal(on.data.splitting, true);
+  assert.equal((await call('A', 'household.get')).data.splitting, true);
+});

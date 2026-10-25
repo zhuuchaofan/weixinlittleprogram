@@ -9,7 +9,7 @@
   </block>
 
   <block wx:else>
-    <view class="notice">{{summaryText}}。导入的账记为自己付、自己的，不参与两人分摊。</view>
+    <view class="notice">{{summaryText}}。导入的账都记在你名下。</view>
     <view wx:for="{{failures}}" wx:key="*this" class="notice error">{{item}}</view>
 
     <block wx:for="{{rows}}" wx:key="key" wx:for-index="index">

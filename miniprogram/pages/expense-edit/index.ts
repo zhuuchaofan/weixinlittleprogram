@@ -37,6 +37,7 @@ Page({
     splits: SPLITS,
     flows: FLOWS,
     flow: 'out' as Flow,
+    splitting: false,
     sourceText: '',
     names: { a: '', b: '' },
     amountText: '',
@@ -59,7 +60,13 @@ Page({
     try {
       household = await getHousehold();
       if (!household) return;
-      this.setData({ names: memberNames(household), payer: household.myRole });
+      // 不开两人分摊时只记账：新记的账算自己的，不显示「怎么分」。
+      this.setData({
+        names: memberNames(household),
+        payer: household.myRole,
+        splitting: household.splitting,
+        split: household.splitting ? 'half' : 'self',
+      });
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     }

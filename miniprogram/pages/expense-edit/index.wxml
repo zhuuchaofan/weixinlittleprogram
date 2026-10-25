@@ -32,8 +32,8 @@
         <view class="chip {{payer === 'b' ? 'chip-on' : ''}}" data-field="payer" data-value="b" bindtap="choose">{{names.b}}</view>
       </view>
     </view>
-    <view wx:if="{{flow === 'in'}}" class="small muted field">收入只记在自己名下，不参与两人分摊。</view>
-    <view wx:else class="field">
+    <view wx:if="{{flow === 'in' && splitting}}" class="small muted field">收入只记在自己名下，不参与两人分摊。</view>
+    <view wx:elif="{{flow === 'out' && splitting}}" class="field">
       <text class="field-label">怎么分</text>
       <view class="list">
         <view wx:for="{{splits}}" wx:key="value" class="list-row" data-field="split" data-value="{{item.value}}" bindtap="choose" hover-class="list-row-active">
@@ -42,7 +42,7 @@
         </view>
       </view>
     </view>
-    <view wx:if="{{flow === 'out' && split === 'ratio'}}" class="field">
+    <view wx:if="{{splitting && flow === 'out' && split === 'ratio'}}" class="field">
       <text class="field-label">付款人承担（%）</text>
       <input type="number" maxlength="3" value="{{ratioText}}" placeholder="例如 60，表示 6:4" bindinput="inputRatio" />
       <view wx:if="{{ratioHint}}" class="row-sub ratio-hint">{{ratioHint}}</view>

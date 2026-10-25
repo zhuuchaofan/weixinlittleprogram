@@ -6,6 +6,7 @@
  * - net：payer 为 a 加 credit，为 b 减 credit；split === 'self' 不计入。
  * - net > 0：b 应付给 a；net < 0：a 应付给 b；|net| < 1 分视为已结清，结算金额四舍五入到分。
  * - 分类统计（byCategory）与共同支出口径相同，按金额从大到小。
+ * - spending：不开两人分摊（只记账）时用的口径，所有支出（不含结算和收入），不管怎么分。
  * - 月份由 date 前 7 位（YYYY-MM）决定。
  */
 const crypto = require('node:crypto');
@@ -46,18 +47,15 @@ function netOf(records) {
   return net;
 }
 
-function summarize(records) {
-  const shared = records.filter(
-    (record) => record.cat !== SETTLEMENT && isShared(record),
-  );
+/** 合计、各自付款、按分类（金额从大到小；金额相同时按契约里的分类顺序，结果稳定）。 */
+function totals(records) {
   const paid = { a: 0, b: 0 };
   const byCat = new Map();
-  for (const record of shared) {
+  for (const record of records) {
     paid[record.payer] += record.amount;
     const cat = normalizeCategory(record.cat);
     byCat.set(cat, (byCat.get(cat) || 0) + record.amount);
   }
-  // 金额相同时按契约里的分类顺序，结果稳定。
   const byCategory = [...byCat]
     .map(([cat, amount]) => ({ cat, amount }))
     .sort(
@@ -65,12 +63,25 @@ function summarize(records) {
         y.amount - x.amount ||
         categories.indexOf(x.cat) - categories.indexOf(y.cat),
     );
+  return { total: paid.a + paid.b, paid, byCategory };
+}
+
+function summarize(records) {
+  const shared = totals(
+    records.filter((record) => record.cat !== SETTLEMENT && isShared(record)),
+  );
+  const { paid, byCategory } = shared;
   const net = netOf(records);
   const settled = Math.abs(net) < 1;
   return {
-    sharedTotal: paid.a + paid.b,
+    sharedTotal: shared.total,
     paid,
     byCategory,
+    spending: totals(
+      records.filter(
+        (record) => record.cat !== SETTLEMENT && record.flow !== 'in',
+      ),
+    ),
     net,
     settled,
     suggestion: settled

@@ -8,13 +8,13 @@
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
   <view class="card summary">
-    <view class="small muted">本月共同支出</view>
+    <view class="small muted">{{splitting ? '本月共同支出' : '本月支出'}}</view>
     <view class="total serif">{{summary ? summaryText.total : '—'}}</view>
     <view class="paid">
       <view class="paid-item"><view class="small muted">{{names.a}} 付</view><view class="paid-value">{{summary ? summaryText.a : '—'}}</view></view>
       <view class="paid-item"><view class="small muted">{{names.b}} 付</view><view class="paid-value">{{summary ? summaryText.b : '—'}}</view></view>
     </view>
-    <block wx:if="{{summary}}">
+    <block wx:if="{{summary && splitting}}">
       <view class="suggestion {{summary.settled ? 'suggestion-ok' : ''}}">{{summaryText.suggestion}}</view>
       <button wx:if="{{!summary.settled}}" class="secondary" bindtap="settle" loading="{{busy}}" disabled="{{busy}}">记为已结算</button>
     </block>
@@ -46,7 +46,7 @@
       <view class="cat-badge">{{item.isSettlement ? '结' : item.cat[0]}}</view>
       <view class="row-main">
         <view class="row-title">{{item.note || item.cat}}</view>
-        <view class="row-sub">{{item.dateText}} · {{item.payerName}}{{item.isIncome ? '收' : '付'}} · {{item.splitText}}<text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text><text wx:if="{{item.editedText}}" class="by-partner"> · {{item.editedText}}</text><text wx:if="{{item.sourceText}}"> · {{item.sourceText}}</text></view>
+        <view class="row-sub">{{item.dateText}} · {{item.payerName}}{{item.isIncome ? '收' : '付'}}<text wx:if="{{item.splitText}}"> · {{item.splitText}}</text><text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text><text wx:if="{{item.editedText}}" class="by-partner"> · {{item.editedText}}</text><text wx:if="{{item.sourceText}}"> · {{item.sourceText}}</text></view>
       </view>
       <view class="row-trail amount serif {{item.isIncome ? 'income' : ''}}">{{item.amountText}}</view>
     </view>

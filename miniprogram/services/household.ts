@@ -43,6 +43,7 @@ export async function joinHousehold(
 export async function updateHousehold(fields: {
   city?: string;
   name?: string;
+  splitting?: boolean;
 }): Promise<Household> {
   return remember(
     await callApi<Household>('household.update', fields),

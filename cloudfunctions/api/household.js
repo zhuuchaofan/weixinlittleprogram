@@ -46,6 +46,8 @@ function publicHousehold(household, openid) {
     myRole: me ? me.role : '',
     // 只有主人在控制台标记过的小家才有答谢宴归档入口。
     archive: household.archive === ARCHIVE_ID ? ARCHIVE_ID : '',
+    // 两人分摊与结算：默认关闭，只记账。
+    splitting: household.splitting === true,
     members: household.members.map((member) => ({
       role: member.role,
       name: member.name,
@@ -134,6 +136,11 @@ function createHouseholdHandler({
         fields.members = household.members.map((member) =>
           member.openid === openid ? { ...member, name } : member,
         );
+      }
+      if (payload?.splitting !== undefined) {
+        if (typeof payload.splitting !== 'boolean')
+          throw new ApiError('VALIDATION', '请选择是否开启两人分摊。');
+        fields.splitting = payload.splitting;
       }
       if (!Object.keys(fields).length)
         throw new ApiError('VALIDATION', '没有需要保存的内容。');
