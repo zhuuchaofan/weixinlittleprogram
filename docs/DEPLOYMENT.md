@@ -152,7 +152,7 @@
 
 ### 开通通义千问
 
-1. 登录 [阿里云百炼](https://bailian.console.aliyun.com/)，开通模型服务；在「模型广场」确认 `qwen3-vl-plus` 可用（新用户一般有免费额度，在模型详情页「免费额度」查看）。
+1. 登录千问 AI 平台（原阿里云百炼），开通模型服务；在「模型广场」确认 `qwen3-vl-plus` 可用（新用户一般有免费额度，在模型详情页「免费额度」查看）。
 2. 在「API-KEY」页面创建一个 API Key（`sk-` 开头）。建议在阿里云「费用」里设一个每月预算提醒，比如 20 元。
 3. 用量参考：每天 3～4 张截图，每月约 100 张；按 qwen3-vl-plus 的价格（输入约 1 元 / 百万 Token，输出约 10 元 / 百万 Token），每月大约 1～2 元。以百炼控制台显示的价格为准。
 
@@ -162,7 +162,7 @@
 2. 在云开发控制台 → 云函数 → `api` → 函数配置：
    - **超时时间改为 60 秒**（识别一张截图要 5～15 秒，默认 3 秒会超时）；
    - 环境变量新增 `DASHSCOPE_API_KEY`，值为上面的 API Key。密钥只放这里，不要写进代码或提交到 git。
-   - 可选：`BILL_MODEL` 换模型（默认 `qwen3-vl-plus`）；`BILL_BASE_URL` 换接口地址（默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`）。
+   - 可选：`BILL_MODEL` 换模型（默认 `qwen3-vl-plus`）；`BILL_BASE_URL` 换接口地址（默认 `https://cn-beijing.maas.qianwenaiapi.com/compatible-mode/v1`）。
 3. 云存储不用新建目录：截图临时上传到 `bill-screenshots/`，识别完马上删除。
 4. 在公众平台「设置 → 服务内容声明 → 用户隐私保护指引」补充：收集「选中的照片或视频信息」，用途「识别账单截图生成记账记录」；并说明截图会交给第三方（阿里云通义千问）识别、识别后删除。
 5. 上传体验版。

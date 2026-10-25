@@ -1,7 +1,8 @@
 const { ApiError } = require('./errors');
 
-// 阿里云百炼（通义千问）的 OpenAI 兼容接口；模型和地址可以用环境变量换。
-const DEFAULT_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+// 千问 AI 平台（原阿里云百炼）的 OpenAI 兼容接口（北京地域）；模型和地址可以用环境变量换。
+const DEFAULT_BASE_URL =
+  'https://cn-beijing.maas.qianwenaiapi.com/compatible-mode/v1';
 const DEFAULT_MODEL = 'qwen3-vl-plus';
 // 要比云函数超时（60 秒）短，留出查重和返回的时间。
 const TIMEOUT_MS = 50 * 1000;

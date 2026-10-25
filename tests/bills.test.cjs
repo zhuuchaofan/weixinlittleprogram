@@ -446,7 +446,7 @@ test('通义千问接口：OpenAI 兼容格式，密钥只放请求头，失败�
   const body = JSON.parse(requests[0].options.body);
   assert.equal(
     requests[0].url,
-    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    'https://cn-beijing.maas.qianwenaiapi.com/compatible-mode/v1/chat/completions',
   );
   assert.equal(requests[0].options.headers.Authorization, 'Bearer sk-test');
   assert.equal(body.model, 'qwen-vl-max');
