@@ -1,24 +1,17 @@
 <view class="page">
   <view wx:if="{{phase === 'reading'}}" class="waiting" aria-label="{{progressText}}">
-    <!-- 等待动画：线条画的小猫守着一杯冒热气的茶，摇尾巴、眨眼。纯 CSS，不用图片。 -->
+    <!-- 等待动画：线条小猫守着一杯冒热气的茶，摇尾巴、眨眼。轮廓是 images 里的 SVG，动作用 CSS。 -->
     <view class="scene" aria-hidden="true">
       <view class="cat">
-        <view class="tail"></view>
-        <view class="body"></view>
-        <view class="head">
-          <view class="ear ear-left"></view>
-          <view class="ear ear-right"></view>
-          <view class="eye eye-left"></view>
-          <view class="eye eye-right"></view>
-          <view class="nose"></view>
-        </view>
+        <image class="tail" src="/images/cat-tail.svg" />
+        <image class="cat-outline" src="/images/cat.svg" />
+        <view class="eye eye-left"></view>
+        <view class="eye eye-right"></view>
       </view>
-      <view class="cup">
-        <view class="steam steam-1"></view>
-        <view class="steam steam-2"></view>
-        <view class="steam steam-3"></view>
-        <view class="handle"></view>
-      </view>
+      <image class="steam steam-1" src="/images/steam.svg" />
+      <image class="steam steam-2" src="/images/steam.svg" />
+      <image class="steam steam-3" src="/images/steam.svg" />
+      <image class="cup" src="/images/cup.svg" />
     </view>
     <view class="waiting-text">{{progressText}}</view>
     <view class="small muted waiting-tip">{{tip}}</view>
