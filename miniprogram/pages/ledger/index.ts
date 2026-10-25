@@ -24,18 +24,20 @@ type CategoryRow = {
   width: number;
 };
 
-/** 占比四舍五入到整数；条的长度相对最大的一类，最大的一类占满。 */
+/** 占比四舍五入到整数；条宽就是占比（占满整条是 100%），太小的类至少画 2% 以免看不见。 */
 function categoryRows(
   total: number,
   byCategory: LedgerSummary['byCategory'],
 ): CategoryRow[] {
-  const top = byCategory[0]?.amount || 0;
-  return byCategory.map(({ cat, amount }) => ({
-    cat,
-    amountText: formatYuan(amount),
-    percent: total ? Math.round((amount * 100) / total) : 0,
-    width: top ? Math.max(2, Math.round((amount * 100) / top)) : 0,
-  }));
+  return byCategory.map(({ cat, amount }) => {
+    const percent = total ? Math.round((amount * 100) / total) : 0;
+    return {
+      cat,
+      amountText: formatYuan(amount),
+      percent,
+      width: total ? Math.max(2, percent) : 0,
+    };
+  });
 }
 
 type Row = Expense & {
