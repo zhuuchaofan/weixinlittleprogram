@@ -1,6 +1,6 @@
 <view class="page">
   <view wx:if="{{phase === 'reading'}}" class="waiting" aria-label="{{progressText}}">
-    <!-- 等待动画：小猫守着一杯冒热气的茶，摇尾巴、眨眼。纯 CSS，不用图片。 -->
+    <!-- 等待动画：线条画的小猫守着一杯冒热气的茶，摇尾巴、眨眼。纯 CSS，不用图片。 -->
     <view class="scene" aria-hidden="true">
       <view class="cat">
         <view class="tail"></view>
@@ -12,7 +12,6 @@
           <view class="eye eye-right"></view>
           <view class="nose"></view>
         </view>
-        <view class="paw"></view>
       </view>
       <view class="cup">
         <view class="steam steam-1"></view>
