@@ -1,11 +1,12 @@
 /**
  * 记账规则（docs/PLAN.md 第 5 节）。金额单位为「分」（人民币）：
- * - 共同支出统计排除 cat === '结算' 与 split === 'self'。
+ * - 共同支出统计排除 cat === '结算' 与 split === 'self'；收入（flow === 'in'）只能是 self，同样不计入。
  * - credit：split === 'other' 时为 amount；split === 'ratio' 时为 round(amount × (100 − ratio) / 100)，
  *   ratio 是付款人承担的百分比（整数 0–100）；否则为 amount / 2。
  * - net：payer 为 a 加 credit，为 b 减 credit；split === 'self' 不计入。
  * - net > 0：b 应付给 a；net < 0：a 应付给 b；|net| < 1 分视为已结清，结算金额四舍五入到分。
  * - 分类统计（byCategory）与共同支出口径相同，按金额从大到小。
+ * - spending：不开两人分摊（只记账）时用的口径，所有支出（不含结算和收入），不管怎么分。
  * - 月份由 date 前 7 位（YYYY-MM）决定。
  */
 const crypto = require('node:crypto');
@@ -32,27 +33,29 @@ function credit(record) {
   return record.amount / 2;
 }
 
+/** 是否参与分摊：「自己的」和收入都不参与。 */
+function isShared(record) {
+  return record.split !== 'self' && record.flow !== 'in';
+}
+
 function netOf(records) {
   let net = 0;
   for (const record of records) {
-    if (record.split === 'self') continue;
+    if (!isShared(record)) continue;
     net += record.payer === 'a' ? credit(record) : -credit(record);
   }
   return net;
 }
 
-function summarize(records) {
-  const shared = records.filter(
-    (record) => record.cat !== SETTLEMENT && record.split !== 'self',
-  );
+/** 合计、各自付款、按分类（金额从大到小；金额相同时按契约里的分类顺序，结果稳定）。 */
+function totals(records) {
   const paid = { a: 0, b: 0 };
   const byCat = new Map();
-  for (const record of shared) {
+  for (const record of records) {
     paid[record.payer] += record.amount;
     const cat = normalizeCategory(record.cat);
     byCat.set(cat, (byCat.get(cat) || 0) + record.amount);
   }
-  // 金额相同时按契约里的分类顺序，结果稳定。
   const byCategory = [...byCat]
     .map(([cat, amount]) => ({ cat, amount }))
     .sort(
@@ -60,12 +63,25 @@ function summarize(records) {
         y.amount - x.amount ||
         categories.indexOf(x.cat) - categories.indexOf(y.cat),
     );
+  return { total: paid.a + paid.b, paid, byCategory };
+}
+
+function summarize(records) {
+  const shared = totals(
+    records.filter((record) => record.cat !== SETTLEMENT && isShared(record)),
+  );
+  const { paid, byCategory } = shared;
   const net = netOf(records);
   const settled = Math.abs(net) < 1;
   return {
-    sharedTotal: paid.a + paid.b,
+    sharedTotal: shared.total,
     paid,
     byCategory,
+    spending: totals(
+      records.filter(
+        (record) => record.cat !== SETTLEMENT && record.flow !== 'in',
+      ),
+    ),
     net,
     settled,
     suggestion: settled

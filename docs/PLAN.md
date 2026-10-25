@@ -73,6 +73,8 @@ P1 阶段计划新增：expenses.recurId；todos.due、todos.repeat；meals（da
 ### 记账规则（必须按这个实现）
 
 - 共同支出统计时，排除 `cat === "结算"` 和 `split === "self"` 的记录。
+- 小家有「两人分摊与结算」开关（`households.splitting`，默认关闭）。关闭时只记账：记账页统计本月所有支出（`summary.spending`，不含结算和收入），不显示怎么分和结算，新记的账为 `split: "self"`；打开后按下面的规则分摊和结算。
+- 每条记录有 `flow`：`out` 支出、`in` 收入，没有 `flow` 的旧记录算支出。收入只能是 `split === "self"`，不参与共同支出和结算。
 - 每条记录的 credit（对方欠付款人的金额）：
   - `split === "other"` 时为 amount；
   - `split === "ratio"` 时为 round(amount × (100 − ratio) / 100)，其中 ratio 是付款人自己承担的百分比（整数 0–100，例如 6:4 记为 60），四舍五入到分（金额单位为分，恰好半分时进位）；

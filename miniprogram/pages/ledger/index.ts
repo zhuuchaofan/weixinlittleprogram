@@ -5,8 +5,14 @@ import {
   requireHousehold,
 } from '../../services/household';
 import { listMonth, settleMonth } from '../../services/ledger';
+import { setPendingImages } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
-import { SETTLEMENT, SPLITS } from '../../config/options';
+import {
+  BILL_IMPORT,
+  SETTLEMENT,
+  SPLITS,
+  billAppLabel,
+} from '../../config/options';
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
@@ -19,10 +25,12 @@ type CategoryRow = {
 };
 
 /** 占比四舍五入到整数；条的长度相对最大的一类，最大的一类占满。 */
-function categoryRows(summary: LedgerSummary): CategoryRow[] {
-  const total = summary.sharedTotal;
-  const top = summary.byCategory[0]?.amount || 0;
-  return summary.byCategory.map(({ cat, amount }) => ({
+function categoryRows(
+  total: number,
+  byCategory: LedgerSummary['byCategory'],
+): CategoryRow[] {
+  const top = byCategory[0]?.amount || 0;
+  return byCategory.map(({ cat, amount }) => ({
     cat,
     amountText: formatYuan(amount),
     percent: total ? Math.round((amount * 100) / total) : 0,
@@ -38,6 +46,8 @@ type Row = Expense & {
   isSettlement: boolean;
   byText: string;
   editedText: string;
+  isIncome: boolean;
+  sourceText: string;
 };
 
 let loadVersion = 0;
@@ -49,6 +59,7 @@ Page({
     monthText: monthLabel(todayKey().slice(0, 7)),
     isCurrentMonth: true,
     names: { a: '', b: '' },
+    splitting: false,
     loading: true,
     busy: false,
     error: '',
@@ -86,29 +97,46 @@ Page({
   ) {
     const splitLabel = (value: string) =>
       SPLITS.find((item) => item.value === value)?.label || '';
+    // 不开两人分摊时只记账：统计所有支出，不显示怎么分和结算。
+    const splitting = household?.splitting === true;
+    const shown = splitting
+      ? {
+          total: summary.sharedTotal,
+          paid: summary.paid,
+          byCategory: summary.byCategory,
+        }
+      : summary.spending;
     this.setData({
       names,
       summary,
-      categories: categoryRows(summary),
+      splitting,
+      categories: categoryRows(shown.total, shown.byCategory),
       summaryText: {
-        total: formatYuan(summary.sharedTotal),
-        a: formatYuan(summary.paid.a),
-        b: formatYuan(summary.paid.b),
+        total: formatYuan(shown.total),
+        a: formatYuan(shown.paid.a),
+        b: formatYuan(shown.paid.b),
         suggestion: summary.suggestion
           ? `${names[summary.suggestion.from]} 应付给 ${names[summary.suggestion.to]} ${formatYuan(summary.suggestion.amount)}`
           : '本月已结清',
       },
       records: records.map((record) => ({
         ...record,
-        amountText: formatYuan(record.amount),
+        amountText:
+          (record.flow === 'in' ? '+' : '') + formatYuan(record.amount),
+        isIncome: record.flow === 'in',
+        sourceText: record.src ? billAppLabel(record.src.app) + '导入' : '',
         dateText: shortDate(record.date),
         payerName: names[record.payer],
         splitText:
           record.cat === SETTLEMENT
             ? '结算'
-            : record.split === 'ratio' && record.ratio !== undefined
-              ? `按比例 ${record.ratio}:${100 - record.ratio}`
-              : splitLabel(record.split),
+            : record.flow === 'in'
+              ? '收入'
+              : !splitting
+                ? ''
+                : record.split === 'ratio' && record.ratio !== undefined
+                  ? `按比例 ${record.ratio}:${100 - record.ratio}`
+                  : splitLabel(record.split),
         isSettlement: record.cat === SETTLEMENT,
         byText: household ? byPartner(record.byRole, household, '记') : '',
         // 只提示对方改过的，自己改自己的不用提醒。
@@ -135,6 +163,24 @@ Page({
   },
   add() {
     wx.navigateTo({ url: '/pages/expense-edit/index' });
+  },
+  /** 截图记账：从相册选微信 / 支付宝账单列表截图，到导入页识别和确认。 */
+  async importScreenshots() {
+    let paths: string[];
+    try {
+      const result = await wx.chooseMedia({
+        count: BILL_IMPORT.maxImages,
+        mediaType: ['image'],
+        sourceType: ['album'],
+        sizeType: ['original'],
+      });
+      paths = result.tempFiles.map((file) => file.tempFilePath);
+    } catch {
+      return; // 取消选择
+    }
+    if (!paths.length) return;
+    setPendingImages(paths);
+    wx.navigateTo({ url: '/pages/bill-import/index' });
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({

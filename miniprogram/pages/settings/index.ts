@@ -72,6 +72,24 @@ Page({
       this.setData({ exporting: false });
     }
   },
+  /** 两人分摊与结算的开关：两个人共用一个设置。 */
+  async toggleSplitting(event: WechatMiniprogram.SwitchChange) {
+    const splitting = event.detail.value;
+    this.setData({ error: '', message: '' });
+    try {
+      this.show(await updateHousehold({ splitting }));
+      this.setData({
+        message: splitting
+          ? '已开启两人分摊：记账页会显示结算。'
+          : '已关闭两人分摊：只记账，不再显示结算。',
+      });
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+      // 保存失败：开关拨回原来的状态。
+      if (this.data.household)
+        this.setData({ household: { ...this.data.household } });
+    }
+  },
   copyCode() {
     const code = this.data.household?.inviteCode;
     if (code) wx.setClipboardData({ data: code });

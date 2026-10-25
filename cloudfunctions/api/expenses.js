@@ -10,10 +10,25 @@ const {
 const { todayKey, lastDayOfMonth } = require('./dates');
 const { publicRecord, requireRecord } = require('./records');
 
-/** 旧分类名换成新名称（见 ledger.normalizeCategory）。 */
-const withCategory = (view) => ({ ...view, cat: normalizeCategory(view.cat) });
+/** 旧分类名换成新名称（见 ledger.normalizeCategory）；没有 flow 的旧记录是支出。 */
+const withCategory = (view) => ({
+  ...view,
+  cat: normalizeCategory(view.cat),
+  flow: view.flow || 'out',
+});
 
-const FIELDS = ['amount', 'note', 'cat', 'date', 'payer', 'split', 'ratio'];
+// src：截图导入的账目才有，记下来自哪个 App 和原始商户名（见 bills.js）。
+const FIELDS = [
+  'amount',
+  'note',
+  'cat',
+  'date',
+  'payer',
+  'split',
+  'ratio',
+  'flow',
+  'src',
+];
 
 function byDateDesc(a, b) {
   return b.date.localeCompare(a.date) || b.ts - a.ts;

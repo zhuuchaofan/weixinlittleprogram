@@ -59,7 +59,19 @@ function ratio(payload) {
   return payload.ratio;
 }
 
-/** 金额只接受正整数（单位：分）。 */
+/** 收入还是支出；没有 flow 的旧记录和旧版小程序提交的都算支出。收入只能是「自己的」，不参与分摊。 */
+function flow(payload) {
+  const value = oneOf(
+    payload.flow ?? 'out',
+    CONTRACT.flows,
+    '请选择收入或支出。',
+  );
+  if (value === 'in' && payload.split !== 'self')
+    throw new ApiError('VALIDATION', '收入只能记为「自己的」。');
+  return value;
+}
+
+/** 金额只接受正整数（单位：分）；收入、支出由 flow 区分。 */
 function expense(payload) {
   const amount = payload?.amount;
   if (!Number.isInteger(amount) || amount < 1 || amount > MAX_AMOUNT)
@@ -74,6 +86,7 @@ function expense(payload) {
     payer: oneOf(payload.payer, CONTRACT.payers, '请选择付款人。'),
     split: oneOf(payload.split, CONTRACT.splits, '请选择分摊方式。'),
     ratio: ratio(payload),
+    flow: flow(payload),
   };
 }
 
@@ -153,6 +166,8 @@ module.exports = {
   dish,
   wish,
   anniversary,
+  oneOf,
+  text,
   month,
   id,
   isDate,

@@ -1,0 +1,15 @@
+.hint { margin: 24rpx 4rpx; }
+.back-button { margin-top: 24rpx; }
+.bill { background: var(--surface); border: 1rpx solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 16rpx; }
+.bill-off .row-title, .bill-off .amount { color: var(--muted); }
+.bill-head { display: flex; align-items: center; gap: 20rpx; min-height: 112rpx; padding: 20rpx 28rpx; }
+.check { width: 48rpx; height: 48rpx; flex-shrink: 0; border-radius: 12rpx; border: 2rpx solid var(--line); display: flex; align-items: center; justify-content: center; color: #fff9ee; font-size: 28rpx; }
+.check-on { background: var(--accent); border-color: var(--accent); }
+.amount { font-size: 34rpx; }
+.income { color: var(--ok); }
+.warn { color: #9a6a1f; }
+.flag { padding: 0 28rpx 20rpx 96rpx; font-size: 24rpx; color: var(--accent); }
+.flag-bad { color: #a23b33; }
+.editor { padding: 24rpx 28rpx 8rpx; border-top: 1rpx solid var(--line); background: var(--paper); }
+.editor .segmented { margin-bottom: 24rpx; }
+.save-bar { position: sticky; bottom: 0; padding: 20rpx 0 calc(20rpx + env(safe-area-inset-bottom)); background: var(--paper); }

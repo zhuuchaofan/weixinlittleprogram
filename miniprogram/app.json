@@ -8,6 +8,7 @@
     "pages/welcome/index",
     "pages/archive/index",
     "pages/expense-edit/index",
+    "pages/bill-import/index",
     "pages/todo-edit/index",
     "pages/dish-edit/index",
     "pages/wish-edit/index",
