@@ -430,15 +430,19 @@ test('收入只能是「自己的」；没有 flow 的旧记录读出来是支�
   assert.equal(month.data.summary.net, 500);
 });
 
-test('通义千问接口：OpenAI 兼容格式，密钥只放请求头，失败不带出内容', async () => {
+test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请求头，失败不带出内容', async () => {
   assert.equal(createVision({}), null);
   const requests = [];
+  const chunk = (content) =>
+    `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
   const vision = createVision(
     { DASHSCOPE_API_KEY: 'sk-test', BILL_MODEL: 'qwen-vl-max' },
     async (url, options) => {
       requests.push({ url, options });
       return new Response(
-        JSON.stringify({ choices: [{ message: { content: '{"items":[]}' } }] }),
+        chunk('{"items"') +
+          chunk(':[]}') +
+          'data: {"choices":[],"usage":{"total_tokens":9}}\n\ndata: [DONE]\n\n',
       );
     },
   );
@@ -450,6 +454,7 @@ test('通义千问接口：OpenAI 兼容格式，密钥只放请求头，失败�
   );
   assert.equal(requests[0].options.headers.Authorization, 'Bearer sk-test');
   assert.equal(body.model, 'qwen-vl-max');
+  assert.equal(body.stream, true);
   assert.deepEqual(body.messages[0].content[0], {
     type: 'image_url',
     image_url: { url: 'https://img/1' },
