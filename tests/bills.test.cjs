@@ -439,11 +439,13 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
     { DASHSCOPE_API_KEY: 'sk-test', BILL_MODEL: 'qwen-vl-max' },
     async (url, options) => {
       requests.push({ url, options });
-      return new Response(
-        chunk('{"items"') +
+      return {
+        status: 200,
+        text:
+          chunk('{"items"') +
           chunk(':[]}') +
           'data: {"choices":[],"usage":{"total_tokens":9}}\n\ndata: [DONE]\n\n',
-      );
+      };
     },
   );
   assert.equal(await vision.read('https://img/1', '读账单'), '{"items":[]}');
@@ -459,11 +461,35 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
     type: 'image_url',
     image_url: { url: 'https://img/1' },
   });
-  const failing = createVision(
-    { DASHSCOPE_API_KEY: 'sk-test' },
-    async () => new Response('quota exceeded', { status: 429 }),
+  const failing = (status, text) =>
+    createVision({ DASHSCOPE_API_KEY: 'sk-test' }, async () => ({
+      status,
+      text,
+    })).read('https://img/1', '读账单');
+  await assert.rejects(
+    failing(
+      401,
+      '{"error":{"code":"invalid_api_key","message":"Incorrect API key"}}',
+    ),
+    {
+      code: 'UNAVAILABLE',
+      message: /API Key 无效.*invalid_api_key Incorrect API key/,
+    },
   );
-  await assert.rejects(failing.read('https://img/1', '读账单'), {
-    code: 'UNAVAILABLE',
+  await assert.rejects(failing(404, ''), { message: /模型名或接口地址不对/ });
+  await assert.rejects(failing(429, 'quota'), { message: /额度用完/ });
+  await assert.rejects(
+    failing(400, '{"error":{"message":"image url download failed"}}'),
+    { message: /HTTP 400.*image url download failed/ },
+  );
+  // 200 但没有内容（例如流里只有错误）
+  await assert.rejects(failing(200, '{"error":{"message":"bad model"}}'), {
+    message: /bad model/,
+  });
+  const offline = createVision({ DASHSCOPE_API_KEY: 'sk-test' }, async () => {
+    throw new Error('ECONNRESET');
+  });
+  await assert.rejects(offline.read('https://img/1', '读账单'), {
+    message: /连不上识别服务/,
   });
 });

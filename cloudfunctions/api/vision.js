@@ -23,24 +23,74 @@ function joinStream(body) {
   return text;
 }
 
+/** 接口返回的错误说明（error.code / error.message），只取前 80 字，不含账单内容。 */
+function errorDetail(text) {
+  try {
+    const error = JSON.parse(text).error || {};
+    return [error.code, error.message].filter(Boolean).join(' ').slice(0, 80);
+  } catch {
+    return '';
+  }
+}
+
+/** HTTP 状态 → 给人看的原因，方便排查是 Key、模型还是额度的问题。 */
+function failureFor(status, text) {
+  const detail = errorDetail(text);
+  const message =
+    status === 401 || status === 403
+      ? 'API Key 无效或没有开通这个模型，请检查云函数 api 的 DASHSCOPE_API_KEY'
+      : status === 404
+        ? '模型名或接口地址不对，请检查 BILL_MODEL / BILL_BASE_URL'
+        : status === 429
+          ? '调用太频繁或额度用完了'
+          : `识别服务出错（HTTP ${status}）`;
+  return new ApiError(
+    'UNAVAILABLE',
+    detail ? `${message}：${detail}` : `${message}。`,
+  );
+}
+
+/** 用 node:https 发 POST，读完整个回复；不依赖 fetch（云函数的 Node 版本可能没有）。 */
+function httpsPost(url, { headers, body, timeout }) {
+  const https = require('node:https');
+  return new Promise((resolve, reject) => {
+    const request = https.request(
+      url,
+      { method: 'POST', headers, timeout },
+      (response) => {
+        const chunks = [];
+        response.on('data', (chunk) => chunks.push(chunk));
+        response.on('end', () =>
+          resolve({
+            status: response.statusCode,
+            text: Buffer.concat(chunks).toString('utf8'),
+          }),
+        );
+        response.on('error', reject);
+      },
+    );
+    request.on('timeout', () => request.destroy(new Error('timeout')));
+    request.on('error', reject);
+    request.end(body);
+  });
+}
+
 /**
  * 视觉模型：read(imageUrl, prompt) 返回模型回复的文本。
  * Omni 系列只支持流式输出，所以一律用 stream 调用，读完整个回复再拼接。
  * 没有配置 DASHSCOPE_API_KEY 时返回 null，截图记账提示未开通。密钥只从环境变量读取。
+ * post 可替换（测试用）：post(url, { headers, body, timeout }) → { status, text }。
  */
-function createVision(env = process.env, fetchImpl = globalThis.fetch) {
+function createVision(env = process.env, post = httpsPost) {
   const apiKey = env.DASHSCOPE_API_KEY;
   if (!apiKey) return null;
   const baseUrl = (env.BILL_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, '');
   const model = env.BILL_MODEL || DEFAULT_MODEL;
-  const unavailable = () =>
-    new ApiError('UNAVAILABLE', '识别服务暂时不可用，请稍后重试。');
   return {
     async read(imageUrl, prompt) {
       let response;
       try {
-        response = await fetchImpl(`${baseUrl}/chat/completions`, {
-          method: 'POST',
+        response = await post(`${baseUrl}/chat/completions`, {
           headers: {
             Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
@@ -60,20 +110,19 @@ function createVision(env = process.env, fetchImpl = globalThis.fetch) {
               },
             ],
           }),
-          signal: AbortSignal.timeout(TIMEOUT_MS),
+          timeout: TIMEOUT_MS,
         });
       } catch {
-        throw unavailable();
+        throw new ApiError(
+          'UNAVAILABLE',
+          '连不上识别服务（网络或超时），请稍后重试。',
+        );
       }
       // 不记录回复内容：里面是账单明细。
-      if (!response.ok) throw unavailable();
-      let content;
-      try {
-        content = joinStream(await response.text());
-      } catch {
-        throw unavailable();
-      }
-      if (!content) throw unavailable();
+      if (response.status !== 200)
+        throw failureFor(response.status, response.text);
+      const content = joinStream(response.text);
+      if (!content) throw failureFor(response.status, response.text);
       return content;
     },
   };
