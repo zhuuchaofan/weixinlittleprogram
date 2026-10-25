@@ -14,6 +14,21 @@ import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 // 一次同时识别几张：太多容易超时，太少等得久。
 const PARALLEL = 3;
 
+// 等待时轮流显示的小提示。
+const TIPS = [
+  '小猫正在一笔一笔对账…',
+  '先喝口茶，马上就好',
+  '在核对日期和金额',
+  '顺便看看有没有记过的',
+];
+const TIP_MS = 2500;
+let tipTimer: number | undefined;
+
+function stopTips(): void {
+  if (tipTimer !== undefined) clearInterval(tipTimer);
+  tipTimer = undefined;
+}
+
 const STATUS_TEXT: Record<BillStatus, string> = {
   imported: '已导入过',
   likely: '很可能已记过',
@@ -84,6 +99,7 @@ Page({
   data: {
     phase: 'reading' as 'reading' | 'review' | 'empty',
     progressText: '',
+    tip: TIPS[0],
     failures: [] as string[],
     rows: [] as Row[],
     selectedCount: 0,
@@ -101,7 +117,15 @@ Page({
       wx.navigateBack();
       return;
     }
-    void this.read(paths);
+    let index = 0;
+    tipTimer = setInterval(() => {
+      index = (index + 1) % TIPS.length;
+      this.setData({ tip: TIPS[index] });
+    }, TIP_MS);
+    void this.read(paths).finally(stopTips);
+  },
+  onUnload() {
+    stopTips();
   },
   async read(paths: string[]) {
     try {
