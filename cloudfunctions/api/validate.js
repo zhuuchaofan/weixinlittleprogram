@@ -173,8 +173,33 @@ function anniversary(payload) {
   };
 }
 
+function amount(value, message) {
+  if (!Number.isInteger(value) || value < 1 || value > MAX_AMOUNT)
+    throw new ApiError('VALIDATION', message);
+  return value;
+}
+
+/** 攒钱目标：金额单位为分；deadline 是最后一个月（YYYY-MM）；saved 是已存的，编辑时可以改正。 */
+function goal(payload) {
+  const saved = payload?.saved ?? 0;
+  if (!Number.isInteger(saved) || saved < 0 || saved > MAX_AMOUNT)
+    throw new ApiError('VALIDATION', '已存金额不对，最多两位小数。');
+  return {
+    title: text(payload?.title, {
+      field: '目标名称',
+      min: 1,
+      max: LENGTHS.goalTitle,
+    }),
+    target: amount(payload.target, '请填写目标金额，最多两位小数。'),
+    deadline: month(payload.deadline),
+    saved,
+  };
+}
+
 module.exports = {
   CATEGORIES,
+  amount,
+  goal,
   DISH_TAGS,
   expense,
   todo,

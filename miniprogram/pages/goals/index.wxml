@@ -1,0 +1,38 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{loading && !goals.length && !ready}}" class="status">正在读取…</view>
+  <view wx:elif="{{!goals.length}}" class="empty">还没有攒钱目标。定一个吧：比如旅行、换手机、应急金。</view>
+
+  <view wx:for="{{goals}}" wx:key="id" class="card goal {{item.done ? 'goal-done' : ''}}">
+    <view class="goal-head" data-id="{{item.id}}" bindtap="edit" hover-class="goal-head-active" aria-role="button">
+      <view class="goal-title">{{item.title}}</view>
+      <view class="small muted">编辑 <text class="chevron">›</text></view>
+    </view>
+    <view class="goal-amount"><text class="serif goal-saved">{{item.savedText}}</text><text class="small muted"> / {{item.targetText}}</text><text class="goal-percent">{{item.percent}}%</text></view>
+    <view class="goal-track" aria-hidden="true"><view class="goal-bar" style="width: {{item.percent}}%"></view></view>
+    <view class="goal-plan small">{{item.planText}}</view>
+    <view class="goal-foot">
+      <text class="small {{item.behind ? 'goal-behind' : 'goal-ok'}}">{{item.monthText}}</text>
+      <button wx:if="{{!item.done}}" class="goal-button" size="mini" data-id="{{item.id}}" bindtap="deposit" disabled="{{busy}}">存了一笔</button>
+    </view>
+  </view>
+
+  <button class="primary add" bindtap="add"><text class="plus">+</text>新目标</button>
+
+  <block wx:if="{{tips.length}}">
+    <view class="section-head"><view class="section-title">从哪儿省</view></view>
+    <view class="card tips">
+      <view class="small muted tips-lead">照前 3 个月的样子（不算房租、水电网），少花一点每月能多存：</view>
+      <view wx:for="{{tips}}" wx:key="cat" class="tip-row">
+        <view class="cat-dot" style="background: {{item.color}}"></view>
+        <view class="tip-main">
+          <view>{{item.cat}} <text class="small muted">月均 {{item.averageText}}</text></view>
+          <view class="small muted">少 10% 省 {{item.save10Text}} · 少 20% 省 {{item.save20Text}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <view class="small muted foot-note">「存了一笔」只记进度，不算支出，不影响记账统计。</view>
+  <view class="page-end"></view>
+</view>

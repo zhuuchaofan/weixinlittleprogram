@@ -76,6 +76,7 @@ export const CONTRACT = {
     "wishTitle": 30,
     "wishWhy": 100,
     "wishPlan": 300,
-    "dateTitle": 20
+    "dateTitle": 20,
+    "goalTitle": 20
   }
 } as const;

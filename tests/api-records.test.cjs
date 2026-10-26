@@ -114,6 +114,16 @@ const NOW = Date.parse('2026-10-20T04:00:00Z');
 async function setup({ vision = null } = {}) {
   const expenses = memoryRecords('e');
   const insights = memoryRecords('i');
+  const goals = memoryRecords('g');
+  goals.deposit = async (householdId, id, entry) => {
+    const d = goals.docs.get(id);
+    if (d && d.householdId === householdId)
+      goals.docs.set(id, {
+        ...d,
+        saved: (d.saved || 0) + entry.amount,
+        log: [...(d.log || []), entry],
+      });
+  };
   const todos = memoryRecords('t');
   const dishes = memoryRecords('d');
   const wishes = memoryRecords('w');
@@ -127,6 +137,7 @@ async function setup({ vision = null } = {}) {
     wishes,
     dates,
     insights,
+    goals,
     vision,
     now: () => NOW,
   });
@@ -137,7 +148,7 @@ async function setup({ vision = null } = {}) {
     code: created.data.inviteCode,
   });
   await call('X', 'household.create', { name: '别人家' });
-  return { call, expenses, todos, dishes, wishes, dates, insights };
+  return { call, expenses, todos, dishes, wishes, dates, insights, goals };
 }
 
 const expense = (overrides = {}) => ({
@@ -1157,4 +1168,103 @@ test('AI 小结：备注截到 12 字', () => {
     ]),
   );
   assert.match(prompt, /「一二三四五六七八九十甲乙」/);
+});
+
+test('攒钱目标：每月要存、存了一笔、本月还差、改正已存、别人家看不到', async () => {
+  const { call, goals } = await setup();
+  for (const bad of [
+    { title: '', target: 100, deadline: '2027-05' },
+    { title: '旅行', target: 0, deadline: '2027-05' },
+    { title: '旅行', target: 12.5, deadline: '2027-05' },
+    { title: '旅行', target: 100, deadline: '2027-5' },
+    { title: '旅行', target: 100, deadline: '2027-05', saved: -1 },
+    { title: 'x'.repeat(21), target: 100, deadline: '2027-05' },
+  ])
+    assert.equal(
+      (await call('A', 'goal.add', bad)).code,
+      'VALIDATION',
+      JSON.stringify(bad),
+    );
+  // 现在是 2026-10，到 2027-05 含两头共 8 个月。
+  const added = await call('A', 'goal.add', {
+    title: '日本旅行',
+    target: 2000000,
+    deadline: '2027-05',
+    saved: 400000,
+  });
+  assert.equal(added.ok, true);
+  assert.equal(added.data.monthsLeft, 8);
+  assert.equal(added.data.perMonth, 200000);
+  assert.equal(added.data.behind, 200000);
+  assert.equal(added.data.percent, 20);
+  const id = added.data.id;
+
+  assert.equal(
+    (await call('B', 'goal.deposit', { id, amount: 0 })).code,
+    'VALIDATION',
+  );
+  const deposited = await call('B', 'goal.deposit', { id, amount: 50000 });
+  assert.equal(deposited.data.saved, 450000);
+  assert.equal(deposited.data.thisMonth, 50000);
+  assert.equal(deposited.data.perMonth, 200000, '本月存了之后每月要存不变');
+  assert.equal(deposited.data.behind, 150000);
+  assert.deepEqual(deposited.data.log, [
+    { amount: 50000, date: '2026-10-20', role: 'b', ts: NOW },
+  ]);
+  assert.equal(JSON.stringify(goals.docs.get(id)).includes('"B"'), false);
+
+  // 只改名字不会动已存金额；改正已存金额要显式传。
+  const renamed = await call('A', 'goal.update', { id, title: '大阪旅行' });
+  assert.equal(renamed.data.saved, 450000);
+  const corrected = await call('A', 'goal.update', { id, saved: 2000000 });
+  assert.equal(corrected.data.done, true);
+  assert.equal(corrected.data.behind, 0);
+  assert.equal(corrected.data.percent, 100);
+
+  await call('A', 'goal.add', {
+    title: '过期的',
+    target: 1000,
+    deadline: '2026-01',
+  });
+  const list = (await call('B', 'goal.list')).data;
+  assert.deepEqual(
+    list.map((goal) => [goal.title, goal.monthsLeft, goal.perMonth]),
+    [
+      ['过期的', 0, 1000],
+      ['大阪旅行', 8, 0],
+    ],
+  );
+  assert.equal((await call('X', 'goal.list')).data.length, 0);
+  assert.equal(
+    (await call('X', 'goal.deposit', { id, amount: 100 })).code,
+    'NOT_FOUND',
+  );
+});
+
+test('攒钱建议：前 3 个整月、不含房租水电和收入，取月均最多的 3 类', async () => {
+  const { call } = await setup();
+  const rows = [
+    { amount: 300000, cat: '房租', date: '2026-09-01' },
+    { amount: 30000, cat: '吃饭', date: '2026-07-10' },
+    { amount: 60000, cat: '吃饭', date: '2026-09-10' },
+    { amount: 9000, cat: '娱乐', date: '2026-08-10' },
+    { amount: 3000, cat: '日用', date: '2026-08-10' },
+    { amount: 1500, cat: '交通', date: '2026-08-11' },
+    { amount: 99900, cat: '旅行', date: '2026-06-30' },
+    { amount: 99900, cat: '旅行', date: '2026-10-01' },
+    {
+      amount: 500000,
+      cat: '其他',
+      date: '2026-09-15',
+      flow: 'in',
+      split: 'self',
+    },
+  ];
+  for (const row of rows)
+    assert.equal((await call('A', 'expense.add', expense(row))).ok, true);
+  assert.deepEqual((await call('B', 'goal.tips')).data, [
+    { cat: '吃饭', average: 30000, save10: 3000, save20: 6000 },
+    { cat: '娱乐', average: 3000, save10: 300, save20: 600 },
+    { cat: '日用', average: 1000, save10: 100, save20: 200 },
+  ]);
 });

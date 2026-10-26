@@ -6,6 +6,7 @@ const { createBillHandler } = require('./bills');
 const { createTodoHandler } = require('./todos');
 const { createExportHandler } = require('./export');
 const { createInsightHandler } = require('./insight');
+const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
@@ -18,6 +19,7 @@ function createRouter({
   wishes,
   dates,
   insights = null,
+  goals = null,
   vision = null,
   now = () => Date.now(),
 }) {
@@ -41,6 +43,12 @@ function createRouter({
       requireMembership,
       now,
       writer: vision,
+    }),
+    ...createGoalHandler({
+      repository: goals,
+      expenses,
+      requireMembership,
+      now,
     }),
     ...createTodoHandler({ repository: todos, requireMembership, now }),
     ...createCollectionHandlers({

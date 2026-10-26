@@ -1,0 +1,28 @@
+.goal { padding: 28rpx 32rpx; }
+.goal-head { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; min-height: 56rpx; }
+.goal-head-active { opacity: 0.7; }
+.goal-title { flex: 1; min-width: 0; font-size: 32rpx; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goal-amount { display: flex; align-items: baseline; margin-top: 8rpx; }
+.goal-saved { font-size: 48rpx; }
+.goal-percent { margin-left: auto; font-size: 28rpx; font-weight: 700; color: var(--accent); }
+.goal-track { height: 16rpx; margin-top: 12rpx; border-radius: 8rpx; background: var(--sunken); overflow: hidden; }
+.goal-bar { height: 100%; border-radius: 8rpx; background: var(--accent-grad); }
+.goal-done .goal-bar { background: var(--ok); }
+.goal-done .goal-percent { color: var(--ok); }
+.goal-plan { margin-top: 16rpx; }
+.goal-foot { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 12rpx; min-height: 64rpx; }
+.goal-behind { color: var(--accent); }
+.goal-ok { color: var(--ok); }
+button.goal-button[size='mini'] { margin: 0; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+.add { margin-top: 32rpx; min-height: 96rpx; }
+.plus { font-size: 40rpx; font-weight: 400; line-height: 1; margin-right: 8rpx; }
+
+.section-head { margin-top: 40rpx; }
+.tips { padding: 24rpx 32rpx; }
+.tips-lead { margin-bottom: 8rpx; }
+.tip-row { display: flex; align-items: center; gap: 16rpx; padding: 12rpx 0; }
+.cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
+.tip-main { flex: 1; min-width: 0; font-size: 28rpx; }
+.foot-note { margin-top: 32rpx; text-align: center; }
+.page-end { height: 80rpx; }

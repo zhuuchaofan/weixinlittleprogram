@@ -3,6 +3,9 @@ import type {
   AnniversaryInput,
   Dish,
   DishInput,
+  Goal,
+  GoalInput,
+  SavingTip,
   Todo,
   TodoInput,
   TodoKind,
@@ -27,5 +30,16 @@ export const todoService = {
       kind,
     });
     return result.removed;
+  },
+};
+
+/** 攒钱目标：通用的增删改查，另加「存了一笔」和省钱建议。 */
+export const goalService = {
+  ...createCollectionService<Goal, GoalInput>('goal'),
+  deposit(id: string, amount: number): Promise<Goal> {
+    return callApi<Goal>('goal.deposit', { id, amount });
+  },
+  tips(): Promise<SavingTip[]> {
+    return callApi<SavingTip[]>('goal.tips');
   },
 };

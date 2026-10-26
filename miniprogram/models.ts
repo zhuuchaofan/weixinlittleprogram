@@ -233,3 +233,41 @@ export interface InsightSummary {
   ts: number;
   stale: boolean;
 }
+
+/** 攒钱目标：金额单位为分；deadline 是最后一个月（YYYY-MM）。 */
+export interface GoalInput {
+  title: string;
+  target: number;
+  deadline: string;
+  /** 已存的；新建时可填已经攒下的，编辑时可以改正。 */
+  saved: number;
+}
+
+export interface GoalDeposit {
+  amount: number;
+  date: string;
+  role: MemberRole | '';
+  ts: number;
+}
+
+export interface Goal extends GoalInput, RecordMeta {
+  /** 最近 10 笔「存了一笔」，最近的在前。 */
+  log: GoalDeposit[];
+  done: boolean;
+  percent: number;
+  remaining: number;
+  /** 从本月到截止月（含）还有几个月；已过截止月为 0。 */
+  monthsLeft: number;
+  perMonth: number;
+  thisMonth: number;
+  /** 本月还差多少才够「每月要存」。 */
+  behind: number;
+}
+
+/** 前 3 个整月某类的月均支出，少花 10% / 20% 每月能省多少。 */
+export interface SavingTip {
+  cat: string;
+  average: number;
+  save10: number;
+  save20: number;
+}

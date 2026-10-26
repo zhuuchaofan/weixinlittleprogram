@@ -64,6 +64,21 @@ function createHouseholdRepository(db) {
   };
 }
 
+/** 攒钱目标：通用记录操作，加上原子的「存了一笔」。 */
+function createGoalRepository(db) {
+  const _ = db.command;
+  const collection = db.collection('goals');
+  return {
+    ...createRecordRepository(db, 'goals'),
+    async deposit(householdId, id, entry) {
+      // 两人同时存也不会丢：saved 用 inc，log 用 push。
+      await collection
+        .where({ _id: id, householdId })
+        .update({ saved: _.inc(entry.amount), log: _.push([entry]) });
+    },
+  };
+}
+
 /** 业务记录集合：所有读写都限定在 householdId 之内。 */
 function createRecordRepository(db, collectionName) {
   const collection = db.collection(collectionName);
@@ -137,6 +152,7 @@ exports.main = async (event, context) => {
     wishes: createRecordRepository(db, 'wishes'),
     dates: createRecordRepository(db, 'dates'),
     insights: createRecordRepository(db, 'insights'),
+    goals: createGoalRepository(db),
     vision: createVision(),
   });
   return route(event, openid);
