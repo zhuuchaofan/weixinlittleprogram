@@ -75,7 +75,10 @@ function present(item: BillItem, previous?: Row): Row {
       (item.flow === 'in' ? '+' : '') +
       (item.amount ? formatYuan(item.amount) : '¥?'),
     dateText: item.date ? shortDate(item.date) : '日期待补',
-    statusText: item.status ? STATUS_TEXT[item.status] : '',
+    // 云端 api 没重新部署时还会返回旧的 likely，没有对应文字就按「可能已记过」显示。
+    statusText: item.status
+      ? STATUS_TEXT[item.status] || STATUS_TEXT.possible
+      : '',
     matchText: matchText(item),
     showDate: false,
   };
