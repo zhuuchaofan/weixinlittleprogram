@@ -96,4 +96,7 @@ Page({
     const code = this.data.household?.inviteCode;
     if (code) wx.setClipboardData({ data: code });
   },
+  openBudgets() {
+    wx.navigateTo({ url: '/pages/budgets/index' });
+  },
 });

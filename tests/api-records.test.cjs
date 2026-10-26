@@ -1268,3 +1268,78 @@ test('攒钱建议：前 3 个整月、不含房租水电和收入，取月均�
     { cat: '日用', average: 1000, save10: 100, save20: 200 },
   ]);
 });
+
+test('分类预算：整体替换、校验分类和金额，记账后返回本月用量', async () => {
+  const { call } = await setup();
+  for (const bad of [[], { 奢侈品: 100 }, { 吃饭: 12.5 }, { 吃饭: -1 }])
+    assert.equal(
+      (await call('A', 'household.update', { budgets: bad })).code,
+      'VALIDATION',
+      JSON.stringify(bad),
+    );
+  const set = await call('A', 'household.update', {
+    budgets: { 吃饭: 10000, 日用: 0, 娱乐: 5000 },
+  });
+  assert.deepEqual(set.data.budgets, { 吃饭: 10000, 娱乐: 5000 });
+  const replaced = await call('B', 'household.update', {
+    budgets: { 吃饭: 10000 },
+  });
+  assert.deepEqual(replaced.data.budgets, { 吃饭: 10000 });
+  assert.deepEqual((await call('A', 'household.get')).data.budgets, {
+    吃饭: 10000,
+  });
+
+  const first = await call('A', 'expense.add', expense({ amount: 7000 }));
+  assert.deepEqual(first.data.budget, {
+    cat: '吃饭',
+    limit: 10000,
+    used: 7000,
+    before: 0,
+  });
+  const second = await call(
+    'B',
+    'expense.add',
+    expense({ amount: 2000, payer: 'b', split: 'self' }),
+  );
+  assert.deepEqual(second.data.budget, {
+    cat: '吃饭',
+    limit: 10000,
+    used: 9000,
+    before: 7000,
+  });
+  // 改一笔：before 是改之前的用量。
+  const edited = await call('A', 'expense.update', {
+    id: first.data.id,
+    ...expense({ amount: 9000 }),
+  });
+  assert.deepEqual(edited.data.budget, {
+    cat: '吃饭',
+    limit: 10000,
+    used: 11000,
+    before: 9000,
+  });
+  // 改到别的分类：吃饭不再算它。
+  const moved = await call('A', 'expense.update', {
+    id: first.data.id,
+    ...expense({ amount: 9000, cat: '日用' }),
+  });
+  assert.equal(moved.data.budget, undefined);
+  // 收入、别的月份、没设预算的分类都不带。
+  const income = await call(
+    'A',
+    'expense.add',
+    expense({ amount: 100, flow: 'in', split: 'self' }),
+  );
+  assert.equal(income.data.budget, undefined);
+  const september = await call(
+    'A',
+    'expense.add',
+    expense({ amount: 500, date: '2026-09-30' }),
+  );
+  assert.deepEqual(september.data.budget, {
+    cat: '吃饭',
+    limit: 10000,
+    used: 500,
+    before: 0,
+  });
+});

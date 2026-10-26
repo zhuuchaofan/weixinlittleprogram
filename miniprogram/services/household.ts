@@ -50,6 +50,7 @@ export async function joinHousehold(
 export async function updateHousehold(fields: {
   name?: string;
   splitting?: boolean;
+  budgets?: Record<string, number>;
 }): Promise<Household> {
   return remember(
     await callApi<Household>('household.update', fields),

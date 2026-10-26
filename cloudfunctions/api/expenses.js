@@ -30,6 +30,41 @@ const FIELDS = [
   'src',
 ];
 
+/** 计入预算的支出：不含结算和收入，口径同 summary.spending。 */
+const isSpending = (record) =>
+  record.cat !== SETTLEMENT && (record.flow || 'out') !== 'in';
+
+/**
+ * 记一笔或改一笔之后，这一类本月的预算用了多少：{ cat, limit, used, before }。
+ * before 是这次保存之前的用量，小程序据此判断是否刚跨过 80% / 100%。没设预算或不是支出时为 null，返回里不带 budget。
+ */
+async function budgetOf(repository, household, record, previous = null) {
+  const cat = normalizeCategory(record.cat);
+  const limit = household.budgets?.[cat];
+  if (!limit || !isSpending(record)) return null;
+  const month = record.date.slice(0, 7);
+  const used = (await repository.listMonth(household._id, month))
+    .filter((item) => isSpending(item) && normalizeCategory(item.cat) === cat)
+    .reduce((total, item) => total + item.amount, 0);
+  const counted = (item) =>
+    item &&
+    isSpending(item) &&
+    normalizeCategory(item.cat) === cat &&
+    item.date.slice(0, 7) === month
+      ? item.amount
+      : 0;
+  return {
+    cat,
+    limit,
+    used,
+    before: used - counted(record) + counted(previous),
+  };
+}
+
+/** 设了预算的分类才在返回里带 budget。 */
+const withBudget = (result, budget) =>
+  budget ? { ...result, budget } : result;
+
 function byDateDesc(a, b) {
   return b.date.localeCompare(a.date) || b.ts - a.ts;
 }
@@ -69,7 +104,10 @@ function createExpenseHandler({ repository, requireMembership, now }) {
         by: openid,
       };
       const id = await repository.insert(record);
-      return view({ ...record, _id: id }, household);
+      return withBudget(
+        view({ ...record, _id: id }, household),
+        await budgetOf(repository, household, record),
+      );
     },
     async 'expense.update'(openid, payload) {
       const household = await requireMembership(openid);
@@ -87,7 +125,11 @@ function createExpenseHandler({ repository, requireMembership, now }) {
         editedAt: now(),
       };
       await repository.update(household._id, id, fields);
-      return view({ ...existing, ...fields }, household);
+      const updated = { ...existing, ...fields };
+      return withBudget(
+        view(updated, household),
+        await budgetOf(repository, household, updated, existing),
+      );
     },
     async 'expense.remove'(openid, payload) {
       const household = await requireMembership(openid);

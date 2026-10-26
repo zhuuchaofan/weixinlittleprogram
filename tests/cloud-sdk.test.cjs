@@ -91,6 +91,8 @@ async function probe() {
         Object.assign(doc, change.$set || {});
         for (const [key, value] of Object.entries(change.$push || {}))
           doc[key] = [...(doc[key] || []), ...value.$each];
+        for (const [key, value] of Object.entries(change.$inc || {}))
+          doc[key] = (doc[key] || 0) + value;
         updated++;
       }
       result = { data: { updated, matched: updated } };
@@ -176,6 +178,42 @@ async function probe() {
   assert.deepEqual([x.ok, y.ok].sort(), [false, true], JSON.stringify([x, y]));
   assert.equal([x, y].find((r) => !r.ok).code, 'ALREADY_SETTLED');
   assert.equal(store.expenses.filter((d) => d.cat === '结算').length, 1);
+
+  // 分类预算：对象字段整体替换（_.set），不和旧值合并成 budgets.吃饭 这样的路径
+  assert.equal(
+    (await call('A', 'household.update', { budgets: { 食费: 1 } })).ok,
+    false,
+    '旧分类名不能当预算分类',
+  );
+  const budgeted = await call('A', 'household.update', {
+    budgets: { 吃饭: 5000, 日用: 800 },
+  });
+  assert.equal(budgeted.ok, true, budgeted.message);
+  const replace = await call('B', 'household.update', {
+    budgets: { 日用: 900 },
+  });
+  assert.equal(replace.ok, true, replace.message);
+  assert.deepEqual(
+    Object.keys(parse(last('database.modifyDocument', 'households').data).$set),
+    ['budgets'],
+  );
+  assert.deepEqual(store.households[0].budgets, { 日用: 900 });
+
+  // 攒钱：存了一笔用 _.inc + _.push，两人同时存不会丢
+  const goal = await call('A', 'goal.add', {
+    title: '旅行',
+    target: 100000,
+    deadline: '2030-12',
+  });
+  assert.equal(goal.ok, true, goal.message);
+  await Promise.all([
+    call('A', 'goal.deposit', { id: goal.data.id, amount: 300 }),
+    call('B', 'goal.deposit', { id: goal.data.id, amount: 200 }),
+  ]);
+  const deposit = parse(last('database.modifyDocument', 'goals').data);
+  assert.deepEqual(Object.keys(deposit).sort(), ['$inc', '$push']);
+  assert.equal(store.goals[0].saved, 500);
+  assert.equal(store.goals[0].log.length, 2);
 
   // 导出：count() 与分页读取一致
   const exported = await call('B', 'data.export');

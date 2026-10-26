@@ -21,6 +21,7 @@ import { formatTimestamp, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
+import { budgetAlert } from '../../utils/budget';
 
 /** 付款人承担的百分比：只接受范围内的整数，否则返回 null。 */
 function parseRatio(text: string): number | null {
@@ -183,8 +184,17 @@ Page({
     }
     this.setData({ busy: true, error: '' });
     try {
-      if (this.data.id) await updateExpense(this.data.id, input);
-      else await addExpense(input);
+      const saved = this.data.id
+        ? await updateExpense(this.data.id, input)
+        : await addExpense(input);
+      // 这一类刚花到预算的 80% 或超出时提醒一下，点「知道了」再返回。
+      const alert = budgetAlert(saved.budget);
+      if (alert)
+        await wx.showModal({
+          ...alert,
+          showCancel: false,
+          confirmText: '知道了',
+        });
       wx.navigateBack();
     } catch (error) {
       // 保留表单内容，提示后可直接重试。

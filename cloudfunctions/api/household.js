@@ -7,6 +7,10 @@ const CODE_PATTERN = /^[A-HJ-NP-Z2-9]{6}$/;
 const MAX_MEMBERS = 2;
 const DEFAULT_CURRENCY = 'CNY';
 const { ARCHIVE_ID } = require('./archive-id');
+const {
+  categories: CATEGORIES,
+  maxAmount: MAX_AMOUNT,
+} = require('./contract.json');
 
 function makeInviteCode() {
   let code = '';
@@ -18,6 +22,21 @@ function cleanName(value) {
   if (typeof value !== 'string') return '';
   const name = value.trim();
   return name.length >= 1 && name.length <= 12 ? name : '';
+}
+
+/** 分类预算：{ 分类: 每月上限（分） }；0 或不填表示这一类不设预算。 */
+function cleanBudgets(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new ApiError('VALIDATION', '预算格式不对，请重试。');
+  const budgets = {};
+  for (const [cat, amount] of Object.entries(value)) {
+    if (!CATEGORIES.includes(cat))
+      throw new ApiError('VALIDATION', `没有「${cat}」这个分类。`);
+    if (!Number.isInteger(amount) || amount < 0 || amount > MAX_AMOUNT)
+      throw new ApiError('VALIDATION', `${cat}的预算不对，最多两位小数。`);
+    if (amount) budgets[cat] = amount;
+  }
+  return budgets;
 }
 
 function requireName(value) {
@@ -40,6 +59,7 @@ function publicHousehold(household, openid) {
     archive: household.archive === ARCHIVE_ID ? ARCHIVE_ID : '',
     // 两人分摊与结算：默认关闭，只记账。
     splitting: household.splitting === true,
+    budgets: household.budgets || {},
     members: household.members.map((member) => ({
       role: member.role,
       name: member.name,
@@ -128,6 +148,8 @@ function createHouseholdHandler({
           throw new ApiError('VALIDATION', '请选择是否开启两人分摊。');
         fields.splitting = payload.splitting;
       }
+      if (payload?.budgets !== undefined)
+        fields.budgets = cleanBudgets(payload.budgets);
       if (!Object.keys(fields).length)
         throw new ApiError('VALIDATION', '没有需要保存的内容。');
       await repository.update(household._id, fields);
