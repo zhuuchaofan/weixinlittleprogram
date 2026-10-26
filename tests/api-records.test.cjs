@@ -795,6 +795,29 @@ test('吃啥：菜品与店家，店家没有「在家做」，旧记录当作�
   assert.equal(dish.ok, true);
 });
 
+test('吃啥：「就吃这个」记下日期，可清空，日期格式要对', async () => {
+  const { call } = await setup();
+  const added = await call('A', 'dish.add', { name: '咖喱饭', tag: '在家做' });
+  assert.equal(added.data.ateOn, '');
+  const ate = await call('B', 'dish.update', {
+    id: added.data.id,
+    ateOn: '2026-10-26',
+  });
+  assert.equal(ate.ok, true, ate.message);
+  assert.equal(ate.data.ateOn, '2026-10-26');
+  assert.equal(ate.data.name, '咖喱饭');
+  assert.equal(
+    (await call('A', 'dish.update', { id: added.data.id, ateOn: '10-26' }))
+      .code,
+    'VALIDATION',
+  );
+  const renamed = await call('A', 'dish.update', {
+    id: added.data.id,
+    name: '咖喱乌冬',
+  });
+  assert.equal(renamed.data.ateOn, '2026-10-26', '改名不丢吃过的日期');
+});
+
 test('按比例分摊：保存比例、参与结算，改回其他方式后不再带 ratio', async () => {
   const { call, expenses } = await setup();
   const added = await call(

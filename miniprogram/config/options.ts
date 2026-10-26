@@ -78,24 +78,20 @@ export function todoTab(kind: TodoKind): TodoKind {
 
 export const DISH_TAGS: DishTag[] = [...CONTRACT.dishTags];
 
-const DISH_KIND_LABELS: Record<DishKind, string> = {
-  dish: '菜品',
-  shop: '店家',
+/** 吃啥只问「怎么吃」；契约里的「外食」在界面上叫「出去吃」。 */
+const DISH_TAG_LABELS: Record<DishTag, string> = {
+  在家做: '在家做',
+  外食: '出去吃',
+  外卖: '外卖',
 };
-export const DISH_KINDS: Array<{ value: DishKind; label: string }> =
-  CONTRACT.dishKinds.map((value: DishKind) => ({
-    value,
-    label: DISH_KIND_LABELS[value],
-  }));
-const SHOP_TAGS: DishTag[] = [...CONTRACT.shopTags];
-/** 某一类能选的标签：店家没有「在家做」。 */
-export function tagsForKind(kind: DishKind | ''): DishTag[] {
-  return kind === 'shop' ? SHOP_TAGS : DISH_TAGS;
+export const DISH_TAG_OPTIONS: Array<{ value: DishTag; label: string }> =
+  DISH_TAGS.map((value) => ({ value, label: DISH_TAG_LABELS[value] }));
+export function dishTagLabel(tag: DishTag): string {
+  return DISH_TAG_LABELS[tag] || tag;
 }
-export function kindLabel(kind: DishKind): string {
-  return DISH_KIND_LABELS[kind];
-}
+
 // 只用于编译期核对契约取值与 models.ts 一致。
 export const PAYERS: Payer[] = [...CONTRACT.payers];
 export const TODO_WHO: TodoWho[] = [...CONTRACT.todoWho];
 export const TODO_KIND_VALUES: TodoKind[] = [...CONTRACT.todoKinds];
+export const DISH_KINDS: DishKind[] = [...CONTRACT.dishKinds];

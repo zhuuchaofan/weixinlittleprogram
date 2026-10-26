@@ -36,3 +36,8 @@ export function shortDate(date: string): string {
   const [, month, day] = date.split('-').map(Number);
   return `${month}月${day}日`;
 }
+
+/** 两个 YYYY-MM-DD 相差几天（to - from）。 */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
+}

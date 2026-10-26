@@ -1,36 +1,53 @@
-import type { Dish, DishKind, DishTag } from '../../models';
+import type { Dish, DishTag } from '../../models';
 import { requireHousehold } from '../../services/household';
 import { dishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { markLoaded, needsReload } from '../../services/snapshot';
-import {
-  DISH_KINDS,
-  LENGTHS,
-  kindLabel,
-  tagsForKind,
-} from '../../config/options';
+import { DISH_TAG_OPTIONS, LENGTHS, dishTagLabel } from '../../config/options';
+import { daysBetween, todayKey } from '../../utils/date';
 
-type Row = Dish & { kindText: string };
+type Row = Dish & { ateText: string; ateDays: number; ateToday: boolean };
+type Group = {
+  tag: DishTag;
+  label: string;
+  tile: string;
+  icon: string;
+  items: Row[];
+};
+
+/** 抽签避开最近几天吃过的。 */
+const RECENT_DAYS = 3;
+
+const GROUP_LOOKS: Record<DishTag, { tile: string; icon: string }> = {
+  在家做: { tile: 'tile-orange', icon: '/images/ui/home.svg' },
+  外食: { tile: 'tile-yellow', icon: '/images/ui/shop.svg' },
+  外卖: { tile: 'tile-blue', icon: '/images/cat-icons/food.svg' },
+};
 
 let loadVersion = 0;
+
+function toRow(dish: Dish, today: string): Row {
+  const days = dish.ateOn ? daysBetween(dish.ateOn, today) : -1;
+  let ateText = '';
+  if (days === 0) ateText = '今天吃过';
+  else if (days === 1) ateText = '昨天吃过';
+  else if (days > 1) ateText = `${days} 天前吃过`;
+  return { ...dish, ateText, ateDays: days, ateToday: days === 0 };
+}
 
 Page({
   data: {
     limits: LENGTHS,
-    kinds: DISH_KINDS,
-    // 顶部筛选：先选菜品 / 店家，再选标签；空字符串表示全部。
-    kindFilter: '' as DishKind | '',
-    filterTags: tagsForKind(''),
+    tags: DISH_TAG_OPTIONS,
+    // 「怎么吃」筛选；空字符串表示全部。新加的也存到这一类（全部时存「在家做」）。
     filter: '' as DishTag | '',
-    scopeText: '全部',
+    filterText: '',
+    addText: dishTagLabel('在家做'),
     dishes: [] as Row[],
     visible: [] as Row[],
+    groups: [] as Group[],
     picked: null as Row | null,
-    // 下方新增表单
     name: '',
-    kind: 'dish' as DishKind,
-    tags: tagsForKind('dish'),
-    tag: '在家做' as DishTag,
     loading: true,
     busy: false,
     error: '',
@@ -43,12 +60,8 @@ Page({
     if (needsReload('dishes')) void this.load();
   },
   showDishes(dishes: Dish[]) {
-    this.setData({
-      dishes: dishes.map((dish): Row => ({
-        ...dish,
-        kindText: kindLabel(dish.kind),
-      })),
-    });
+    const today = todayKey();
+    this.setData({ dishes: dishes.map((dish) => toRow(dish, today)) });
     this.applyFilter();
   },
   onPullDownRefresh() {
@@ -71,32 +84,22 @@ Page({
     }
   },
   applyFilter() {
-    const { kindFilter, filter } = this.data;
-    const scope = [kindFilter && kindLabel(kindFilter), filter].filter(Boolean);
+    const { filter } = this.data;
+    const visible = this.data.dishes.filter(
+      (dish) => !filter || dish.tag === filter,
+    );
+    const groups = DISH_TAG_OPTIONS.map(({ value, label }): Group => ({
+      tag: value,
+      label,
+      ...GROUP_LOOKS[value],
+      items: visible.filter((dish) => dish.tag === value),
+    })).filter((group) => group.items.length);
     this.setData({
-      scopeText: scope.join(' · ') || '全部',
-      visible: this.data.dishes.filter(
-        (dish) =>
-          (!kindFilter || dish.kind === kindFilter) &&
-          (!filter || dish.tag === filter),
-      ),
+      visible,
+      groups,
+      filterText: filter ? dishTagLabel(filter) : '',
+      addText: dishTagLabel(filter || '在家做'),
     });
-  },
-  chooseKindFilter(event: WechatMiniprogram.TouchEvent) {
-    const kindFilter = event.currentTarget.dataset.value as DishKind | '';
-    const filterTags = tagsForKind(kindFilter);
-    this.setData({
-      kindFilter,
-      filterTags,
-      // 切到店家时，「在家做」这个标签筛选已经没有意义。
-      filter: filterTags.includes(this.data.filter as DishTag)
-        ? this.data.filter
-        : '',
-      picked: null,
-    });
-    // 新增表单跟着当前筛选走，省得再选一遍。
-    if (kindFilter) this.setKind(kindFilter);
-    this.applyFilter();
   },
   chooseFilter(event: WechatMiniprogram.TouchEvent) {
     this.setData({
@@ -111,46 +114,58 @@ Page({
       this.setData({ error: '这一类里还没有可以抽的，先加几个吧。' });
       return;
     }
-    // 尽量不和上一次抽到的重复。
-    const candidates =
-      pool.length > 1
-        ? pool.filter((dish) => dish.id !== this.data.picked?.id)
-        : pool;
+    // 避开最近吃过的和上一次抽到的；都排除光了就不避了。
+    const fresh = pool.filter(
+      (dish) =>
+        (dish.ateDays < 0 || dish.ateDays >= RECENT_DAYS) &&
+        dish.id !== this.data.picked?.id,
+    );
+    const others = pool.filter((dish) => dish.id !== this.data.picked?.id);
+    const candidates = fresh.length ? fresh : others.length ? others : pool;
     this.setData({
       error: '',
       picked: candidates[Math.floor(Math.random() * candidates.length)],
     });
   },
+  /** 就吃这个：记下今天吃过，之后几天不会再抽到。 */
+  async eat() {
+    const picked = this.data.picked;
+    if (!picked || picked.ateToday || this.data.busy) return;
+    this.setData({ busy: true, error: '' });
+    try {
+      const dish = await dishService.update(picked.id, { ateOn: todayKey() });
+      const row = toRow(dish, todayKey());
+      this.setData({
+        picked: row,
+        dishes: this.data.dishes.map((item) =>
+          item.id === row.id ? row : item,
+        ),
+      });
+      this.applyFilter();
+      wx.showToast({ title: '记下了', icon: 'success' });
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+    } finally {
+      this.setData({ busy: false });
+    }
+  },
   inputName(event: WechatMiniprogram.Input) {
     this.setData({ name: event.detail.value });
-  },
-  setKind(kind: DishKind) {
-    const tags = tagsForKind(kind);
-    // 店家没有「在家做」，切过去时改成外食。
-    this.setData({
-      kind,
-      tags,
-      tag: tags.includes(this.data.tag) ? this.data.tag : tags[0],
-    });
-  },
-  chooseKind(event: WechatMiniprogram.TouchEvent) {
-    this.setKind(event.currentTarget.dataset.value as DishKind);
-  },
-  chooseTag(event: WechatMiniprogram.TouchEvent) {
-    this.setData({ tag: event.currentTarget.dataset.value as DishTag });
   },
   async add() {
     if (this.data.busy) return;
     const name = this.data.name.trim();
     if (!name) {
-      this.setData({
-        error: this.data.kind === 'shop' ? '请先写店名。' : '请先写菜名。',
-      });
+      this.setData({ error: '请先写名字，菜名或店名都行。' });
       return;
     }
     this.setData({ busy: true, error: '' });
     try {
-      await dishService.add({ name, kind: this.data.kind, tag: this.data.tag });
+      await dishService.add({
+        name,
+        kind: 'dish',
+        tag: this.data.filter || '在家做',
+      });
       this.setData({ name: '' });
       await this.load();
     } catch (error) {

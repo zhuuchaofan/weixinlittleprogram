@@ -109,10 +109,20 @@ function todo(payload) {
   };
 }
 
+/** 可不填的日期：空字符串表示没有。 */
+function optionalDate(value) {
+  if (value === undefined || value === null || value === '') return '';
+  if (!isDate(value)) throw new ApiError('VALIDATION', '请选择有效的日期。');
+  return value;
+}
+
 const DISH_TAGS = CONTRACT.dishTags;
 const DISH_KINDS = CONTRACT.dishKinds;
 
-/** 菜单里的一条：菜品（dish）或店家（shop）；没有 kind 的旧记录当作菜品。店家没有「在家做」。 */
+/**
+ * 菜单里的一条：菜品（dish）或店家（shop）；没有 kind 的旧记录当作菜品。店家没有「在家做」。
+ * 界面已不再区分菜品和店家，新记录都是 dish。ateOn：最近一次「就吃这个」的日期。
+ */
 function dish(payload) {
   const kind = oneOf(payload.kind ?? 'dish', DISH_KINDS, '请选择菜品或店家。');
   const shop = kind === 'shop';
@@ -128,6 +138,7 @@ function dish(payload) {
       shop ? CONTRACT.shopTags : DISH_TAGS,
       shop ? '店家请选择外食或外卖。' : '请选择在家做、外食或外卖。',
     ),
+    ateOn: optionalDate(payload.ateOn),
   };
 }
 

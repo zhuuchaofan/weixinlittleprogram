@@ -3,7 +3,7 @@ const { createCrudHandler } = require('./crud');
 const { countdown } = require('./anniversary');
 const { todayKey } = require('./dates');
 
-const DISH_FIELDS = ['name', 'kind', 'tag'];
+const DISH_FIELDS = ['name', 'kind', 'tag', 'ateOn'];
 
 /** 没有 kind 的旧记录当作菜品。 */
 const withDishKind = (view) => ({ ...view, kind: view.kind || 'dish' });

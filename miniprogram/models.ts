@@ -158,6 +158,8 @@ export interface DishInput {
   name: string;
   kind: DishKind;
   tag: DishTag;
+  /** 最近一次「就吃这个」，YYYY-MM-DD；没有时为空。 */
+  ateOn?: string;
 }
 
 export interface WishInput {
