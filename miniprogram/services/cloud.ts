@@ -3,7 +3,7 @@ import { noteWrite } from './snapshot';
 
 let initialized = false;
 
-// 只读不写的 action；其余都算写，成功后各 tab 切回时重新读取。
+// 只读不写的 action；其余都算写，成功后回到各页时重新读取。
 const READ_ONLY = /\.(get|list|parse|match|export)$/;
 
 export class ApiError extends Error {

@@ -25,7 +25,7 @@ view, button, input, textarea { box-sizing: border-box; }
 
 /* 版式 */
 .page { max-width: 960rpx; margin: 0 auto; padding: 32rpx 32rpx 0; overflow-wrap: anywhere; }
-.page-end { height: 120rpx; }
+.page-end { height: calc(120rpx + env(safe-area-inset-bottom)); }
 .serif, .title { font-weight: 700; }
 .kicker { color: var(--accent); font-size: 23rpx; letter-spacing: 4rpx; }
 .title { font-size: 56rpx; line-height: 1.35; margin: 16rpx 0 20rpx; }

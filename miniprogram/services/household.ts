@@ -56,7 +56,7 @@ export async function updateHousehold(fields: {
   ) as Household;
 }
 
-/** tab 页进入时调用：未加入小家则跳到创建 / 加入页。 */
+/** 主页和各功能页进入时调用：未加入小家则跳到创建 / 加入页。 */
 export async function requireHousehold(
   force = false,
 ): Promise<Household | null> {

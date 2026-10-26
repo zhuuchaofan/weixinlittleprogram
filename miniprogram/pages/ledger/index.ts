@@ -7,10 +7,9 @@ import {
 } from '../../services/household';
 import { listMonth, peekMonth, settleMonth } from '../../services/ledger';
 import { markLoaded, needsReload } from '../../services/snapshot';
-import { setPendingImages } from '../../services/bills';
+import { pickBillScreenshots } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
 import {
-  BILL_IMPORT,
   SETTLEMENT,
   SPLITS,
   billAppLabel,
@@ -191,23 +190,8 @@ Page({
   add() {
     wx.navigateTo({ url: '/pages/expense-edit/index' });
   },
-  /** 截图记账：从相册选微信 / 支付宝账单列表截图，到导入页识别和确认。 */
-  async importScreenshots() {
-    let paths: string[];
-    try {
-      const result = await wx.chooseMedia({
-        count: BILL_IMPORT.maxImages,
-        mediaType: ['image'],
-        sourceType: ['album'],
-        sizeType: ['original'],
-      });
-      paths = result.tempFiles.map((file) => file.tempFilePath);
-    } catch {
-      return; // 取消选择
-    }
-    if (!paths.length) return;
-    setPendingImages(paths);
-    wx.navigateTo({ url: '/pages/bill-import/index' });
+  importScreenshots() {
+    void pickBillScreenshots();
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({

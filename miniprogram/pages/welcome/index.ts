@@ -21,7 +21,7 @@ Page({
     try {
       // 已经在小家里（例如另一台设备完成了绑定），直接回到首页。
       if (await getHousehold(true)) {
-        wx.switchTab({ url: '/pages/ledger/index' });
+        wx.reLaunch({ url: '/pages/home/index' });
         return;
       }
     } catch (error) {
@@ -57,12 +57,7 @@ Page({
     try {
       if (this.data.mode === 'create') await createHousehold(name);
       else await joinHousehold(name, this.data.code.trim());
-      wx.switchTab({
-        url:
-          this.data.mode === 'create'
-            ? '/pages/memory/index'
-            : '/pages/ledger/index',
-      });
+      wx.reLaunch({ url: '/pages/home/index' });
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
