@@ -31,7 +31,6 @@ function stopTips(): void {
 
 const STATUS_TEXT: Record<BillStatus, string> = {
   imported: '已导入过',
-  likely: '很可能已记过',
   possible: '可能已记过',
   partner: '你们俩之间的转账，默认不记',
   new: '',
@@ -50,10 +49,10 @@ type Row = BillItem & {
 
 let household: Household | null = null;
 
-/** 新的和「可能已记过」默认勾选；已导入过、很可能重复、两人互转、读不全的默认不勾。 */
+/** 只有新的默认勾选；已导入过、可能已记过、两人互转、读不全的默认不勾。 */
 function defaultSelected(item: BillItem): boolean {
   if (item.problem) return false;
-  return item.status === 'new' || item.status === 'possible';
+  return item.status === 'new';
 }
 
 function matchText(item: BillItem): string {
