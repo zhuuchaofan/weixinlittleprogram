@@ -35,7 +35,7 @@
 
   <view class="section-head">
     <view class="section-title">明细</view>
-    <text wx:if="{{records.length}}" class="small muted">{{records.length}} 笔</text>
+    <text wx:if="{{total}}" class="small muted">{{total}} 笔</text>
   </view>
   <view wx:if="{{loading && !summary}}" class="status">正在读取…</view>
   <view wx:elif="{{!records.length}}" class="empty">这个月还没有记账。</view>
@@ -49,6 +49,8 @@
       <view class="row-trail amount serif {{item.isIncome ? 'income' : ''}}">{{item.amountText}}</view>
     </view>
   </view>
+  <view wx:if="{{hasMore}}" class="list-end small muted">继续往上滑，显示更多</view>
+  <view wx:elif="{{total > 30}}" class="list-end small muted">这个月的 {{total}} 笔都在这里了</view>
   <view class="page-end"></view>
 
   <view class="fab-row">
