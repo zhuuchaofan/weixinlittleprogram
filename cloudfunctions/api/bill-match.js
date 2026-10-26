@@ -77,37 +77,58 @@ function matchItems(items, records, household) {
     return describe(record);
   };
   const free = (record) => !used.has(record._id);
-  // 先认领「已导入过」，再按相似程度认领，避免一条已有账目被松的规则先占掉。
-  const result = unique.map((item) => {
-    const exact = candidates.find(
-      (record) => free(record) && record.src?.key === item.key,
-    );
-    return exact ? { ...item, status: 'imported', match: take(exact) } : item;
-  });
-  return result.map((item) => {
-    if (item.status) return item;
-    if (isPartnerTransfer(item, household))
-      return { ...item, status: 'partner', match: null };
-    if (!item.amount || !item.date)
-      return { ...item, status: 'new', match: null };
-    const same = candidates.filter(
+  const same = (item) =>
+    candidates.filter(
       (record) =>
         free(record) &&
         record.amount === item.amount &&
         (record.flow || 'out') === item.flow &&
         daysApart(record.date, item.date) <= 1,
     );
-    const best =
-      same.find(
-        (record) =>
-          record.date === item.date &&
-          (similar(item.merchant, record.note) ||
-            similar(item.merchant, record.src?.merchant)),
-      ) ||
-      same.sort(
-        (a, b) => daysApart(a.date, item.date) - daysApart(b.date, item.date),
-      )[0];
-    if (best) return { ...item, status: 'possible', match: take(best) };
+  // 整批分三轮认领：先「已导入过」，再同一天且商户相似的，最后才是日期相近的，
+  // 避免一条已有账目被前面某一笔按松的规则先占掉。
+  const first = unique.map((item) => {
+    const exact = candidates.find(
+      (record) => free(record) && record.src?.key === item.key,
+    );
+    if (exact) return { ...item, status: 'imported', match: take(exact) };
+    if (isPartnerTransfer(item, household))
+      return { ...item, status: 'partner', match: null };
+    if (!item.amount || !item.date)
+      return { ...item, status: 'new', match: null };
+    return item;
+  });
+  const second = first.map((item) => {
+    if (item.status) return item;
+    const close = same(item).find(
+      (record) =>
+        record.date === item.date &&
+        (similar(item.merchant, record.note) ||
+          similar(item.merchant, record.src?.merchant)),
+    );
+    return close ? { ...item, status: 'possible', match: take(close) } : item;
+  });
+  // 日期相近的按相差天数从小到大配对，同一天的先配上。
+  const pairs = second
+    .flatMap((item, index) =>
+      item.status
+        ? []
+        : same(item).map((record) => ({
+            index,
+            record,
+            days: daysApart(record.date, item.date),
+          })),
+    )
+    .sort((a, b) => a.days - b.days);
+  const near = new Map();
+  for (const { index, record } of pairs) {
+    if (near.has(index) || !free(record)) continue;
+    near.set(index, take(record));
+  }
+  return second.map((item, index) => {
+    if (item.status) return item;
+    if (near.has(index))
+      return { ...item, status: 'possible', match: near.get(index) };
     return { ...item, status: 'new', match: null };
   });
 }
