@@ -11,6 +11,7 @@ Page({
     error: '',
     household: null as Household | null,
     dates: [] as Array<Anniversary & { dateText: string }>,
+    next: null as Anniversary | null,
     datesError: '',
   },
   onShow() {
@@ -52,6 +53,8 @@ Page({
   },
   showDates(dates: Anniversary[]) {
     this.setData({
+      // 云端已按「未过的在前、天数从近到远」排好，第一个就是下一个纪念日。
+      next: dates[0] && !dates[0].passed ? dates[0] : null,
       dates: dates.map((item) => ({
         ...item,
         dateText: shortDate(item.nextDate),

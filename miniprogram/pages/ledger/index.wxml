@@ -41,7 +41,7 @@
   <view wx:elif="{{!records.length}}" class="empty">这个月还没有记账。</view>
   <view wx:else class="list">
     <view wx:for="{{records}}" wx:key="id" class="list-row {{item.isSettlement ? 'row-settlement' : ''}}" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
-      <view class="cat-badge" style="background: {{item.tint}}"><image class="cat-icon" src="{{item.icon}}" /></view>
+      <view class="tile" style="background: {{item.tint}}"><image class="tile-icon" src="{{item.icon}}" /></view>
       <view class="row-main">
         <view class="row-title">{{item.note || item.cat}}</view>
         <view class="row-sub">{{item.dateText}} · {{item.payerName}}{{item.isIncome ? '收' : '付'}}<text wx:if="{{item.splitText}}"> · {{item.splitText}}</text><text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text><text wx:if="{{item.editedText}}" class="by-partner"> · {{item.editedText}}</text><text wx:if="{{item.sourceText}}"> · {{item.sourceText}}</text></view>

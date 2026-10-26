@@ -8,8 +8,9 @@
   <view wx:elif="{{!wishes.length}}" class="empty">还没有收藏。周末想去哪儿，先记下来。</view>
   <view wx:else class="list">
     <view wx:for="{{wishes}}" wx:key="id" class="list-row" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
+      <view class="tile tile-blue"><image class="tile-icon" src="/images/ui/pin.svg" /></view>
       <view class="row-main">
-        <view class="wish-title serif">{{item.title}}</view>
+        <view class="wish-title">{{item.title}}</view>
         <view wx:if="{{item.why}}" class="row-sub">{{item.why}}</view>
         <view wx:if="{{item.plan}}" class="wish-plan">{{item.plan}}</view>
       </view>

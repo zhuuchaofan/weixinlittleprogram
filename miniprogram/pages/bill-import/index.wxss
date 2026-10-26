@@ -1,10 +1,10 @@
 .hint { margin: 24rpx 4rpx; }
 .back-button { margin-top: 24rpx; }
-.bill { background: var(--surface); border: 1rpx solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 16rpx; }
+.bill { background: var(--surface); box-shadow: var(--shadow); border-radius: var(--radius); overflow: hidden; margin-bottom: 16rpx; }
 .bill-off .row-title, .bill-off .amount { color: var(--muted); }
 .bill-head { display: flex; align-items: center; gap: 20rpx; min-height: 112rpx; padding: 20rpx 28rpx; }
-.check { width: 48rpx; height: 48rpx; flex-shrink: 0; border-radius: 12rpx; border: 2rpx solid var(--line); display: flex; align-items: center; justify-content: center; color: #fff9ee; font-size: 28rpx; }
-.check-on { background: var(--accent); border-color: var(--accent); }
+.check { width: 48rpx; height: 48rpx; flex-shrink: 0; border-radius: 50%; border: 3rpx solid #ffb39e; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28rpx; }
+.check-on { background: var(--accent-grad); border-color: transparent; }
 .amount { font-size: 34rpx; }
 .income { color: var(--ok); }
 .warn { color: #9a6a1f; }

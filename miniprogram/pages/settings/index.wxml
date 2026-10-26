@@ -7,7 +7,7 @@
     <view class="section-head"><view class="section-title">成员</view></view>
     <view class="list">
       <view wx:for="{{household.members}}" wx:key="role" class="list-row">
-        <view class="avatar serif">{{item.name[0]}}</view>
+        <view class="avatar {{item.role === 'a' ? 'avatar-a' : 'avatar-b'}}">{{item.name[0]}}</view>
         <view class="row-main">{{item.name}}<text wx:if="{{item.isMe}}" class="small muted">（我）</text></view>
         <text class="tag">{{item.role === 'a' ? '创建者' : '成员'}}</text>
       </view>

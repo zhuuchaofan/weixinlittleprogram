@@ -27,8 +27,6 @@
 
 /* 明细 */
 .section-head { margin-top: 24rpx; }
-.cat-badge { width: 76rpx; height: 76rpx; flex-shrink: 0; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; }
-.cat-icon { width: 40rpx; height: 40rpx; }
 .amount { font-size: 32rpx; }
 .income { color: var(--ok); }
 .row-settlement .row-title, .row-settlement .amount { color: var(--muted); }

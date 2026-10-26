@@ -8,13 +8,16 @@
       <view wx:for="{{flows}}" wx:key="value" class="segment {{flow === item.value ? 'segment-on' : ''}}" data-field="flow" data-value="{{item.value}}" bindtap="choose" aria-role="button">{{item.label}}</view>
     </view>
     <view class="amount-box">
-      <text class="yen serif">¥</text>
-      <input class="amount-input serif" type="digit" value="{{amountText}}" placeholder="0.00" bindinput="inputAmount" focus="{{!id}}" />
+      <text class="yen">¥</text>
+      <input class="amount-input" type="digit" value="{{amountText}}" placeholder="0.00" bindinput="inputAmount" focus="{{!id}}" />
     </view>
     <view class="field">
       <text class="field-label">分类</text>
-      <view class="chips">
-        <view wx:for="{{categories}}" wx:key="*this" class="chip {{cat === item ? 'chip-on' : ''}}" data-field="cat" data-value="{{item}}" bindtap="choose">{{item}}</view>
+      <view class="cat-grid">
+        <view wx:for="{{categories}}" wx:key="name" class="cat-cell {{cat === item.name ? 'cat-cell-on' : ''}}" data-field="cat" data-value="{{item.name}}" bindtap="choose" aria-role="button" aria-label="{{item.name}}">
+          <view class="tile" style="background: {{item.tint}}"><image class="tile-icon" src="{{item.icon}}" /></view>
+          <view class="cat-cell-name">{{item.name}}</view>
+        </view>
       </view>
     </view>
     <view class="field">
