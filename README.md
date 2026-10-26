@@ -46,6 +46,7 @@
 CloudBase 数据库：所有集合禁止客户端直接读写
 ```
 
+- 小程序端：`pages/` 只管显示和交互，`pages/<列表>/` 与编辑页一一对应（`wishes` ↔ `wish-edit`、`dates` ↔ `date-edit` …）；`services/` 是调用 `api` 的封装（`collections.ts` 里清单、吃啥、想去、纪念日共用 `collection.ts` 的通用写法，`page-load.ts` 是各页共用的「确认小家 → 读云端 → 显示」流程）；`config/` 是取值和主题；`utils/` 是日期、金额等纯函数。
 - `cloudfunctions/api/router.js`：action 分发；`household.js`：小家；`expenses.js` + `ledger.js`：记账与结算规则；`todos.js`：清单；`export.js`：导出；`collections.js` + `crud.js`：吃啥、想去、纪念日；`bills.js` + `bill-parse.js` + `bill-match.js` + `vision.js`：截图记账（解析、查重、调用千问）；`anniversary.js`：纪念日倒数；`archive.js`：答谢宴归档只读。
 - 每条业务记录都带 `householdId`、`ts`、`by`（openid），读写都限定在本小家内。
 - 返回给小程序的数据不包含 openid。

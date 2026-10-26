@@ -40,7 +40,7 @@ Page({
       if (household) this.setData({ household });
       if (dates) this.showDates(dates);
     }
-    if (needsReload('memory')) void this.load();
+    if (needsReload('dates')) void this.load();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -63,7 +63,7 @@ Page({
     try {
       this.showDates(await dateService.list());
       this.setData({ datesError: '' });
-      markLoaded('memory');
+      markLoaded('dates');
     } catch (error) {
       this.setData({ datesError: errorMessage(error) });
     }

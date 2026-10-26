@@ -141,6 +141,7 @@ export interface TodoInput {
   text: string;
   kind: TodoKind;
   who: TodoWho;
+  done?: boolean;
 }
 
 export interface Todo extends TodoInput {

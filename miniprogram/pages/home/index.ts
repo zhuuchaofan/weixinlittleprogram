@@ -1,14 +1,15 @@
 import type { Anniversary, Household, LedgerMonth, Todo } from '../../models';
-import { peekHousehold, requireHousehold } from '../../services/household';
+import { peekHousehold } from '../../services/household';
 import { listMonth, peekMonth } from '../../services/ledger';
-import { listTodos, peekTodos } from '../../services/todos';
-import { dateService } from '../../services/collections';
+import { dateService, todoService } from '../../services/collections';
 import { pickBillScreenshots } from '../../services/bills';
-import { errorMessage } from '../../services/cloud';
-import { markLoaded, needsReload } from '../../services/snapshot';
+import { needsReload } from '../../services/snapshot';
+import { createLoader } from '../../services/page-load';
 import { todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
+
+const loader = createLoader();
 
 /** 主页：一进来就是本月花了多少、下一个纪念日，各功能从这里点进去。 */
 Page({
@@ -37,7 +38,7 @@ Page({
     this.setData({ household });
     const month = peekMonth(todayKey().slice(0, 7));
     if (month) this.showMonth(month);
-    const todos = peekTodos();
+    const todos = todoService.peek();
     if (todos) this.showTodos(todos);
     const dates = dateService.peek();
     if (dates) this.showDates(dates);
@@ -45,26 +46,24 @@ Page({
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
   },
-  async load(force = false) {
-    this.setData({ loading: true, error: '' });
-    try {
-      const household = await requireHousehold(force === true);
-      if (!household) return;
-      this.setData({ household });
-      const [month, todos, dates] = await Promise.all([
-        listMonth(todayKey().slice(0, 7)),
-        listTodos(),
-        dateService.list(),
-      ]);
-      this.showMonth(month);
-      this.showTodos(todos);
-      this.showDates(dates);
-      markLoaded('home');
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ loading: false });
-    }
+  load(force = false) {
+    return loader(this, {
+      key: 'home',
+      force,
+      fetch: (household) => {
+        this.setData({ household });
+        return Promise.all([
+          listMonth(todayKey().slice(0, 7)),
+          todoService.list(),
+          dateService.list(),
+        ]);
+      },
+      show: ([month, todos, dates]) => {
+        this.showMonth(month);
+        this.showTodos(todos);
+        this.showDates(dates);
+      },
+    });
   },
   showMonth({ records, summary }: LedgerMonth) {
     // 和记账页一致：开了两人分摊看共同支出，没开看全部支出。
