@@ -1,24 +1,5 @@
 <view class="page">
-  <view wx:if="{{aiEnabled}}" class="ai-block">
-    <view class="section-head"><view class="section-title">让 AI 出主意</view></view>
-    <view class="card">
-      <view wx:for="{{groups}}" wx:key="key" wx:for-item="group" class="field">
-        <text class="field-label">{{group.label}}</text>
-        <view class="chips">
-          <view wx:for="{{conditions[group.key]}}" wx:key="*this" class="chip {{picked[group.key] === item ? 'chip-on' : ''}}" data-field="{{group.key}}" data-value="{{item}}" bindtap="pick">{{item}}</view>
-        </view>
-      </view>
-      <button class="secondary" bindtap="askAi" loading="{{aiBusy}}" disabled="{{aiBusy}}">让 AI 推荐</button>
-    </view>
-    <view wx:if="{{aiItems.length}}" class="list list-gap">
-      <view wx:for="{{aiItems}}" wx:key="title" class="list-row">
-        <view class="row-main"><view class="row-title">{{item.title}}</view><view class="row-sub">{{item.why}}</view><view wx:if="{{item.plan || item.cost}}" class="row-sub">{{item.plan}} {{item.cost}}</view></view>
-        <button class="text-button" data-index="{{index}}" bindtap="keepAi">收藏</button>
-      </view>
-    </view>
-  </view>
-
-  <view class="section-head {{aiEnabled ? 'section' : ''}}">
+  <view class="section-head">
     <view class="section-title">想去的地方</view>
     <button class="primary btn-inline" bindtap="add">添加</button>
   </view>

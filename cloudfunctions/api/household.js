@@ -5,7 +5,6 @@ const { ApiError } = require('./errors');
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_PATTERN = /^[A-HJ-NP-Z2-9]{6}$/;
 const MAX_MEMBERS = 2;
-const DEFAULT_CITY = '东京';
 const DEFAULT_CURRENCY = 'CNY';
 const { ARCHIVE_ID } = require('./archive-id');
 
@@ -27,19 +26,12 @@ function requireName(value) {
   return name;
 }
 
-function cleanCity(value) {
-  if (typeof value !== 'string') return '';
-  const city = value.trim();
-  return city.length >= 1 && city.length <= 20 ? city : '';
-}
-
 /** 返回给小程序的视图：不包含任何 openid。 */
 function publicHousehold(household, openid) {
   if (!household) return null;
   const me = household.members.find((member) => member.openid === openid);
   return {
     id: household._id,
-    city: household.city,
     currency: household.currency,
     inviteCode:
       household.members.length < MAX_MEMBERS ? household.inviteCode : '',
@@ -94,7 +86,6 @@ function createHouseholdHandler({
         inviteCode: await uniqueCode(),
         members: [{ openid, role: 'a', name }],
         memberCount: 1,
-        city: DEFAULT_CITY,
         currency: DEFAULT_CURRENCY,
         ts: now(),
         by: openid,
@@ -126,11 +117,6 @@ function createHouseholdHandler({
     async 'household.update'(openid, payload) {
       const household = await requireMembership(openid);
       const fields = {};
-      if (payload?.city !== undefined) {
-        const city = cleanCity(payload.city);
-        if (!city) throw new ApiError('VALIDATION', '城市请填写 1–20 字。');
-        fields.city = city;
-      }
       if (payload?.name !== undefined) {
         const name = requireName(payload.name);
         fields.members = household.members.map((member) =>

@@ -2,7 +2,6 @@
 .draw-icon { width: 112rpx; height: 112rpx; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 60rpx; display: flex; align-items: center; justify-content: center; }
 .picked-name { font-size: 68rpx; color: var(--accent); line-height: 1.3; }
 .draw-button { margin-top: 20rpx; }
-.ai-button { margin-top: 20rpx; }
 .composer { padding: 24rpx; }
 .composer-row { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 20rpx; }
 .composer-row .chips { gap: 12rpx; min-width: 0; flex: 1; }

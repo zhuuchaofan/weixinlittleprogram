@@ -8,7 +8,6 @@ export interface HouseholdMember {
 
 export interface Household {
   id: string;
-  city: string;
   currency: string;
   /** 只有 1 人时有值；满 2 人后为空字符串。 */
   inviteCode: string;
@@ -190,19 +189,4 @@ export interface Anniversary extends AnniversaryInput, RecordMeta {
   passed: boolean;
   /** 每年重复时，下一次是第几周年。 */
   years: number;
-}
-
-export type AiScene = 'food' | 'weekend';
-
-export interface AiFoodItem {
-  name: string;
-  tag: DishTag;
-  why: string;
-}
-
-export interface AiWeekendItem {
-  title: string;
-  why: string;
-  plan: string;
-  cost: string;
 }
