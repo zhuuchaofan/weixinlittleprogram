@@ -14,6 +14,7 @@
 | dishes                | name, kind, tag, ateOn                                                               | 界面不再区分菜品和店家，新记录 kind 都是 dish（旧的 shop 保留）；tag 为 在家做、外食（显示为出去吃）、外卖；ateOn 为最近一次「就吃这个」的日期                        |
 | wishes                | title, why, plan, done, doneOn                                                       | 想去的地方；界面只有一栏备注，存在 plan（why 是旧数据，编辑保存时并进 plan）；done 为去过了，doneOn 为去的日期                                                        |
 | insights              | month, text, fingerprint                                                             | AI 月度小结，每小家每月一份，_id 为 `householdId-YYYY-MM`；fingerprint 是生成时的「合计/笔数」，账目变了就提示重新生成                                                |
+| goals                 | title, target, deadline, saved, log                                                  | 攒钱目标；target、saved 单位为分；deadline 为 YYYY-MM（最后一个月）；log 为每次「存了一笔」[{amount, date, role, ts}]，role 为 a / b                                  |
 | dates                 | title, date, yearly                                                                  | 纪念日                                                                                                                                                                |
 | rsvps、guest_messages | —                                                                                    | 答谢宴旧数据，只读归档                                                                                                                                                |
 
@@ -34,6 +35,7 @@
 - 按月统计，月份由 date 的前 7 位（YYYY-MM）决定。
 - 花销分析（`insight.get`）：口径同 `summary.spending`，所有支出、不含结算和收入、不管怎么分。本月和上月按分类对比；大额单笔是本月支出前 3 笔，再加上 ¥500 及以上的，最多 5 笔；走势是截至本月的近 6 个月每月支出。
 - AI 月度小结（`insight.write`）：只把上面这份汇总写成文字发给千问，大额单笔带备注或商户名（截到 12 字），不发截图、明细和名字；每小家每天最多生成 5 次（`households.summaryQuota`），失败也算一次。
+- 攒钱目标：进度只靠手动「存了一笔」（`goal.deposit`，`saved` 累加并记 `log`），存入不是支出，不进记账统计。每月要存 = 月初还差的 ÷ 本月到截止月（含）的月数，向上取整；已过截止月时是还差的全部；攒够了为 0。本月还差 = 每月要存 − 本月存入（不超过还差的）。省钱建议：前 3 个整月里除房租、水电网外各类的月均支出，取最多的 3 类，算少花 10% / 20% 每月能多存多少。
 
 ## 功能编号
 
@@ -53,7 +55,7 @@ ROADMAP 和提交记录里用这些编号。
 | M10 | 记账   | 截图记账                                         | 第 1 期已完成 |
 | M11 | 记账   | 花销分析：和上月比、大额单笔、近 6 个月走势      | 已完成        |
 | M12 | 记账   | AI 月度小结                                      | 已完成        |
-| M13 | 记账   | 攒钱目标                                         | 待做          |
+| M13 | 记账   | 攒钱目标                                         | 已完成        |
 | T1  | 清单   | 购物、待办两类（家务并入待办），指派，勾选       | 已完成        |
 | T2  | 清单   | 编辑条目                                         | 已完成        |
 | T3  | 清单   | 重复任务，如每周倒垃圾                           | 待做          |

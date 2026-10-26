@@ -49,6 +49,18 @@
       <view class="small muted">{{countText}}</view>
     </view>
 
+    <view wx:if="{{goalsReady}}" class="card saving" data-page="goals" bindtap="open" hover-class="card-active" aria-role="button">
+      <view class="month-head">
+        <view class="small muted">攒钱{{goal ? ' · ' + goal.title : ''}}</view>
+        <view class="small muted">{{goal ? goal.percent + '%' : '定一个目标'}} <text class="chevron-sm">›</text></view>
+      </view>
+      <block wx:if="{{goal}}">
+        <view class="saving-track" aria-hidden="true"><view class="saving-bar {{goal.done ? 'saving-done' : ''}}" style="width: {{goal.percent}}%"></view></view>
+        <view class="small {{goal.behind ? 'saving-behind' : 'muted'}}">{{goal.savedText}} / {{goal.targetText}}{{goal.monthText ? ' · ' + goal.monthText : ' · 攒够啦'}}</view>
+      </block>
+      <view wx:else class="small muted">比如旅行、应急金：写下金额和期限，算出每月要存多少</view>
+    </view>
+
     <view class="actions">
       <button class="primary" bindtap="addExpense"><text class="plus">+</text>记一笔</button>
       <button class="secondary" bindtap="importScreenshots">截图记账</button>

@@ -1,7 +1,18 @@
-import type { Anniversary, Household, LedgerMonth, Todo } from '../../models';
+import type {
+  Anniversary,
+  Goal,
+  Household,
+  LedgerMonth,
+  Todo,
+} from '../../models';
 import { peekHousehold } from '../../services/household';
 import { listMonth, peekMonth } from '../../services/ledger';
-import { dateService, todoService } from '../../services/collections';
+import {
+  dateService,
+  goalService,
+  todoService,
+} from '../../services/collections';
+import { goalView, type GoalRow } from '../../utils/goal';
 import { pickBillScreenshots } from '../../services/bills';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
@@ -23,6 +34,9 @@ Page({
     spentText: '',
     countText: '',
     todoText: '',
+    /** 最要紧的一个攒钱目标（没攒完、截止最早），没有时为 null。 */
+    goal: null as GoalRow | null,
+    goalsReady: false,
   },
   onShow() {
     applyTheme(this);
@@ -42,6 +56,8 @@ Page({
     if (todos) this.showTodos(todos);
     const dates = dateService.peek();
     if (dates) this.showDates(dates);
+    const goals = goalService.peek();
+    if (goals) this.showGoals(goals);
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -56,12 +72,15 @@ Page({
           listMonth(todayKey().slice(0, 7)),
           todoService.list(),
           dateService.list(),
+          // 攒钱读不到（如 api 还没部署新版）时主页其他部分照常显示。
+          goalService.list().catch(() => null),
         ]);
       },
-      show: ([month, todos, dates]) => {
+      show: ([month, todos, dates, goals]) => {
         this.showMonth(month);
         this.showTodos(todos);
         this.showDates(dates);
+        if (goals) this.showGoals(goals);
       },
     });
   },
@@ -81,6 +100,13 @@ Page({
   showDates(dates: Anniversary[]) {
     // 云端已按「未过的在前、天数从近到远」排好，第一个就是下一个纪念日。
     this.setData({ next: dates[0] && !dates[0].passed ? dates[0] : null });
+  },
+  showGoals(goals: Goal[]) {
+    // 云端已按「没攒完的在前、截止早的在前」排好。
+    this.setData({
+      goal: goals[0] ? goalView(goals[0]) : null,
+      goalsReady: true,
+    });
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({ url: `/pages/${event.currentTarget.dataset.page}/index` });
