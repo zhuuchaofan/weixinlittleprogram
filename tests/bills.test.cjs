@@ -6,7 +6,7 @@ const {
   parseBillDate,
   parseReply,
 } = require('../cloudfunctions/api/bill-parse');
-const { similar } = require('../cloudfunctions/api/bill-match');
+const { similar, matchItems } = require('../cloudfunctions/api/bill-match');
 const { createVision } = require('../cloudfunctions/api/vision');
 
 // 2026-10-25（周日）12:00 UTC+8
@@ -308,7 +308,7 @@ test('识别截图：每个小家每天最多 20 张，两人合计，第二天�
   );
 });
 
-test('查重：已导入过、很可能、可能重复、两人之间的转账，一条已有账目只对上一笔', async () => {
+test('查重：已导入过、可能已记过、两人之间的转账，一条已有账目只对上一笔', async () => {
   const { call } = await setup();
   const parsed = (await call('A', 'bill.parse', { url: 'https://img/1' })).data;
   // B 手记的晚饭（同一天、商户相似）、A 手记的前一天 23.50（金额同、差 1 天）
@@ -365,6 +365,35 @@ test('查重：已导入过、很可能、可能重复、两人之间的转账�
     other.data.items.map((item) => item.status),
     ['new', 'new', 'new'],
   );
+});
+
+test('查重：日期相近的按相差天数配对，同一天的那笔不会被前一天的抢走', () => {
+  const household = { members: [{ openid: 'A', role: 'a', name: '球球' }] };
+  const item = (key, date, merchant) => ({
+    key,
+    date,
+    merchant,
+    amount: 1400,
+    flow: 'out',
+    kind: '消费',
+  });
+  const items = [
+    item('k1', '2026-10-25', '滴滴出行'),
+    item('k2', '2026-10-24', '牛阿良牛肉汤烧饼'),
+  ];
+  const records = [
+    {
+      _id: 'r1',
+      date: '2026-10-24',
+      amount: 1400,
+      note: '烧饼牛肉饼',
+      by: 'A',
+    },
+  ];
+  const [didi, bing] = matchItems(items, records, household);
+  assert.equal(bing.status, 'possible');
+  assert.equal(bing.match.id, 'r1');
+  assert.equal(didi.status, 'new');
 });
 
 test('批量保存：上传者付款、全算自己，收入不进结算，同一笔只落一次', async () => {

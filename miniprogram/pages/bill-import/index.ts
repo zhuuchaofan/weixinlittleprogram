@@ -36,6 +36,12 @@ const STATUS_TEXT: Record<BillStatus, string> = {
   new: '',
 };
 
+/** 云函数还是旧版时可能回来不认识的 status（如 likely）：没勾的都要说明原因。 */
+function statusText(status: BillStatus | undefined): string {
+  if (!status) return '';
+  return STATUS_TEXT[status] ?? STATUS_TEXT.possible;
+}
+
 type Row = BillItem & {
   selected: boolean;
   expanded: boolean;
@@ -75,7 +81,7 @@ function present(item: BillItem, previous?: Row): Row {
       (item.flow === 'in' ? '+' : '') +
       (item.amount ? formatYuan(item.amount) : '¥?'),
     dateText: item.date ? shortDate(item.date) : '日期待补',
-    statusText: item.status ? STATUS_TEXT[item.status] : '',
+    statusText: statusText(item.status),
     matchText: matchText(item),
     showDate: false,
   };
