@@ -5,6 +5,7 @@ const { createExpenseHandler } = require('./expenses');
 const { createBillHandler } = require('./bills');
 const { createTodoHandler } = require('./todos');
 const { createExportHandler } = require('./export');
+const { createInsightHandler } = require('./insight');
 const { createCollectionHandlers } = require('./collections');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
@@ -32,6 +33,7 @@ function createRouter({
       now,
       vision,
     }),
+    ...createInsightHandler({ repository: expenses, requireMembership }),
     ...createTodoHandler({ repository: todos, requireMembership, now }),
     ...createCollectionHandlers({
       dishes,

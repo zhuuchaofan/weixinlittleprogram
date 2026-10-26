@@ -2,6 +2,7 @@
   "pages": [
     "pages/home/index",
     "pages/ledger/index",
+    "pages/insight/index",
     "pages/lists/index",
     "pages/food/index",
     "pages/wishes/index",

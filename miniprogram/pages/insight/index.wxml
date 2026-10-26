@@ -1,0 +1,61 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view class="month-bar">
+    <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹</view>
+    <view class="month-text">{{monthText}}</view>
+    <view class="month-arrow {{isCurrentMonth ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeMonth" hover-class="{{isCurrentMonth ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="下个月">›</view>
+  </view>
+
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+
+  <view class="hero grad-card">
+    <view class="hero-label">{{monthText}} · 支出 {{ready ? count + ' 笔' : ''}}</view>
+    <view class="hero-total">{{ready ? totalText : '—'}}</view>
+    <view wx:if="{{ready}}" class="hero-change">{{changeText}}</view>
+    <view wx:if="{{incomeText}}" class="hero-income">本月收入 {{incomeText}}（不算在支出里）</view>
+  </view>
+
+  <view wx:if="{{loading && !ready}}" class="status">正在读取…</view>
+  <view wx:elif="{{ready && !categories.length}}" class="empty">这个月和上个月都还没有支出。</view>
+
+  <block wx:if="{{categories.length}}">
+    <view class="section-head"><view class="section-title">按分类，和上个月比</view></view>
+    <view class="card compare">
+      <view wx:for="{{categories}}" wx:key="cat" class="compare-row" aria-label="{{item.cat}} {{item.amountText}}，上个月 {{item.prevText}}，{{item.text}}">
+        <view class="compare-line">
+          <view class="cat-dot" style="background: {{item.color}}"></view>
+          <view class="cat-name">{{item.cat}}<text class="small muted"> {{item.countText}}</text></view>
+          <view class="compare-change small {{item.tone}}">{{item.text}}</view>
+          <view class="cat-amount">{{item.amountText}}</view>
+        </view>
+        <view class="compare-track"><view class="compare-bar" style="width: {{item.width}}%; background: {{item.color}}"></view></view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{big.length}}">
+    <view class="section-head"><view class="section-title">大额单笔</view></view>
+    <view class="list">
+      <view wx:for="{{big}}" wx:key="id" class="list-row" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
+        <view class="tile" style="background: {{item.tint}}"><image class="tile-icon" src="{{item.icon}}" /></view>
+        <view class="row-main">
+          <view class="row-title">{{item.title}}</view>
+          <view class="row-sub">{{item.sub}}</view>
+        </view>
+        <view class="row-trail serif big-amount">{{item.amountText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{ready}}">
+    <view class="section-head"><view class="section-title">近 6 个月</view></view>
+    <view class="card trend" aria-label="近 6 个月每月支出">
+      <view wx:for="{{trend}}" wx:key="month" class="trend-col">
+        <view class="trend-value small muted">{{item.totalText}}</view>
+        <view class="trend-track"><view class="trend-bar {{item.current ? 'trend-current' : ''}}" style="height: {{item.height}}%"></view></view>
+        <view class="trend-label small {{item.current ? '' : 'muted'}}">{{item.label}}</view>
+      </view>
+    </view>
+  </block>
+  <view class="page-end"></view>
+</view>

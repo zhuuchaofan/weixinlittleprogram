@@ -22,6 +22,9 @@
 .cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
 .cat-name { flex: 1; min-width: 0; font-size: 28rpx; white-space: nowrap; }
 .cat-percent { width: 72rpx; flex-shrink: 0; text-align: right; }
+.insight-link { display: flex; align-items: center; justify-content: flex-end; gap: 8rpx; min-height: 88rpx; margin-top: 8rpx; border-top: 1rpx solid var(--line); color: var(--accent); font-size: 26rpx; }
+.insight-link .chevron { color: var(--accent); }
+.insight-link-active { opacity: 0.7; }
 .cat-amount { width: 180rpx; flex-shrink: 0; text-align: right; font-size: 28rpx; font-weight: 600; white-space: nowrap; }
 
 /* 明细 */
