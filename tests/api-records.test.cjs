@@ -35,6 +35,13 @@ function memoryHouseholds() {
     async update(id, fields) {
       docs.set(id, { ...docs.get(id), ...fields });
     },
+    async takeQuota(id, field, day, limit) {
+      const d = docs.get(id);
+      const used = d[field]?.day === day ? d[field].count : 0;
+      if (used >= limit) return false;
+      docs.set(id, { ...d, [field]: { day, count: used + 1 } });
+      return true;
+    },
   };
 }
 
@@ -104,8 +111,9 @@ function memoryRecords(prefix) {
 // 2026-10-20 12:00 UTC+8
 const NOW = Date.parse('2026-10-20T04:00:00Z');
 
-async function setup() {
+async function setup({ vision = null } = {}) {
   const expenses = memoryRecords('e');
+  const insights = memoryRecords('i');
   const todos = memoryRecords('t');
   const dishes = memoryRecords('d');
   const wishes = memoryRecords('w');
@@ -118,6 +126,8 @@ async function setup() {
     dishes,
     wishes,
     dates,
+    insights,
+    vision,
     now: () => NOW,
   });
   const call = (openid, action, payload) => route({ action, payload }, openid);
@@ -127,7 +137,7 @@ async function setup() {
     code: created.data.inviteCode,
   });
   await call('X', 'household.create', { name: '别人家' });
-  return { call, expenses, todos, dishes, wishes, dates };
+  return { call, expenses, todos, dishes, wishes, dates, insights };
 }
 
 const expense = (overrides = {}) => ({
@@ -1059,4 +1069,92 @@ test('花销分析：大额单笔最多 5 笔，没有备注时用截图商户�
   assert.equal(result.big[0].note, '某某超市');
   assert.equal(result.big[0].cat, '吃饭');
   assert.equal(result.prevTotal, 0);
+});
+
+test('AI 小结：只发汇总、存下来、账目变了提示重新生成、每天最多 5 次', async () => {
+  assert.equal(
+    (await (await setup()).call('A', 'insight.write', { month: '2026-10' }))
+      .code,
+    'UNAVAILABLE',
+  );
+  const prompts = [];
+  const vision = {
+    async write(prompt) {
+      prompts.push(prompt);
+      return '**这个月**花得最多的是房租。\n\n\n机票是一次性的。';
+    },
+  };
+  const { call, insights } = await setup({ vision });
+  assert.equal(
+    (await call('A', 'insight.write', { month: '2026-10' })).code,
+    'VALIDATION',
+  );
+  await call('A', 'expense.add', expense({ amount: 300000, cat: '房租' }));
+  await call(
+    'B',
+    'expense.add',
+    expense({
+      amount: 98000,
+      cat: '旅行',
+      note: '国庆机票去大阪玩五天',
+      payer: 'b',
+    }),
+  );
+  await call('A', 'expense.add', expense({ amount: 4000, date: '2026-09-03' }));
+
+  assert.equal(
+    (await call('A', 'insight.get', { month: '2026-10' })).data.summary,
+    null,
+  );
+  const written = await call('A', 'insight.write', { month: '2026-10' });
+  assert.equal(written.ok, true);
+  assert.deepEqual(written.data, {
+    text: '这个月花得最多的是房租。\n机票是一次性的。',
+    ts: NOW,
+    stale: false,
+  });
+  const prompt = prompts[0];
+  assert.match(prompt, /10月支出合计 3980 元，共 2 笔；上个月（9月）40 元/);
+  assert.match(prompt, /- 旅行：980 \/ 0 \/ 1 笔/);
+  assert.match(prompt, /10月5日 旅行 980 元「国庆机票去大阪玩五天」/);
+  for (const secret of ['超凡', '佳益', '"A"', 'householdId'])
+    assert.equal(prompt.includes(secret), false, secret);
+  assert.equal(insights.docs.size, 1);
+
+  const seen = await call('B', 'insight.get', { month: '2026-10' });
+  assert.equal(seen.data.summary.text, written.data.text);
+  assert.equal(seen.data.summary.stale, false);
+  await call('A', 'expense.add', expense({ amount: 500 }));
+  assert.equal(
+    (await call('B', 'insight.get', { month: '2026-10' })).data.summary.stale,
+    true,
+  );
+
+  for (let i = 2; i <= 5; i++)
+    assert.equal(
+      (await call('B', 'insight.write', { month: '2026-10' })).ok,
+      true,
+    );
+  assert.equal(insights.docs.size, 1, '每月只存一份');
+  assert.equal(
+    (await call('B', 'insight.write', { month: '2026-10' })).code,
+    'LIMIT',
+  );
+  assert.equal(prompts.length, 5);
+});
+
+test('AI 小结：备注截到 12 字', () => {
+  const { summaryPrompt, analyze } = require('../cloudfunctions/api/insight');
+  const prompt = summaryPrompt(
+    analyze('2026-10', [
+      {
+        _id: 'e1',
+        amount: 100,
+        cat: '吃饭',
+        note: '一二三四五六七八九十甲乙丙丁',
+        date: '2026-10-01',
+      },
+    ]),
+  );
+  assert.match(prompt, /「一二三四五六七八九十甲乙」/);
 });

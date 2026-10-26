@@ -38,6 +38,9 @@ export const CONTRACT = {
     "maxItems": 100,
     "dailyImages": 20
   },
+  "aiSummary": {
+    "daily": 5
+  },
   "ratio": {
     "min": 0,
     "max": 100

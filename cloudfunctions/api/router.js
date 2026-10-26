@@ -17,6 +17,7 @@ function createRouter({
   dishes,
   wishes,
   dates,
+  insights = null,
   vision = null,
   now = () => Date.now(),
 }) {
@@ -33,7 +34,14 @@ function createRouter({
       now,
       vision,
     }),
-    ...createInsightHandler({ repository: expenses, requireMembership }),
+    ...createInsightHandler({
+      repository: expenses,
+      insights,
+      households,
+      requireMembership,
+      now,
+      writer: vision,
+    }),
     ...createTodoHandler({ repository: todos, requireMembership, now }),
     ...createCollectionHandlers({
       dishes,

@@ -12,6 +12,16 @@
 
 .section-head { margin-top: 32rpx; }
 
+/* 喵喵小结 */
+.ai { margin-top: 24rpx; }
+.ai-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
+.ai-cat { width: 44rpx; height: 44rpx; }
+.ai-title { font-size: 30rpx; font-weight: 700; }
+.ai-text { font-size: 28rpx; line-height: 1.8; white-space: pre-line; }
+.ai-error { margin-top: 12rpx; color: #a1302a; }
+.ai-foot { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 16rpx; }
+button.ai-button[size='mini'] { margin: 0; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
 /* 按分类对比：每类一行文字 + 一条按本月最大一类缩放的进度条 */
 .compare { padding: 20rpx 32rpx; }
 .compare-row { padding: 12rpx 0; }

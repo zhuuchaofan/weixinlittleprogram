@@ -46,11 +46,11 @@ function memoryHouseholds() {
     async update(id, fields) {
       docs.set(id, { ...docs.get(id), ...fields });
     },
-    async takeBillQuota(id, day, limit) {
+    async takeQuota(id, field, day, limit) {
       const d = docs.get(id);
-      const used = d.billQuota?.day === day ? d.billQuota.count : 0;
+      const used = d[field]?.day === day ? d[field].count : 0;
       if (used >= limit) return false;
-      docs.set(id, { ...d, billQuota: { day, count: used + 1 } });
+      docs.set(id, { ...d, [field]: { day, count: used + 1 } });
       return true;
     },
   };

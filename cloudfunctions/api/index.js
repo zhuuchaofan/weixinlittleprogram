@@ -43,20 +43,20 @@ function createHouseholdRepository(db) {
     async update(id, fields) {
       await collection.where({ _id: id }).update(fields);
     },
-    async takeBillQuota(id, day, limit) {
-      // 条件更新保证两人同时识别也不会超出当天上限。换日后先把计数重置为 1。
+    async takeQuota(id, field, day, limit) {
+      // 每日次数（截图识别 billQuota、AI 小结 summaryQuota）。条件更新保证两人同时用也不会超出当天上限。换日后先把计数重置为 1。
       for (let attempt = 0; attempt < 2; attempt++) {
         const today = await collection
           .where({
             _id: id,
-            'billQuota.day': day,
-            'billQuota.count': _.lt(limit),
+            [`${field}.day`]: day,
+            [`${field}.count`]: _.lt(limit),
           })
-          .update({ 'billQuota.count': _.inc(1) });
+          .update({ [`${field}.count`]: _.inc(1) });
         if (today.updated === 1) return true;
         const fresh = await collection
-          .where({ _id: id, 'billQuota.day': _.neq(day) })
-          .update({ billQuota: _.set({ day, count: 1 }) });
+          .where({ _id: id, [`${field}.day`]: _.neq(day) })
+          .update({ [field]: _.set({ day, count: 1 }) });
         if (fresh.updated === 1) return true;
       }
       return false;
@@ -136,6 +136,7 @@ exports.main = async (event, context) => {
     dishes: createRecordRepository(db, 'dishes'),
     wishes: createRecordRepository(db, 'wishes'),
     dates: createRecordRepository(db, 'dates'),
+    insights: createRecordRepository(db, 'insights'),
     vision: createVision(),
   });
   return route(event, openid);

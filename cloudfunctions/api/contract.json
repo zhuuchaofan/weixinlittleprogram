@@ -17,6 +17,7 @@
   "flows": ["out", "in"],
   "billApps": ["wechat", "alipay"],
   "billImport": { "maxImages": 9, "maxItems": 100, "dailyImages": 20 },
+  "aiSummary": { "daily": 5 },
   "ratio": { "min": 0, "max": 100 },
   "todoKinds": ["shop", "todo", "chore"],
   "todoWho": ["a", "b", "both"],
