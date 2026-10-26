@@ -1,6 +1,6 @@
 /**
- * 截图记账的查重：金额相同才算重复；src.key 一致 → 已导入过；同一天且商户与备注相似 → 很可能重复；
- * 日期相差不超过 1 天 → 可能重复。一条已有账目只能对上一笔。
+ * 截图记账的查重：金额相同才算重复；src.key 一致 → 已导入过；日期相差不超过 1 天 → 可能已记过，
+ * 优先对上同一天且商户与备注相似的那条。一条已有账目只能对上一笔。
  */
 const { SETTLEMENT } = require('./ledger');
 const { DAY_MS, keyToMs, str } = require('./bill-parse');
@@ -51,7 +51,7 @@ function isPartnerTransfer(item, household) {
 }
 
 /**
- * 给每一笔打上 status：imported / likely / possible / partner / new，
+ * 给每一笔打上 status：imported / possible / partner / new，
  * 撞上的已有账目放在 match。同一批里 key 相同的（连续截图的重叠部分）只留一笔。
  */
 function matchItems(items, records, household) {
@@ -97,17 +97,17 @@ function matchItems(items, records, household) {
         (record.flow || 'out') === item.flow &&
         daysApart(record.date, item.date) <= 1,
     );
-    const likely = same.find(
-      (record) =>
-        record.date === item.date &&
-        (similar(item.merchant, record.note) ||
-          similar(item.merchant, record.src?.merchant)),
-    );
-    if (likely) return { ...item, status: 'likely', match: take(likely) };
-    const possible = same.sort(
-      (a, b) => daysApart(a.date, item.date) - daysApart(b.date, item.date),
-    )[0];
-    if (possible) return { ...item, status: 'possible', match: take(possible) };
+    const best =
+      same.find(
+        (record) =>
+          record.date === item.date &&
+          (similar(item.merchant, record.note) ||
+            similar(item.merchant, record.src?.merchant)),
+      ) ||
+      same.sort(
+        (a, b) => daysApart(a.date, item.date) - daysApart(b.date, item.date),
+      )[0];
+    if (best) return { ...item, status: 'possible', match: take(best) };
     return { ...item, status: 'new', match: null };
   });
 }

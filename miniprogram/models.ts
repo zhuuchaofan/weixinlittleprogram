@@ -105,7 +105,7 @@ export interface BillSource {
   flow: Flow;
 }
 
-export type BillStatus = 'imported' | 'likely' | 'possible' | 'partner' | 'new';
+export type BillStatus = 'imported' | 'possible' | 'partner' | 'new';
 
 /** 截图识别出的一笔，确认页可以改 amount、note、cat、date、flow。 */
 export interface BillItem {

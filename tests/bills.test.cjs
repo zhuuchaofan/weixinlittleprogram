@@ -339,7 +339,7 @@ test('查重：已导入过、很可能、可能重复、两人之间的转账�
   const status = matched.data.items.map((item) => item.status);
   assert.deepEqual(status, [
     'possible',
-    'likely',
+    'possible',
     'new',
     'partner',
     'new',
