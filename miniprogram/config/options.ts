@@ -18,6 +18,34 @@ export const LENGTHS = CONTRACT.lengths;
 export const RATIO_RANGE = CONTRACT.ratio;
 export const BILL_IMPORT = CONTRACT.billImport;
 
+/** 每个分类的图标（images/cat-icons/*.svg）和颜色；契约里新增分类没配时用「其他」。 */
+const CATEGORY_LOOKS: Record<string, { icon: string; color: string }> = {
+  吃饭: { icon: 'food', color: '#ff8a3d' },
+  日用: { icon: 'daily', color: '#22b573' },
+  房租: { icon: 'rent', color: '#3b82f6' },
+  水电网: { icon: 'utility', color: '#0ea5c6' },
+  交通: { icon: 'transit', color: '#9b5cf6' },
+  娱乐: { icon: 'fun', color: '#f2487a' },
+  旅行: { icon: 'travel', color: '#e8a317' },
+  猫咪: { icon: 'pet', color: '#c47f4f' },
+  其他: { icon: 'other', color: '#94a0b4' },
+  [CONTRACT.settlement]: { icon: 'settle', color: '#24a466' },
+};
+export function categoryLook(cat: string): {
+  icon: string;
+  color: string;
+  tint: string;
+} {
+  const look = CATEGORY_LOOKS[cat] || CATEGORY_LOOKS['其他'];
+  const hex = look.color.slice(1);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return {
+    icon: `/images/cat-icons/${look.icon}.svg`,
+    color: look.color,
+    tint: `rgba(${r}, ${g}, ${b}, 0.12)`,
+  };
+}
+
 const FLOW_LABELS: Record<Flow, string> = { out: '支出', in: '收入' };
 export const FLOWS: Array<{ value: Flow; label: string }> = CONTRACT.flows.map(
   (value: Flow) => ({ value, label: FLOW_LABELS[value] }),

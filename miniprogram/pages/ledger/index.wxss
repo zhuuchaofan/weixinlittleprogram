@@ -1,26 +1,43 @@
-.month-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; }
+.month-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16rpx; }
 .month-arrow { width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 48rpx; color: var(--accent); }
 .month-arrow-active { background: var(--sunken); }
 .month-arrow-off { color: var(--line); }
-.month-text { font-size: 38rpx; white-space: nowrap; }
-.total { font-size: 72rpx; color: var(--accent); line-height: 1.25; margin: 4rpx 0 20rpx; }
-.paid { display: flex; gap: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--line); }
-.paid-item { flex: 1; min-width: 0; }
-.paid-value { font-size: 32rpx; margin-top: 4rpx; }
-.suggestion { margin: 24rpx 0 20rpx; padding: 18rpx 24rpx; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent); font-size: 28rpx; }
-.suggestion-ok { background: var(--ok-soft); color: var(--ok); margin-bottom: 0; }
-.add-row { display: flex; gap: 20rpx; margin: 28rpx 0 8rpx; }
-.add-row button { flex: 1; }
+.month-text { font-size: 34rpx; font-weight: 700; white-space: nowrap; }
+
+/* 本月总额：渐变大卡片 */
+.hero { position: relative; overflow: hidden; padding: 36rpx 36rpx 32rpx; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx rgba(242, 97, 79, 0.28); }
+.hero::after { content: ''; position: absolute; right: -80rpx; top: -120rpx; width: 360rpx; height: 360rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
+.hero-label { font-size: 24rpx; opacity: 0.92; }
+.hero-total { font-size: 80rpx; font-weight: 800; line-height: 1.2; margin: 8rpx 0 24rpx; letter-spacing: -1rpx; }
+.hero-track { height: 12rpx; border-radius: 6rpx; background: rgba(255, 255, 255, 0.35); overflow: hidden; }
+.hero-share { height: 100%; border-radius: 6rpx; background: #fff; }
+.hero-paid { display: flex; justify-content: space-between; gap: 20rpx; margin-top: 16rpx; font-size: 24rpx; font-weight: 600; }
+.suggestion { position: relative; z-index: 1; margin-top: 24rpx; padding: 16rpx 24rpx; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.2); font-size: 26rpx; }
+.hero-button, button.hero-button:not([size='mini']) { position: relative; z-index: 1; margin-top: 20rpx; min-height: 80rpx; background: #fff; color: var(--accent); font-weight: 600; }
+
+/* 按分类：一条彩色堆叠条 + 图例 */
+.categories { margin-top: 24rpx; padding: 28rpx 32rpx 16rpx; }
+.stack-bar { display: flex; gap: 4rpx; height: 16rpx; border-radius: 8rpx; overflow: hidden; margin-bottom: 8rpx; }
+.stack-seg { min-width: 4rpx; height: 100%; }
+.cat-row { display: flex; align-items: center; gap: 16rpx; min-height: 64rpx; }
+.cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
+.cat-name { flex: 1; min-width: 0; font-size: 28rpx; white-space: nowrap; }
+.cat-percent { width: 72rpx; flex-shrink: 0; text-align: right; }
+.cat-amount { width: 180rpx; flex-shrink: 0; text-align: right; font-size: 28rpx; font-weight: 600; white-space: nowrap; }
+
+/* 明细 */
+.section-head { margin-top: 24rpx; }
+.cat-badge { width: 76rpx; height: 76rpx; flex-shrink: 0; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; }
+.cat-icon { width: 40rpx; height: 40rpx; }
+.amount { font-size: 32rpx; }
 .income { color: var(--ok); }
-.cat-badge { width: 64rpx; height: 64rpx; flex-shrink: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 26rpx; }
-.amount { font-size: 34rpx; }
-.row-settlement .cat-badge { background: var(--ok-soft); color: var(--ok); }
 .row-settlement .row-title, .row-settlement .amount { color: var(--muted); }
 .by-partner { color: var(--accent); }
-.categories { margin-top: 24rpx; }
-.cat-row { display: flex; align-items: center; gap: 16rpx; margin-top: 18rpx; }
-.cat-name { width: 96rpx; flex-shrink: 0; font-size: 28rpx; white-space: nowrap; }
-.cat-track { flex: 1; min-width: 0; height: 16rpx; border-radius: 8rpx; background: var(--sunken); overflow: hidden; }
-.cat-bar { height: 100%; border-radius: 8rpx; background: var(--accent); }
-.cat-percent { width: 64rpx; flex-shrink: 0; text-align: right; }
-.cat-amount { width: 170rpx; flex-shrink: 0; text-align: right; font-size: 28rpx; white-space: nowrap; }
+
+/* 底部浮动按钮 */
+.page-end { height: 200rpx; }
+.fab-row { position: fixed; left: 0; right: 0; bottom: 32rpx; display: flex; justify-content: center; gap: 20rpx; z-index: 10; pointer-events: none; }
+.fab { pointer-events: auto; display: flex; align-items: center; gap: 10rpx; height: 96rpx; padding: 0 48rpx; border-radius: 48rpx; background: var(--dark); color: #fff; font-size: 30rpx; font-weight: 600; box-shadow: 0 12rpx 32rpx rgba(38, 33, 31, 0.28); }
+.fab-light { background: var(--surface); color: var(--ink); padding: 0 36rpx; box-shadow: 0 8rpx 24rpx rgba(38, 33, 31, 0.12); }
+.fab-plus { font-size: 40rpx; font-weight: 400; line-height: 1; }
+.fab-active { opacity: 0.85; }

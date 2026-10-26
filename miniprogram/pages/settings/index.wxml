@@ -33,7 +33,7 @@
       <view class="list">
         <view class="list-row">
           <view class="row-main"><view>两人分摊与结算</view><view class="row-sub">关闭时只记账：不选怎么分，不算谁该给谁多少。两个人共用这个设置。</view></view>
-          <switch checked="{{household.splitting}}" color="#7a3e3c" bindchange="toggleSplitting" />
+          <switch checked="{{household.splitting}}" color="#f2614f" bindchange="toggleSplitting" />
         </view>
       </view>
     </view>

@@ -1,38 +1,36 @@
 <view class="page">
   <view class="month-bar">
     <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹</view>
-    <view class="month-text serif">{{monthText}}</view>
+    <view class="month-text">{{monthText}}</view>
     <view class="month-arrow {{isCurrentMonth ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeMonth" hover-class="{{isCurrentMonth ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="下个月">›</view>
   </view>
 
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
-  <view class="card summary">
-    <view class="small muted">{{splitting ? '本月共同支出' : '本月支出'}}</view>
-    <view class="total serif">{{summary ? summaryText.total : '—'}}</view>
-    <view class="paid">
-      <view class="paid-item"><view class="small muted">{{names.a}} 付</view><view class="paid-value">{{summary ? summaryText.a : '—'}}</view></view>
-      <view class="paid-item"><view class="small muted">{{names.b}} 付</view><view class="paid-value">{{summary ? summaryText.b : '—'}}</view></view>
+  <view class="hero">
+    <view class="hero-label">{{monthText}} · {{splitting ? '共同支出' : '支出'}}</view>
+    <view class="hero-total">{{summary ? summaryText.total : '—'}}</view>
+    <view class="hero-track" aria-hidden="true"><view class="hero-share" style="width: {{shareA}}%"></view></view>
+    <view class="hero-paid">
+      <text>{{names.a}} 付 {{summary ? summaryText.a : '—'}}</text>
+      <text>{{names.b}} 付 {{summary ? summaryText.b : '—'}}</text>
     </view>
     <block wx:if="{{summary && splitting}}">
-      <view class="suggestion {{summary.settled ? 'suggestion-ok' : ''}}">{{summaryText.suggestion}}</view>
-      <button wx:if="{{!summary.settled}}" class="secondary" bindtap="settle" loading="{{busy}}" disabled="{{busy}}">记为已结算</button>
+      <view class="suggestion">{{summary.settled ? '✓ ' : ''}}{{summaryText.suggestion}}</view>
+      <button wx:if="{{!summary.settled}}" class="hero-button" bindtap="settle" loading="{{busy}}" disabled="{{busy}}">记为已结算</button>
     </block>
   </view>
 
   <view wx:if="{{categories.length}}" class="card categories">
-    <view class="small muted">按分类</view>
+    <view class="stack-bar" aria-hidden="true">
+      <view wx:for="{{categories}}" wx:key="cat" class="stack-seg" style="flex: {{item.width}}; background: {{item.color}}"></view>
+    </view>
     <view wx:for="{{categories}}" wx:key="cat" class="cat-row" aria-label="{{item.cat}} {{item.amountText}}，占 {{item.percent}}%">
+      <view class="cat-dot" style="background: {{item.color}}"></view>
       <view class="cat-name">{{item.cat}}</view>
-      <view class="cat-track"><view class="cat-bar" style="width: {{item.width}}%"></view></view>
       <view class="cat-percent small muted">{{item.percent}}%</view>
       <view class="cat-amount">{{item.amountText}}</view>
     </view>
-  </view>
-
-  <view class="add-row">
-    <button class="primary" bindtap="add">记一笔</button>
-    <button class="secondary" bindtap="importScreenshots">截图记账</button>
   </view>
 
   <view class="section-head">
@@ -43,7 +41,7 @@
   <view wx:elif="{{!records.length}}" class="empty">这个月还没有记账。</view>
   <view wx:else class="list">
     <view wx:for="{{records}}" wx:key="id" class="list-row {{item.isSettlement ? 'row-settlement' : ''}}" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
-      <view class="cat-badge">{{item.isSettlement ? '结' : item.cat[0]}}</view>
+      <view class="cat-badge" style="background: {{item.tint}}"><image class="cat-icon" src="{{item.icon}}" /></view>
       <view class="row-main">
         <view class="row-title">{{item.note || item.cat}}</view>
         <view class="row-sub">{{item.dateText}} · {{item.payerName}}{{item.isIncome ? '收' : '付'}}<text wx:if="{{item.splitText}}"> · {{item.splitText}}</text><text wx:if="{{item.byText}}" class="by-partner"> · {{item.byText}}</text><text wx:if="{{item.editedText}}" class="by-partner"> · {{item.editedText}}</text><text wx:if="{{item.sourceText}}"> · {{item.sourceText}}</text></view>
@@ -52,4 +50,9 @@
     </view>
   </view>
   <view class="page-end"></view>
+
+  <view class="fab-row">
+    <view class="fab fab-light" bindtap="importScreenshots" hover-class="fab-active" aria-role="button">截图记账</view>
+    <view class="fab" bindtap="add" hover-class="fab-active" aria-role="button"><text class="fab-plus">+</text>记一笔</view>
+  </view>
 </view>
