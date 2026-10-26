@@ -4,15 +4,39 @@
 
   <block wx:if="{{household}}">
     <view class="top-bar">
-      <view class="top-greeting small muted">{{household.members.length > 1 ? household.members[0].name + ' & ' + household.members[1].name : '等待对方加入'}}</view>
+      <view class="top-greeting small muted">{{household.members.length > 1 ? '我们的小家' : '等待对方加入'}}</view>
       <view class="icon-button" bindtap="openSettings" hover-class="icon-button-active" aria-role="button" aria-label="设置">
         <image class="icon" src="/images/settings.png" mode="aspectFit" />
       </view>
     </view>
+
     <view wx:if="{{household.inviteCode}}" class="card invite">
+      <view class="home-tile"><image class="home-icon" src="/images/ui/home.svg" /></view>
+      <view class="invite-title">我们的小家</view>
       <view class="small muted">把邀请码发给对方，在「用邀请码加入」里输入</view>
-      <view class="invite-code serif">{{household.inviteCode}}</view>
-      <button class="secondary" bindtap="copyCode">复制邀请码</button>
+      <view class="pair" aria-hidden="true">
+        <view class="avatar-lg avatar-a">{{household.members[0].name[0]}}</view>
+        <view class="pair-line"></view>
+        <view class="pair-heart"><image class="pair-heart-icon" src="/images/ui/heart.svg" /></view>
+        <view class="pair-line"></view>
+        <view class="avatar-lg avatar-wait">TA</view>
+      </view>
+      <view class="invite-code">{{household.inviteCode}}</view>
+      <button class="primary" bindtap="copyCode">复制邀请码</button>
+    </view>
+    <view wx:else class="couple">
+      <view class="couple-names">
+        <view class="avatars" aria-hidden="true">
+          <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>
+          <view class="avatar-sm avatar-b">{{household.members[1].name[0]}}</view>
+        </view>
+        <view class="couple-text">{{household.members[0].name}} & {{household.members[1].name}}</view>
+      </view>
+      <view wx:if="{{next}}" class="couple-next">
+        <view class="couple-next-label">{{next.title}}{{next.days === 0 ? '' : ' 还有'}}</view>
+        <view wx:if="{{next.days === 0}}" class="couple-next-today">就是今天</view>
+        <view wx:else class="couple-next-days">{{next.days}}<text class="couple-next-unit">天</text></view>
+      </view>
     </view>
 
     <view class="section-head">
@@ -23,13 +47,14 @@
     <view wx:if="{{!dates.length && !datesError}}" class="empty">还没有纪念日。结婚纪念日、生日，都可以记在这里。</view>
     <view wx:elif="{{dates.length}}" class="list">
       <view wx:for="{{dates}}" wx:key="id" class="list-row {{item.passed ? 'date-passed' : ''}}" data-id="{{item.id}}" bindtap="openDate" hover-class="list-row-active">
+        <view class="tile tile-pink"><image class="tile-icon" src="/images/ui/calendar.svg" /></view>
         <view class="row-main">
           <view class="row-title">{{item.title}}</view>
           <view class="row-sub">{{item.dateText}}{{item.yearly ? ' · 每年' : ''}}{{item.yearly && item.years > 0 ? ' · 第 ' + item.years + ' 年' : ''}}</view>
         </view>
         <view class="row-trail date-days {{item.days === 0 && !item.passed ? 'date-today' : ''}}">
           <block wx:if="{{item.days === 0 && !item.passed}}">就是今天</block>
-          <block wx:else><text class="small">{{item.passed ? '已经' : '还有'}}</text><text class="days-number serif">{{item.days}}</text><text class="small">天</text></block>
+          <block wx:else><text class="small">{{item.passed ? '已经' : '还有'}}</text><text class="days-number">{{item.days}}</text><text class="small">天</text></block>
         </view>
       </view>
     </view>
@@ -38,6 +63,7 @@
       <view class="section-head"><view class="section-title">回忆</view></view>
       <view wx:if="{{household.archive === 'wedding-2026'}}" class="list">
         <navigator class="list-row" url="/pages/archive/index" hover-class="list-row-active">
+          <view class="tile tile-accent"><image class="tile-icon" src="/images/ui/gift.svg" /></view>
           <view class="row-main"><view class="row-title">答谢宴 · 登记与祝福</view><view class="row-sub">2026.09.28 亲友留下的话</view></view>
           <text class="chevron">›</text>
         </navigator>

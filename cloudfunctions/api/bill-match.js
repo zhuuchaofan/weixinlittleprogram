@@ -1,6 +1,6 @@
 /**
- * 截图记账的查重：金额相同才算重复；src.key 一致 → 已导入过；同一天且商户与备注相似 → 很可能重复；
- * 日期相差不超过 1 天 → 可能重复。一条已有账目只能对上一笔。
+ * 截图记账的查重：金额相同才算重复；src.key 一致 → 已导入过；日期相差不超过 1 天 → 可能已记过，
+ * 优先对上同一天且商户与备注相似的那条。一条已有账目只能对上一笔。
  */
 const { SETTLEMENT } = require('./ledger');
 const { DAY_MS, keyToMs, str } = require('./bill-parse');
@@ -51,7 +51,7 @@ function isPartnerTransfer(item, household) {
 }
 
 /**
- * 给每一笔打上 status：imported / likely / possible / partner / new，
+ * 给每一笔打上 status：imported / possible / partner / new，
  * 撞上的已有账目放在 match。同一批里 key 相同的（连续截图的重叠部分）只留一笔。
  */
 function matchItems(items, records, household) {
@@ -77,37 +77,58 @@ function matchItems(items, records, household) {
     return describe(record);
   };
   const free = (record) => !used.has(record._id);
-  // 先认领「已导入过」，再按相似程度认领，避免一条已有账目被松的规则先占掉。
-  const result = unique.map((item) => {
-    const exact = candidates.find(
-      (record) => free(record) && record.src?.key === item.key,
-    );
-    return exact ? { ...item, status: 'imported', match: take(exact) } : item;
-  });
-  return result.map((item) => {
-    if (item.status) return item;
-    if (isPartnerTransfer(item, household))
-      return { ...item, status: 'partner', match: null };
-    if (!item.amount || !item.date)
-      return { ...item, status: 'new', match: null };
-    const same = candidates.filter(
+  const same = (item) =>
+    candidates.filter(
       (record) =>
         free(record) &&
         record.amount === item.amount &&
         (record.flow || 'out') === item.flow &&
         daysApart(record.date, item.date) <= 1,
     );
-    const likely = same.find(
+  // 整批分三轮认领：先「已导入过」，再同一天且商户相似的，最后才是日期相近的，
+  // 避免一条已有账目被前面某一笔按松的规则先占掉。
+  const first = unique.map((item) => {
+    const exact = candidates.find(
+      (record) => free(record) && record.src?.key === item.key,
+    );
+    if (exact) return { ...item, status: 'imported', match: take(exact) };
+    if (isPartnerTransfer(item, household))
+      return { ...item, status: 'partner', match: null };
+    if (!item.amount || !item.date)
+      return { ...item, status: 'new', match: null };
+    return item;
+  });
+  const second = first.map((item) => {
+    if (item.status) return item;
+    const close = same(item).find(
       (record) =>
         record.date === item.date &&
         (similar(item.merchant, record.note) ||
           similar(item.merchant, record.src?.merchant)),
     );
-    if (likely) return { ...item, status: 'likely', match: take(likely) };
-    const possible = same.sort(
-      (a, b) => daysApart(a.date, item.date) - daysApart(b.date, item.date),
-    )[0];
-    if (possible) return { ...item, status: 'possible', match: take(possible) };
+    return close ? { ...item, status: 'possible', match: take(close) } : item;
+  });
+  // 日期相近的按相差天数从小到大配对，同一天的先配上。
+  const pairs = second
+    .flatMap((item, index) =>
+      item.status
+        ? []
+        : same(item).map((record) => ({
+            index,
+            record,
+            days: daysApart(record.date, item.date),
+          })),
+    )
+    .sort((a, b) => a.days - b.days);
+  const near = new Map();
+  for (const { index, record } of pairs) {
+    if (near.has(index) || !free(record)) continue;
+    near.set(index, take(record));
+  }
+  return second.map((item, index) => {
+    if (item.status) return item;
+    if (near.has(index))
+      return { ...item, status: 'possible', match: near.get(index) };
     return { ...item, status: 'new', match: null };
   });
 }

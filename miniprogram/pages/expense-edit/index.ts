@@ -9,6 +9,7 @@ import {
 import { errorMessage } from '../../services/cloud';
 import {
   CATEGORIES,
+  categoryLook,
   FLOWS,
   LENGTHS,
   RATIO_RANGE,
@@ -33,7 +34,7 @@ Page({
     limits: LENGTHS,
     id: '',
     isSettlement: false,
-    categories: CATEGORIES,
+    categories: CATEGORIES.map((name) => ({ name, ...categoryLook(name) })),
     splits: SPLITS,
     flows: FLOWS,
     flow: 'out' as Flow,

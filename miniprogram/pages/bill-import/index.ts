@@ -31,11 +31,16 @@ function stopTips(): void {
 
 const STATUS_TEXT: Record<BillStatus, string> = {
   imported: '已导入过',
-  likely: '很可能已记过',
   possible: '可能已记过',
   partner: '你们俩之间的转账，默认不记',
   new: '',
 };
+
+/** 云函数还是旧版时可能回来不认识的 status（如 likely）：没勾的都要说明原因。 */
+function statusText(status: BillStatus | undefined): string {
+  if (!status) return '';
+  return STATUS_TEXT[status] ?? STATUS_TEXT.possible;
+}
 
 type Row = BillItem & {
   selected: boolean;
@@ -50,10 +55,10 @@ type Row = BillItem & {
 
 let household: Household | null = null;
 
-/** 新的和「可能已记过」默认勾选；已导入过、很可能重复、两人互转、读不全的默认不勾。 */
+/** 只有新的默认勾选；已导入过、可能已记过、两人互转、读不全的默认不勾。 */
 function defaultSelected(item: BillItem): boolean {
   if (item.problem) return false;
-  return item.status === 'new' || item.status === 'possible';
+  return item.status === 'new';
 }
 
 function matchText(item: BillItem): string {
@@ -76,7 +81,7 @@ function present(item: BillItem, previous?: Row): Row {
       (item.flow === 'in' ? '+' : '') +
       (item.amount ? formatYuan(item.amount) : '¥?'),
     dateText: item.date ? shortDate(item.date) : '日期待补',
-    statusText: item.status ? STATUS_TEXT[item.status] : '',
+    statusText: statusText(item.status),
     matchText: matchText(item),
     showDate: false,
   };

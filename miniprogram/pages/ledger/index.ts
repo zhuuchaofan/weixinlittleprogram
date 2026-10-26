@@ -14,6 +14,7 @@ import {
   SETTLEMENT,
   SPLITS,
   billAppLabel,
+  categoryLook,
 } from '../../config/options';
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
@@ -24,6 +25,7 @@ type CategoryRow = {
   amountText: string;
   percent: number;
   width: number;
+  color: string;
 };
 
 /** 占比四舍五入到整数；条宽就是占比（占满整条是 100%），太小的类至少画 2% 以免看不见。 */
@@ -38,6 +40,7 @@ function categoryRows(
       amountText: formatYuan(amount),
       percent,
       width: total ? Math.max(2, percent) : 0,
+      color: categoryLook(cat).color,
     };
   });
 }
@@ -52,6 +55,8 @@ type Row = Expense & {
   editedText: string;
   isIncome: boolean;
   sourceText: string;
+  icon: string;
+  tint: string;
 };
 
 let loadVersion = 0;
@@ -70,6 +75,7 @@ Page({
     records: [] as Row[],
     summary: null as LedgerSummary | null,
     summaryText: { total: '', a: '', b: '', suggestion: '' },
+    shareA: 50,
     categories: [] as CategoryRow[],
   },
   onShow() {
@@ -125,6 +131,11 @@ Page({
       summary,
       splitting,
       categories: categoryRows(shown.total, shown.byCategory),
+      // 总卡片里那条白色进度条：左边是 A 付的占比。
+      shareA:
+        shown.paid.a + shown.paid.b
+          ? Math.round((shown.paid.a * 100) / (shown.paid.a + shown.paid.b))
+          : 50,
       summaryText: {
         total: formatYuan(shown.total),
         a: formatYuan(shown.paid.a),
@@ -135,6 +146,8 @@ Page({
       },
       records: records.map((record) => ({
         ...record,
+        icon: categoryLook(record.cat).icon,
+        tint: categoryLook(record.cat).tint,
         amountText:
           (record.flow === 'in' ? '+' : '') + formatYuan(record.amount),
         isIncome: record.flow === 'in',

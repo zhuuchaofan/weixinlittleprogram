@@ -17,15 +17,15 @@
   ],
   "window": {
     "navigationBarTitleText": "小家",
-    "navigationBarBackgroundColor": "#F7F2E9",
+    "navigationBarBackgroundColor": "#FFF7F3",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#F7F2E9",
+    "backgroundColor": "#FFF7F3",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#A89A8C",
-    "selectedColor": "#7A3E3C",
-    "backgroundColor": "#FDFAF5",
+    "color": "#A3948E",
+    "selectedColor": "#F2614F",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {

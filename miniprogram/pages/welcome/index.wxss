@@ -1,4 +1,12 @@
-.hero { padding: 48rpx 0 56rpx; }
+.hero { padding: 48rpx 0 56rpx; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.home-tile { width: 160rpx; height: 160rpx; border-radius: 44rpx; background: var(--accent-grad); display: flex; align-items: center; justify-content: center; box-shadow: 0 16rpx 40rpx rgba(242, 97, 79, 0.3); margin-bottom: 32rpx; }
+.home-icon { width: 88rpx; height: 88rpx; }
+.hero .title { margin: 0 0 12rpx; }
+.pair { display: flex; align-items: center; justify-content: center; margin-top: 48rpx; }
+.avatar-lg { width: 120rpx; height: 120rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 38rpx; font-weight: 700; box-shadow: 0 8rpx 24rpx rgba(176, 96, 64, 0.18); }
+.pair-line { width: 48rpx; border-top: 4rpx dashed #ffb39e; }
+.pair-heart { width: 60rpx; height: 60rpx; border-radius: 50%; background: var(--accent-grad); display: flex; align-items: center; justify-content: center; }
+.pair-heart-icon { width: 32rpx; height: 32rpx; }
 .form-title { margin-bottom: 24rpx; }
 .code-input { letter-spacing: 8rpx; }
 .back { margin: 12rpx auto 0; }
