@@ -5,8 +5,8 @@ const {
   parseAmount,
   parseBillDate,
   parseReply,
-  similar,
-} = require('../cloudfunctions/api/bills');
+} = require('../cloudfunctions/api/bill-parse');
+const { similar } = require('../cloudfunctions/api/bill-match');
 const { createVision } = require('../cloudfunctions/api/vision');
 
 // 2026-10-25（周日）12:00 UTC+8
