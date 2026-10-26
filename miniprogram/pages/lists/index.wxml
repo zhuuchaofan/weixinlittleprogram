@@ -1,40 +1,46 @@
 <view class="page">
-  <view class="top-row">
-    <view class="segmented">
-      <view wx:for="{{kinds}}" wx:key="value" class="segment {{kind === item.value ? 'segment-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKind">{{item.label}}</view>
-    </view>
-    <view class="icon-button" bindtap="more" hover-class="icon-button-active" aria-role="button" aria-label="更多操作"><image class="icon" src="/images/more.png" mode="aspectFit" /></view>
+  <view class="segmented">
+    <view wx:for="{{kinds}}" wx:key="value" class="segment {{kind === item.value ? 'segment-on' : ''}}" data-value="{{item.value}}" bindtap="chooseKind">{{item.label}}</view>
   </view>
 
-  <view class="card composer">
-    <input value="{{text}}" maxlength="{{limits.todoText}}" placeholder="添加一条…" confirm-type="done" bindinput="inputText" bindconfirm="add" />
-    <view class="composer-row">
-      <view class="chips">
-        <view class="chip {{who === 'a' ? 'chip-on' : ''}}" data-value="a" bindtap="chooseWho">{{names.a}}</view>
-        <view class="chip {{who === 'b' ? 'chip-on' : ''}}" data-value="b" bindtap="chooseWho">{{names.b}}</view>
-        <view class="chip {{who === 'both' ? 'chip-on' : ''}}" data-value="both" bindtap="chooseWho">一起</view>
-      </view>
-      <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
-    </view>
+  <view class="composer">
+    <input class="composer-input" value="{{text}}" maxlength="{{limits.todoText}}" placeholder="{{kind === 'shop' ? '要买什么…' : '要做什么…'}}" confirm-type="done" confirm-hold bindinput="inputText" bindconfirm="add" />
+    <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
   </view>
 
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">刷新</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
   <view wx:if="{{loading && !all.length}}" class="status">正在读取…</view>
-  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap">这里还空着。</view>
+  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap">{{kind === 'shop' ? '还没有要买的，在上面写一样。' : '还没有待办，在上面写一件。'}}</view>
 
   <view wx:if="{{open.length}}" class="list list-gap">
     <view wx:for="{{open}}" wx:key="id" class="list-row todo-row">
       <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="完成 {{item.text}}"><view class="box"></view></view>
-      <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active"><view class="row-title">{{item.text}}</view><view class="row-sub">{{item.subText}}</view></view>
+      <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
+        <view class="row-title">{{item.text}}</view>
+        <text wx:if="{{item.whoName}}" class="tag">{{item.whoName}}</text>
+      </view>
     </view>
   </view>
 
-  <block wx:if="{{done.length}}">
-    <view class="list-label">已完成 {{done.length}}</view>
-    <view class="list">
+  <block wx:if="{{kind === 'shop' && bought.length}}">
+    <view class="fold-head">
+      <text>买过的 · 点一下加回清单</text>
+      <button class="text-button" bindtap="clear" disabled="{{busy}}">清除</button>
+    </view>
+    <view class="chips">
+      <view wx:for="{{bought}}" wx:key="id" class="chip" data-id="{{item.id}}" bindtap="toggle" aria-role="button" aria-label="再买 {{item.text}}">＋ {{item.text}}</view>
+    </view>
+  </block>
+
+  <block wx:if="{{kind === 'todo' && done.length}}">
+    <view class="fold-head">
+      <text bindtap="toggleDone" aria-role="button">已完成 {{done.length}} {{showDone ? '▾' : '▸'}}</text>
+      <button class="text-button" bindtap="clear" disabled="{{busy}}">清除</button>
+    </view>
+    <view wx:if="{{showDone}}" class="list">
       <view wx:for="{{done}}" wx:key="id" class="list-row todo-row todo-done">
         <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="box box-on">✓</view></view>
-        <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active"><view class="row-title struck">{{item.text}}</view><view class="row-sub">{{item.subText}}</view></view>
+        <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active"><view class="row-title struck">{{item.text}}</view></view>
       </view>
     </view>
   </block>

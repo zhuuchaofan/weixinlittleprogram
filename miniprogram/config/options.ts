@@ -67,16 +67,14 @@ const SPLIT_TEXT: Record<Split, { label: string; hint: string }> = {
 export const SPLITS: Array<{ value: Split; label: string; hint: string }> =
   CONTRACT.splits.map((value: Split) => ({ value, ...SPLIT_TEXT[value] }));
 
-const TODO_KIND_LABELS: Record<TodoKind, string> = {
-  shop: '购物',
-  todo: '待办',
-  chore: '家务',
-};
-export const TODO_KINDS: Array<{ value: TodoKind; label: string }> =
-  CONTRACT.todoKinds.map((value: TodoKind) => ({
-    value,
-    label: TODO_KIND_LABELS[value],
-  }));
+/** 界面上只分购物和待办；旧的「家务」条目归到待办里显示。 */
+export const TODO_KINDS: Array<{ value: TodoKind; label: string }> = [
+  { value: 'shop', label: '购物' },
+  { value: 'todo', label: '待办' },
+];
+export function todoTab(kind: TodoKind): TodoKind {
+  return kind === 'chore' ? 'todo' : kind;
+}
 
 export const DISH_TAGS: DishTag[] = [...CONTRACT.dishTags];
 
@@ -100,3 +98,4 @@ export function kindLabel(kind: DishKind): string {
 // 只用于编译期核对契约取值与 models.ts 一致。
 export const PAYERS: Payer[] = [...CONTRACT.payers];
 export const TODO_WHO: TodoWho[] = [...CONTRACT.todoWho];
+export const TODO_KIND_VALUES: TodoKind[] = [...CONTRACT.todoKinds];

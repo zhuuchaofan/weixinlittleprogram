@@ -1,14 +1,13 @@
-.composer { margin-top: 24rpx; padding: 24rpx; }
-.composer-row { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 20rpx; }
-.composer-row .chips { gap: 12rpx; min-width: 0; flex: 1; }
-.composer-row .chip { padding: 0 22rpx; }
-.list-gap { margin-top: 32rpx; }
+.composer { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; }
+.composer-input { flex: 1; min-width: 0; }
+.list-gap { margin-top: 24rpx; }
 .todo-row { padding: 0 20rpx 0 0; align-items: stretch; gap: 0; }
-.check { width: 96rpx; min-height: 112rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.check { width: 96rpx; min-height: 104rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .box { width: 44rpx; height: 44rpx; border: 3rpx solid #ffb39e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24rpx; font-weight: 700; }
 .box-on { background: var(--accent-grad); border-color: transparent; }
-.todo-main { display: flex; flex-direction: column; justify-content: center; padding: 16rpx 0; }
+.todo-main { display: flex; align-items: center; gap: 16rpx; padding: 16rpx 0; }
+.todo-main .row-title { flex: 1; min-width: 0; }
 .todo-done { opacity: 0.7; }
 .struck { text-decoration: line-through; color: var(--muted); }
-.top-row { display: flex; align-items: center; gap: 12rpx; }
-.top-row .segmented { flex: 1; min-width: 0; }
+.fold-head { display: flex; align-items: center; justify-content: space-between; margin: 24rpx 4rpx 8rpx; font-size: 26rpx; color: var(--muted); }
+.fold-head .text-button { font-size: 26rpx; }
