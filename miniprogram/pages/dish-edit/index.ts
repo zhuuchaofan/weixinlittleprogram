@@ -3,9 +3,11 @@ import { dishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { DISH_TAG_OPTIONS, LENGTHS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
+import { applyTheme, themeData } from '../../services/theme';
 
 Page({
   data: {
+    ...themeData(),
     limits: LENGTHS,
     id: '',
     tags: DISH_TAG_OPTIONS,
@@ -14,6 +16,9 @@ Page({
     ateOn: '',
     busy: false,
     error: '',
+  },
+  onShow() {
+    applyTheme(this);
   },
   async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) {

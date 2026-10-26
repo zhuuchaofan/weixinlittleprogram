@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view class="hero">
     <view class="home-tile"><image class="home-icon" src="/images/ui/home.svg" /></view>

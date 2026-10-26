@@ -8,10 +8,12 @@ import { errorMessage } from '../../services/cloud';
 import { markLoaded, needsReload } from '../../services/snapshot';
 import { todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
+import { applyTheme, themeData } from '../../services/theme';
 
 /** 主页：一进来就是本月花了多少、下一个纪念日，各功能从这里点进去。 */
 Page({
   data: {
+    ...themeData(),
     loading: true,
     error: '',
     household: null as Household | null,
@@ -22,6 +24,7 @@ Page({
     todoText: '',
   },
   onShow() {
+    applyTheme(this);
     if (!this.data.household) this.showSnapshot();
     // 还在等对方加入时每次都读，邀请码和成员才能及时更新。
     if (needsReload('home') || this.data.household?.inviteCode)

@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <block wx:if="{{id}}">
     <view class="field">

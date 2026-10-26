@@ -21,7 +21,8 @@
 - 纪念日 2 月 29 日在平年按 2 月 28 日计算。
 - 截图识别每个小家每天最多 20 张（两人合计，`shared/contract.json` 的 `billImport.dailyImages`），识别失败也算一次。
 - 各页的列表在本机存一份快照，打开小程序先显示快照再从云端更新；回到主页时只有本机改过数据或超过 60 秒才重新读，下拉刷新总是重新读（`miniprogram/services/snapshot.ts`）。
-- 主页四个入口的图标是 `miniprogram/images/home-*.png`（原来的底部 tab 图标，由 Pillow 生成）。
+- 主题：5 套配色在 `miniprogram/config/themes.ts`（默认香芋紫），每套是一组 CSS 变量；各页 wxml 顶部 `<page-meta page-style>` 套用，`services/theme.ts` 的 `applyTheme` 在 onShow 里刷新。设置页可切换，存在本机。页面样式里不要写死主色，用 `--accent`、`--accent-grad`、`--glow`、`--ring` 等变量。
+- 跟主色走的图标（主页四个入口、截图记账小猫、礼物）原图在 `assets/theme-src/`，改了图标或主题后运行 `python3 scripts/theme-icons.py`（需要 Pillow）生成 `miniprogram/images/themes/<主题>/`。
 
 ### 记账规则的落地细节
 

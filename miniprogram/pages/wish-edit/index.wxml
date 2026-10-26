@@ -1,9 +1,10 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view class="field"><text class="field-label">想去哪儿 / 想做什么</text><input value="{{title}}" maxlength="{{limits.wishTitle}}" data-field="title" bindinput="input" placeholder="例如：镰仓看海" /></view>
   <view class="field"><text class="field-label">备注</text><textarea value="{{note}}" maxlength="{{limits.wishPlan}}" data-field="note" bindinput="input" placeholder="可不填，例如为什么想去、交通、预算" /></view>
   <view wx:if="{{id}}" class="card went">
     <view class="row-main"><view>去过了</view><view class="row-sub">打开后记下去的日期</view></view>
-    <switch checked="{{done}}" bindchange="toggleDone" color="#f2614f" aria-label="去过了" />
+    <switch checked="{{done}}" bindchange="toggleDone" color="{{accent}}" aria-label="去过了" />
   </view>
   <view wx:if="{{done}}" class="field">
     <text class="field-label">哪天去的</text>

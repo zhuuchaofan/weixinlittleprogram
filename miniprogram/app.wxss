@@ -1,18 +1,24 @@
 /* 小家：全局设计变量与公共组件。页面 wxss 只写本页特有的布局。 */
 page {
-  --paper: #fff7f3;
+  --paper: #f8f5fc;
   --surface: #ffffff;
-  --sunken: #f7ede8;
-  --ink: #2b2220;
-  --muted: #8f817b;
-  --line: #f1e5de;
-  --accent: #f2614f;
-  --accent-soft: #ffece5;
-  --accent-grad: linear-gradient(135deg, #ff8f4a 0%, #ff6a5c 55%, #f9578a 100%);
+  --sunken: #eee8f6;
+  --ink: #26203a;
+  --muted: #8a8299;
+  --line: #e9e2f2;
+  --accent: #8a5fd6;
+  --accent-soft: #efe7fb;
+  --accent-grad: linear-gradient(135deg, #c8a2f7 0%, #9a72ea 55%, #e785c0 100%);
   --dark: #26211f;
   --ok: #24a466;
   --ok-soft: #e2f5ea;
-  --shadow: 0 8rpx 32rpx rgba(176, 96, 64, 0.08);
+  --shadow: 0 8rpx 32rpx rgba(110, 80, 150, 0.08);
+  /* 主题色衍生：勾选圈、主色阴影、卡片阴影、头像。换主题见 config/themes.ts，这里是默认（香芋紫）。 */
+  --ring: #cfb8f2;
+  --glow: rgba(138, 95, 214, 0.28);
+  --tint: rgba(110, 80, 150, 0.14);
+  --avatar-a: linear-gradient(135deg, #c8a2f7, #9a72ea);
+  --avatar-b: linear-gradient(135deg, #7cc4f2, #5b9cf0);
   --radius: 32rpx;
   --radius-sm: 20rpx;
   background: var(--paper);
@@ -56,8 +62,8 @@ view, button, input, textarea { box-sizing: border-box; }
 button, button:not([size='mini']) { width: 100%; margin: 0; }
 button { font: inherit; font-size: 30rpx; border: 0; border-radius: var(--radius-sm); min-height: 92rpx; line-height: 1.4; display: flex; justify-content: center; align-items: center; padding: 20rpx 28rpx; color: var(--ink); background: transparent; }
 button::after { border: 0; }
-button[disabled] { background: #eee4df !important; color: #9a8d87 !important; }
-.primary { background: var(--accent-grad); color: #fff; font-weight: 600; box-shadow: 0 8rpx 24rpx rgba(242, 97, 79, 0.25); }
+button[disabled] { background: var(--sunken) !important; color: var(--muted) !important; }
+.primary { background: var(--accent-grad); color: #fff; font-weight: 600; box-shadow: 0 8rpx 24rpx var(--glow); }
 .secondary { background: var(--surface); box-shadow: var(--shadow); }
 .btn-inline, button.btn-inline:not([size='mini']) { width: auto; flex-shrink: 0; padding: 0 36rpx; min-height: 80rpx; font-size: 28rpx; }
 .text-button, button.text-button:not([size='mini']) { width: auto; color: var(--accent); padding: 20rpx 12rpx; min-height: 88rpx; }
@@ -74,7 +80,7 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 /* 分段切换 */
 .segmented { display: flex; gap: 6rpx; padding: 6rpx; background: var(--sunken); border-radius: var(--radius); }
 .segment { flex: 1; min-height: 80rpx; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--muted); font-size: 28rpx; }
-.segment-on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 2rpx 8rpx rgba(176, 96, 64, 0.12); }
+.segment-on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 2rpx 8rpx var(--tint); }
 
 /* 选择胶囊 */
 .chips { display: flex; flex-wrap: wrap; gap: 16rpx; }
@@ -97,12 +103,12 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 /* 彩色图标块（列表行前面），图标在 images/ui、images/cat-icons */
 .tile { width: 76rpx; height: 76rpx; flex-shrink: 0; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; }
 .tile-icon { width: 40rpx; height: 40rpx; }
-.tile-accent { background: rgba(242, 97, 79, 0.12); }
+.tile-accent { background: var(--accent-soft); }
 .tile-pink { background: rgba(242, 72, 122, 0.12); }
 .tile-blue { background: rgba(59, 130, 246, 0.12); }
 .tile-orange { background: rgba(255, 138, 61, 0.12); }
 .tile-yellow { background: rgba(232, 163, 23, 0.14); }
 
 /* 两人头像：创建者暖橙，另一位蓝紫 */
-.avatar-a { background: linear-gradient(135deg, #ff9a52, #ff6a5c); color: #fff; }
-.avatar-b { background: linear-gradient(135deg, #8b7cf6, #6c8cff); color: #fff; }
+.avatar-a { background: var(--avatar-a); color: #fff; }
+.avatar-b { background: var(--avatar-b); color: #fff; }

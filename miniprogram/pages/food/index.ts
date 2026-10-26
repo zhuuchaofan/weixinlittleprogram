@@ -5,6 +5,7 @@ import { errorMessage } from '../../services/cloud';
 import { markLoaded, needsReload } from '../../services/snapshot';
 import { DISH_TAG_OPTIONS, LENGTHS, dishTagLabel } from '../../config/options';
 import { daysBetween, todayKey } from '../../utils/date';
+import { applyTheme, themeData } from '../../services/theme';
 
 type Row = Dish & { ateText: string; ateDays: number; ateToday: boolean };
 type Group = {
@@ -37,6 +38,7 @@ function toRow(dish: Dish, today: string): Row {
 
 Page({
   data: {
+    ...themeData(),
     limits: LENGTHS,
     tags: DISH_TAG_OPTIONS,
     // 「怎么吃」筛选；空字符串表示全部。新加的也存到这一类（全部时存「在家做」）。
@@ -53,6 +55,7 @@ Page({
     error: '',
   },
   onShow() {
+    applyTheme(this);
     if (!this.data.dishes.length) {
       const saved = dishService.peek();
       if (saved) this.showDishes(saved);

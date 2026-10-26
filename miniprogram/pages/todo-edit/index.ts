@@ -4,9 +4,11 @@ import { getTodo, removeTodo, updateTodo } from '../../services/todos';
 import { errorMessage } from '../../services/cloud';
 import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
+import { applyTheme, themeData } from '../../services/theme';
 
 Page({
   data: {
+    ...themeData(),
     limits: LENGTHS,
     id: '',
     kinds: TODO_KINDS,
@@ -16,6 +18,9 @@ Page({
     who: 'both' as TodoWho,
     busy: false,
     error: '',
+  },
+  onShow() {
+    applyTheme(this);
   },
   async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) {

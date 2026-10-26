@@ -5,6 +5,7 @@ import { errorMessage } from '../../services/cloud';
 import { markLoaded, needsReload } from '../../services/snapshot';
 import { LENGTHS } from '../../config/options';
 import { todayKey } from '../../utils/date';
+import { applyTheme, themeData } from '../../services/theme';
 
 type Row = Wish & { subText: string };
 
@@ -25,6 +26,7 @@ function toRow(wish: Wish): Row {
 
 Page({
   data: {
+    ...themeData(),
     limits: LENGTHS,
     wishes: [] as Row[],
     open: [] as Row[],
@@ -38,6 +40,7 @@ Page({
     error: '',
   },
   onShow() {
+    applyTheme(this);
     if (!this.data.wishes.length) this.showWishes(wishService.peek() || []);
     if (needsReload('wishes')) void this.load();
   },

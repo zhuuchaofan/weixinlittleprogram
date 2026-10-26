@@ -2,9 +2,12 @@ import type { Household } from '../../models';
 import { getHousehold, updateHousehold } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
+import { applyTheme, setTheme, themeData } from '../../services/theme';
+import { THEMES } from '../../config/themes';
 
 Page({
   data: {
+    ...themeData(),
     loading: true,
     busy: false,
     exporting: false,
@@ -12,6 +15,15 @@ Page({
     message: '',
     household: null as Household | null,
     myName: '',
+    themes: THEMES.map(({ id, name, swatch }) => ({ id, name, swatch })),
+  },
+  onShow() {
+    applyTheme(this);
+  },
+  /** 换主题只影响这台手机；返回其他页面时各自在 onShow 里套用。 */
+  chooseTheme(event: WechatMiniprogram.TouchEvent) {
+    setTheme(String(event.currentTarget.dataset.id));
+    applyTheme(this);
   },
   onLoad() {
     void this.load();

@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{isSettlement}}" class="card">
     <view class="section-title">结算记录</view>

@@ -1,4 +1,4 @@
-.draw-card { position: relative; overflow: hidden; margin-top: 24rpx; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12rpx; padding: 40rpx 32rpx 28rpx; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx rgba(242, 97, 79, 0.28); }
+.draw-card { position: relative; overflow: hidden; margin-top: 24rpx; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12rpx; padding: 40rpx 32rpx 28rpx; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx var(--glow); }
 .draw-card::after { content: ''; position: absolute; right: -80rpx; top: -120rpx; width: 360rpx; height: 360rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
 .draw-label { font-size: 26rpx; opacity: 0.92; }
 .draw-icon { width: 112rpx; height: 112rpx; border-radius: 36rpx; background: #fff; display: flex; align-items: center; justify-content: center; }
