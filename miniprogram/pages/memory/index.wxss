@@ -1,4 +1,4 @@
-.hero { position: relative; overflow: hidden; padding: 36rpx 36rpx 32rpx; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx rgba(242, 97, 79, 0.28); }
+.hero { position: relative; overflow: hidden; padding: 36rpx 36rpx 32rpx; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx var(--glow); }
 .hero::after { content: ''; position: absolute; right: -80rpx; top: -120rpx; width: 320rpx; height: 320rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
 .hero-label { font-size: 26rpx; opacity: 0.92; }
 .hero-days { margin: 8rpx 0 4rpx; font-size: 72rpx; font-weight: 800; line-height: 1.2; }

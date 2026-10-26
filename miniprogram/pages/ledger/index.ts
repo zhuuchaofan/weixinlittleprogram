@@ -18,6 +18,7 @@ import {
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
+import { applyTheme, themeData } from '../../services/theme';
 
 type CategoryRow = {
   cat: string;
@@ -68,6 +69,7 @@ let allRows: Row[] = [];
 
 Page({
   data: {
+    ...themeData(),
     month: todayKey().slice(0, 7),
     monthText: monthLabel(todayKey().slice(0, 7)),
     isCurrentMonth: true,
@@ -85,6 +87,7 @@ Page({
     categories: [] as CategoryRow[],
   },
   onShow() {
+    applyTheme(this);
     if (!this.data.summary) this.showSnapshot();
     if (needsReload(`ledger:${this.data.month}`)) void this.load();
   },

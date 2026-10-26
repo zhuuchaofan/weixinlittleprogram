@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{loading && !household}}" class="status">正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
@@ -33,7 +34,17 @@
       <view class="list">
         <view class="list-row">
           <view class="row-main"><view>两人分摊与结算</view><view class="row-sub">关闭时只记账：不选怎么分，不算谁该给谁多少。两个人共用这个设置。</view></view>
-          <switch checked="{{household.splitting}}" color="#f2614f" bindchange="toggleSplitting" />
+          <switch checked="{{household.splitting}}" color="{{accent}}" bindchange="toggleSplitting" />
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">主题</view><text class="small muted">只改这台手机</text></view>
+      <view class="card themes">
+        <view wx:for="{{themes}}" wx:key="id" class="theme {{themeId === item.id ? 'theme-on' : ''}}" data-id="{{item.id}}" bindtap="chooseTheme" aria-role="radio" aria-checked="{{themeId === item.id}}" aria-label="{{item.name}}">
+          <view class="swatch" style="background: {{item.swatch}}">{{themeId === item.id ? '✓' : ''}}</view>
+          <view class="small">{{item.name}}</view>
         </view>
       </view>
     </view>

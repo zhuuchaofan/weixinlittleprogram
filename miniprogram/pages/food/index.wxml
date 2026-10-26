@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view class="segmented">
     <view class="segment {{filter === '' ? 'segment-on' : ''}}" data-value="" bindtap="chooseFilter">全部</view>

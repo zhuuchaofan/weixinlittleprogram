@@ -4,11 +4,13 @@ import {
   joinHousehold,
 } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
+import { applyTheme, themeData } from '../../services/theme';
 
 type Mode = 'choose' | 'create' | 'join';
 
 Page({
   data: {
+    ...themeData(),
     mode: 'choose' as Mode,
     name: '',
     code: '',
@@ -17,6 +19,7 @@ Page({
     error: '',
   },
   async onShow() {
+    applyTheme(this);
     this.setData({ checking: true, error: '' });
     try {
       // 已经在小家里（例如另一台设备完成了绑定），直接回到首页。

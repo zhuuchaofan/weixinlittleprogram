@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view class="field"><text class="field-label">名称</text><input value="{{title}}" maxlength="{{limits.dateTitle}}" bindinput="inputTitle" placeholder="例如：结婚纪念日" /></view>
   <view class="field">
@@ -6,7 +7,7 @@
   </view>
   <view class="card yearly">
     <view class="row-main"><view>每年重复</view><view class="row-sub">生日、纪念日打开；一次性的计划关闭</view></view>
-    <switch checked="{{yearly}}" bindchange="toggleYearly" color="#f2614f" aria-label="每年重复" />
+    <switch checked="{{yearly}}" bindchange="toggleYearly" color="{{accent}}" aria-label="每年重复" />
   </view>
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
   <button class="primary save" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>

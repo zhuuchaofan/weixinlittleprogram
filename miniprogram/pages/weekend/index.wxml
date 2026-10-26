@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view class="composer">
     <input class="composer-input" value="{{title}}" maxlength="{{limits.wishTitle}}" placeholder="想去哪儿 / 想做什么…" confirm-type="done" confirm-hold bindinput="inputTitle" bindconfirm="add" />

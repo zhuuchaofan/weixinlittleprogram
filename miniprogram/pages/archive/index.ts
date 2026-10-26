@@ -2,12 +2,17 @@ import type { Archive } from '../../models';
 import { getArchive } from '../../services/archive';
 import { errorMessage } from '../../services/cloud';
 import { formatDateTime } from '../../utils/date';
+import { applyTheme, themeData } from '../../services/theme';
 
 Page({
   data: {
+    ...themeData(),
     loading: true,
     error: '',
     archive: null as Archive | null,
+  },
+  onShow() {
+    applyTheme(this);
   },
   onLoad() {
     void this.load();

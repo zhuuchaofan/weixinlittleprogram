@@ -15,6 +15,7 @@ import { markLoaded, needsReload } from '../../services/snapshot';
 import { errorMessage } from '../../services/cloud';
 import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
+import { applyTheme, themeData } from '../../services/theme';
 
 type Row = Todo & { whoName: string };
 
@@ -29,6 +30,7 @@ function toRow(todo: Todo): Row {
 
 Page({
   data: {
+    ...themeData(),
     limits: LENGTHS,
     kinds: TODO_KINDS,
     kind: 'shop' as TodoKind,
@@ -46,6 +48,7 @@ Page({
     error: '',
   },
   onShow() {
+    applyTheme(this);
     if (!this.data.all.length) this.showSnapshot();
     if (needsReload('todos')) void this.load();
   },

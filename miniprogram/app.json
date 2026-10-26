@@ -18,9 +18,9 @@
   ],
   "window": {
     "navigationBarTitleText": "小家",
-    "navigationBarBackgroundColor": "#FFF7F3",
+    "navigationBarBackgroundColor": "#F8F5FC",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#FFF7F3",
+    "backgroundColor": "#F8F5FC",
     "backgroundTextStyle": "dark"
   },
   "style": "v2",

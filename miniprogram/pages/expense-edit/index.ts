@@ -20,6 +20,7 @@ import {
 import { formatTimestamp, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
+import { applyTheme, themeData } from '../../services/theme';
 
 /** 付款人承担的百分比：只接受范围内的整数，否则返回 null。 */
 function parseRatio(text: string): number | null {
@@ -31,6 +32,7 @@ function parseRatio(text: string): number | null {
 
 Page({
   data: {
+    ...themeData(),
     limits: LENGTHS,
     id: '',
     isSettlement: false,
@@ -55,6 +57,9 @@ Page({
     ratioHint: '',
     busy: false,
     error: '',
+  },
+  onShow() {
+    applyTheme(this);
   },
   async onLoad(options: Record<string, string | undefined>) {
     let household: Household | null = null;

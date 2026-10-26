@@ -3,9 +3,11 @@ import { errorMessage } from '../../services/cloud';
 import { todayKey } from '../../utils/date';
 import { confirmAction } from '../../utils/confirm';
 import { LENGTHS } from '../../config/options';
+import { applyTheme, themeData } from '../../services/theme';
 
 Page({
   data: {
+    ...themeData(),
     limits: LENGTHS,
     id: '',
     title: '',
@@ -13,6 +15,9 @@ Page({
     yearly: true,
     busy: false,
     error: '',
+  },
+  onShow() {
+    applyTheme(this);
   },
   async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) return;

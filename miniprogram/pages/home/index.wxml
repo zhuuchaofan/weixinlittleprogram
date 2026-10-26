@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{loading && !household}}" class="status">正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
@@ -55,22 +56,22 @@
 
     <view class="grid">
       <view class="grid-cell" data-page="lists" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-accent"><image class="tile-icon" src="/images/home-lists.png" /></view>
+        <view class="tile tile-accent"><image class="tile-icon" src="/images/themes/{{themeId}}/home-lists.png" /></view>
         <view class="grid-title">清单</view>
         <view class="small muted">{{todoText || '待办和购物'}}</view>
       </view>
       <view class="grid-cell" data-page="food" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-orange"><image class="tile-icon" src="/images/home-food.png" /></view>
+        <view class="tile tile-orange"><image class="tile-icon" src="/images/themes/{{themeId}}/home-food.png" /></view>
         <view class="grid-title">吃啥</view>
         <view class="small muted">抽一个今天吃的</view>
       </view>
       <view class="grid-cell" data-page="weekend" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-blue"><image class="tile-icon" src="/images/home-weekend.png" /></view>
+        <view class="tile tile-blue"><image class="tile-icon" src="/images/themes/{{themeId}}/home-weekend.png" /></view>
         <view class="grid-title">想去</view>
         <view class="small muted">想去的地方和想做的事</view>
       </view>
       <view class="grid-cell" data-page="memory" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-pink"><image class="tile-icon" src="/images/home-memory.png" /></view>
+        <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-memory.png" /></view>
         <view class="grid-title">纪念日</view>
         <view class="small muted">倒数和已经多少天</view>
       </view>

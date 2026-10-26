@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{loading && !household}}" class="status">正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
@@ -30,7 +31,7 @@
 
     <view wx:if="{{household.archive === 'wedding-2026'}}" class="list archive">
       <navigator class="list-row" url="/pages/archive/index" hover-class="list-row-active">
-        <view class="tile tile-accent"><image class="tile-icon" src="/images/ui/gift.svg" /></view>
+        <view class="tile tile-accent"><image class="tile-icon" src="/images/themes/{{themeId}}/gift.svg" /></view>
         <view class="row-main"><view class="row-title">答谢宴的祝福</view><view class="row-sub">2026.09.28 亲友留下的话</view></view>
         <text class="chevron">›</text>
       </navigator>

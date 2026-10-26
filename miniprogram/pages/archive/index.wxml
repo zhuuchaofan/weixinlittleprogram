@@ -1,3 +1,4 @@
+<page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view class="kicker">答谢宴 / 2026.09.28</view>
   <view class="title">登记与祝福</view>

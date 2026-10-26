@@ -10,6 +10,7 @@ import { errorMessage } from '../../services/cloud';
 import { CATEGORIES, FLOWS, LENGTHS } from '../../config/options';
 import { shortDate, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
+import { applyTheme, themeData } from '../../services/theme';
 
 // 一次同时识别几张：太多容易超时，太少等得久。
 const PARALLEL = 3;
@@ -102,6 +103,7 @@ function arrange(rows: Row[]): Row[] {
 
 Page({
   data: {
+    ...themeData(),
     phase: 'reading' as 'reading' | 'review' | 'empty',
     progressText: '',
     tip: TIPS[0],
@@ -115,6 +117,9 @@ Page({
     today: todayKey(),
     busy: false,
     error: '',
+  },
+  onShow() {
+    applyTheme(this);
   },
   onLoad() {
     const paths = takePendingImages();

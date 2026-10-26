@@ -3,6 +3,7 @@ import { peekHousehold, requireHousehold } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { dateService } from '../../services/collections';
 import { markLoaded, needsReload } from '../../services/snapshot';
+import { applyTheme, themeData } from '../../services/theme';
 
 type Row = Anniversary & { dateText: string; yearText: string };
 
@@ -22,6 +23,7 @@ function toRow(item: Anniversary): Row {
 
 Page({
   data: {
+    ...themeData(),
     loading: true,
     error: '',
     household: null as Household | null,
@@ -31,6 +33,7 @@ Page({
     datesError: '',
   },
   onShow() {
+    applyTheme(this);
     if (!this.data.household) {
       const household = peekHousehold();
       const dates = dateService.peek();
