@@ -58,8 +58,13 @@ type Row = Expense & {
   tint: string;
 };
 
+/** 明细一次显示的笔数；滑到底再显示下一批。整月账目仍一次读完（汇总要用），只是分批渲染。 */
+const BATCH = 30;
+
 let loadVersion = 0;
 let household: Household | null = null;
+/** 当月全部明细；records 里只放已经显示的前若干笔。 */
+let allRows: Row[] = [];
 
 Page({
   data: {
@@ -72,6 +77,8 @@ Page({
     busy: false,
     error: '',
     records: [] as Row[],
+    total: 0,
+    hasMore: false,
     summary: null as LedgerSummary | null,
     summaryText: { total: '', a: '', b: '', suggestion: '' },
     shareA: 50,
@@ -125,6 +132,33 @@ Page({
           byCategory: summary.byCategory,
         }
       : summary.spending;
+    allRows = records.map((record): Row => ({
+      ...record,
+      icon: categoryLook(record.cat).icon,
+      tint: categoryLook(record.cat).tint,
+      amountText: (record.flow === 'in' ? '+' : '') + formatYuan(record.amount),
+      isIncome: record.flow === 'in',
+      sourceText: record.src ? billAppLabel(record.src.app) + '导入' : '',
+      dateText: shortDate(record.date),
+      payerName: names[record.payer],
+      splitText:
+        record.cat === SETTLEMENT
+          ? '结算'
+          : record.flow === 'in'
+            ? '收入'
+            : !splitting
+              ? ''
+              : record.split === 'ratio' && record.ratio !== undefined
+                ? `按比例 ${record.ratio}:${100 - record.ratio}`
+                : splitLabel(record.split),
+      isSettlement: record.cat === SETTLEMENT,
+      byText: household ? byPartner(record.byRole, household, '记') : '',
+      // 只提示对方改过的，自己改自己的不用提醒。
+      editedText:
+        household && record.editedByRole
+          ? byPartner(record.editedByRole, household, '改过')
+          : '',
+    }));
     this.setData({
       names,
       summary,
@@ -143,35 +177,19 @@ Page({
           ? `${names[summary.suggestion.from]} 应付给 ${names[summary.suggestion.to]} ${formatYuan(summary.suggestion.amount)}`
           : '本月已结清',
       },
-      records: records.map((record) => ({
-        ...record,
-        icon: categoryLook(record.cat).icon,
-        tint: categoryLook(record.cat).tint,
-        amountText:
-          (record.flow === 'in' ? '+' : '') + formatYuan(record.amount),
-        isIncome: record.flow === 'in',
-        sourceText: record.src ? billAppLabel(record.src.app) + '导入' : '',
-        dateText: shortDate(record.date),
-        payerName: names[record.payer],
-        splitText:
-          record.cat === SETTLEMENT
-            ? '结算'
-            : record.flow === 'in'
-              ? '收入'
-              : !splitting
-                ? ''
-                : record.split === 'ratio' && record.ratio !== undefined
-                  ? `按比例 ${record.ratio}:${100 - record.ratio}`
-                  : splitLabel(record.split),
-        isSettlement: record.cat === SETTLEMENT,
-        byText: household ? byPartner(record.byRole, household, '记') : '',
-        // 只提示对方改过的，自己改自己的不用提醒。
-        editedText:
-          household && record.editedByRole
-            ? byPartner(record.editedByRole, household, '改过')
-            : '',
-      })),
+      total: allRows.length,
     });
+    // 重新读取（如改完一笔返回）时保持已经显示的笔数，不跳回顶部那一批。
+    this.showRows(Math.max(BATCH, this.data.records.length));
+  },
+  showRows(count: number) {
+    this.setData({
+      records: allRows.slice(0, count),
+      hasMore: allRows.length > count,
+    });
+  },
+  onReachBottom() {
+    if (this.data.hasMore) this.showRows(this.data.records.length + BATCH);
   },
   changeMonth(event: WechatMiniprogram.TouchEvent) {
     const delta = Number(event.currentTarget.dataset.delta);
@@ -182,9 +200,12 @@ Page({
       monthText: monthLabel(month),
       isCurrentMonth: month === todayKey().slice(0, 7),
       records: [],
+      total: 0,
+      hasMore: false,
       summary: null,
       categories: [],
     });
+    allRows = [];
     void this.load();
   },
   add() {
