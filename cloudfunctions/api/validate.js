@@ -109,10 +109,20 @@ function todo(payload) {
   };
 }
 
+/** 可不填的日期：空字符串表示没有。 */
+function optionalDate(value) {
+  if (value === undefined || value === null || value === '') return '';
+  if (!isDate(value)) throw new ApiError('VALIDATION', '请选择有效的日期。');
+  return value;
+}
+
 const DISH_TAGS = CONTRACT.dishTags;
 const DISH_KINDS = CONTRACT.dishKinds;
 
-/** 菜单里的一条：菜品（dish）或店家（shop）；没有 kind 的旧记录当作菜品。店家没有「在家做」。 */
+/**
+ * 菜单里的一条：菜品（dish）或店家（shop）；没有 kind 的旧记录当作菜品。店家没有「在家做」。
+ * 界面已不再区分菜品和店家，新记录都是 dish。ateOn：最近一次「就吃这个」的日期。
+ */
 function dish(payload) {
   const kind = oneOf(payload.kind ?? 'dish', DISH_KINDS, '请选择菜品或店家。');
   const shop = kind === 'shop';
@@ -128,10 +138,13 @@ function dish(payload) {
       shop ? CONTRACT.shopTags : DISH_TAGS,
       shop ? '店家请选择外食或外卖。' : '请选择在家做、外食或外卖。',
     ),
+    ateOn: optionalDate(payload.ateOn),
   };
 }
 
+/** 想去的一条。界面上只有「备注」一栏（存在 plan），why 是旧数据。 */
 function wish(payload) {
+  const done = payload?.done === true;
   return {
     title: text(payload?.title, {
       field: '地点或活动',
@@ -139,7 +152,10 @@ function wish(payload) {
       max: LENGTHS.wishTitle,
     }),
     why: text(payload.why, { field: '想去的理由', max: LENGTHS.wishWhy }),
-    plan: text(payload.plan, { field: '计划', max: LENGTHS.wishPlan }),
+    plan: text(payload.plan, { field: '备注', max: LENGTHS.wishPlan }),
+    done,
+    // 去过的日期；取消「去过了」时清空。
+    doneOn: done ? optionalDate(payload.doneOn) : '',
   };
 }
 

@@ -2,14 +2,18 @@ import { wishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { confirmAction } from '../../utils/confirm';
 import { LENGTHS } from '../../config/options';
+import { todayKey } from '../../utils/date';
 
 Page({
   data: {
     limits: LENGTHS,
     id: '',
     title: '',
-    why: '',
-    plan: '',
+    // 旧数据的「为什么想去」和「怎么安排」合在一起显示，保存时都存进 plan。
+    note: '',
+    done: false,
+    doneOn: '',
+    today: todayKey(),
     busy: false,
     error: '',
   },
@@ -25,8 +29,9 @@ Page({
     this.setData({
       id: wish.id,
       title: wish.title,
-      why: wish.why,
-      plan: wish.plan,
+      note: [wish.why, wish.plan].filter(Boolean).join('\n'),
+      done: wish.done === true,
+      doneOn: wish.doneOn || todayKey(),
     });
   },
   input(event: WechatMiniprogram.Input) {
@@ -34,12 +39,21 @@ Page({
       [String(event.currentTarget.dataset.field)]: event.detail.value,
     });
   },
+  toggleDone(event: WechatMiniprogram.SwitchChange) {
+    this.setData({ done: event.detail.value });
+  },
+  pickDate(event: WechatMiniprogram.PickerChange) {
+    this.setData({ doneOn: String(event.detail.value) });
+  },
   async save() {
     if (this.data.busy) return;
+    const { done } = this.data;
     const input = {
       title: this.data.title.trim(),
-      why: this.data.why.trim(),
-      plan: this.data.plan.trim(),
+      why: '',
+      plan: this.data.note.trim().slice(0, LENGTHS.wishPlan),
+      done,
+      doneOn: done ? this.data.doneOn : '',
     };
     if (!input.title) {
       this.setData({ error: '请写下想去的地方或想做的事。' });

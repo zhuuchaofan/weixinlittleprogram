@@ -1,23 +1,17 @@
-import type { DishKind, DishTag } from '../../models';
+import type { DishTag } from '../../models';
 import { dishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
-import {
-  DISH_KINDS,
-  DISH_TAGS,
-  LENGTHS,
-  tagsForKind,
-} from '../../config/options';
+import { DISH_TAG_OPTIONS, LENGTHS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 
 Page({
   data: {
     limits: LENGTHS,
     id: '',
-    kinds: DISH_KINDS,
-    tags: DISH_TAGS,
+    tags: DISH_TAG_OPTIONS,
     name: '',
-    kind: 'dish' as DishKind,
     tag: '在家做' as DishTag,
+    ateOn: '',
     busy: false,
     error: '',
   },
@@ -31,9 +25,8 @@ Page({
       this.setData({
         id: dish.id,
         name: dish.name,
-        kind: dish.kind,
         tag: dish.tag,
-        tags: tagsForKind(dish.kind),
+        ateOn: dish.ateOn || '',
       });
     } catch (error) {
       this.setData({ error: errorMessage(error) });
@@ -41,16 +34,6 @@ Page({
   },
   inputName(event: WechatMiniprogram.Input) {
     this.setData({ name: event.detail.value });
-  },
-  chooseKind(event: WechatMiniprogram.TouchEvent) {
-    const kind = event.currentTarget.dataset.value as DishKind;
-    const tags = tagsForKind(kind);
-    // 店家没有「在家做」，切过去时改成外食。
-    this.setData({
-      kind,
-      tags,
-      tag: tags.includes(this.data.tag) ? this.data.tag : tags[0],
-    });
   },
   chooseTag(event: WechatMiniprogram.TouchEvent) {
     this.setData({ tag: event.currentTarget.dataset.value as DishTag });
@@ -65,7 +48,8 @@ Page({
     try {
       await dishService.update(this.data.id, {
         name: this.data.name.trim(),
-        kind: this.data.kind,
+        // 界面不再区分菜品和店家，统一存成 dish（任何「怎么吃」都能选）。
+        kind: 'dish',
         tag: this.data.tag,
       });
       wx.navigateBack();

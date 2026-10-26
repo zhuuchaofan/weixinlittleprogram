@@ -1,6 +1,5 @@
-import type { Household, Todo, TodoKind, TodoWho } from '../../models';
+import type { Household, Todo, TodoKind } from '../../models';
 import {
-  byPartner,
   memberNames,
   peekHousehold,
   requireHousehold,
@@ -14,20 +13,18 @@ import {
 } from '../../services/todos';
 import { markLoaded, needsReload } from '../../services/snapshot';
 import { errorMessage } from '../../services/cloud';
-import { LENGTHS, TODO_KINDS } from '../../config/options';
+import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 
-type Row = Todo & { subText: string };
+type Row = Todo & { whoName: string };
 
 let loadVersion = 0;
 let household: Household | null = null;
 
+/** 默认「一起」不显示；指定了某个人才在行尾显示名字。 */
 function toRow(todo: Todo): Row {
-  if (!household) return { ...todo, subText: '' };
-  const names = memberNames(household);
-  const who = todo.who === 'both' ? '一起' : names[todo.who];
-  const by = byPartner(todo.byRole, household, '添加');
-  return { ...todo, subText: by ? `${who} · ${by}` : who };
+  if (!household || todo.who === 'both') return { ...todo, whoName: '' };
+  return { ...todo, whoName: memberNames(household)[todo.who] };
 }
 
 Page({
@@ -35,14 +32,15 @@ Page({
     limits: LENGTHS,
     kinds: TODO_KINDS,
     kind: 'shop' as TodoKind,
-    names: { a: '', b: '' },
     all: [] as Row[],
     open: [] as Row[],
     done: [] as Row[],
+    // 购物：买过的（去重、清单里已有的不再显示），点一下重新加入。
+    bought: [] as Row[],
+    showDone: false,
     // 正在保存勾选状态的条目；各条互不阻塞。
     pending: {} as Record<string, boolean>,
     text: '',
-    who: 'both' as TodoWho,
     loading: true,
     busy: false,
     error: '',
@@ -56,7 +54,7 @@ Page({
     const saved = peekTodos();
     household = peekHousehold();
     if (!saved || !household) return;
-    this.setData({ names: memberNames(household), all: saved.map(toRow) });
+    this.setData({ all: saved.map(toRow) });
     this.filter();
   },
   onPullDownRefresh() {
@@ -70,7 +68,7 @@ Page({
       if (!household) return;
       const todos = await listTodos();
       if (version !== loadVersion) return;
-      this.setData({ names: memberNames(household), all: todos.map(toRow) });
+      this.setData({ all: todos.map(toRow) });
       this.filter();
       markLoaded('todos');
     } catch (error) {
@@ -80,11 +78,18 @@ Page({
     }
   },
   filter() {
-    const items = this.data.all.filter((todo) => todo.kind === this.data.kind);
-    this.setData({
-      open: items.filter((todo) => !todo.done),
-      done: items.filter((todo) => todo.done),
+    const items = this.data.all.filter(
+      (todo) => todoTab(todo.kind) === this.data.kind,
+    );
+    const open = items.filter((todo) => !todo.done);
+    const done = items.filter((todo) => todo.done);
+    const seen = new Set(open.map((todo) => todo.text));
+    const bought = done.filter((todo) => {
+      if (seen.has(todo.text)) return false;
+      seen.add(todo.text);
+      return true;
     });
+    this.setData({ open, done, bought });
   },
   replace(id: string, row: Row | null) {
     this.setData({
@@ -98,8 +103,8 @@ Page({
     this.setData({ kind: event.currentTarget.dataset.value as TodoKind });
     this.filter();
   },
-  chooseWho(event: WechatMiniprogram.TouchEvent) {
-    this.setData({ who: event.currentTarget.dataset.value as TodoWho });
+  toggleDone() {
+    this.setData({ showDone: !this.data.showDone });
   },
   inputText(event: WechatMiniprogram.Input) {
     this.setData({ text: event.detail.value });
@@ -116,7 +121,7 @@ Page({
       const todo = await addTodo({
         text,
         kind: this.data.kind,
-        who: this.data.who,
+        who: 'both',
       });
       this.setData({ text: '', all: [toRow(todo), ...this.data.all] });
       this.filter();
@@ -150,23 +155,13 @@ Page({
       url: `/pages/todo-edit/index?id=${event.currentTarget.dataset.id}`,
     });
   },
-  async more() {
+  async clear() {
     const label = TODO_KINDS.find(
       (item) => item.value === this.data.kind,
     )?.label;
     const count = this.data.done.length;
-    try {
-      await wx.showActionSheet({
-        itemList: [`清除已完成的${label}（${count} 条）`],
-      });
-    } catch {
-      return; // 点了取消
-    }
-    if (!count) {
-      wx.showToast({ title: '没有已完成的条目', icon: 'none' });
-      return;
-    }
     if (
+      !count ||
       !(await confirmAction(
         `清除 ${count} 条已完成的${label}？`,
         '清除后无法恢复。',
@@ -175,10 +170,12 @@ Page({
       return;
     this.setData({ busy: true, error: '' });
     try {
-      await clearDone(this.data.kind);
+      // 待办里还混着旧的「家务」，一起清掉。
+      const kinds = [...new Set(this.data.done.map((todo) => todo.kind))];
+      for (const kind of kinds) await clearDone(kind);
       this.setData({
         all: this.data.all.filter(
-          (item) => !(item.kind === this.data.kind && item.done),
+          (item) => !(todoTab(item.kind) === this.data.kind && item.done),
         ),
       });
       this.filter();

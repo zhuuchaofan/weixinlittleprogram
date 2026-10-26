@@ -158,12 +158,18 @@ export interface DishInput {
   name: string;
   kind: DishKind;
   tag: DishTag;
+  /** 最近一次「就吃这个」，YYYY-MM-DD；没有时为空。 */
+  ateOn?: string;
 }
 
 export interface WishInput {
   title: string;
+  /** 旧版的「为什么想去」；现在只用 plan（界面上叫备注），编辑保存时合并进去。 */
   why: string;
   plan: string;
+  done?: boolean;
+  /** 去过的日期，YYYY-MM-DD；没去过为空。 */
+  doneOn?: string;
 }
 
 export interface AnniversaryInput {

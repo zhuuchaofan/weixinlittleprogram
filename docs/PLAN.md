@@ -10,9 +10,9 @@
 | --------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | households            | members[{openid, role, name}], memberCount, inviteCode, currency, splitting, archive | role 为 a（创建者）或 b，最多 2 人；currency 为 CNY；splitting 为「两人分摊与结算」开关，默认关；archive 为 `wedding-2026` 时可看答谢宴归档。旧记录里的 city 不再使用 |
 | expenses              | amount, note, cat, date, payer, split, ratio, flow, src, editedBy, editedAt          | amount 单位为分；split 为 half、self、other、ratio；ratio 为 0–100 的整数，只在 split 为 ratio 时有值；flow 为 out / in；src 为截图导入的原始字段                     |
-| todos                 | text, kind, who, done                                                                | kind 为 shop、todo、chore；who 为 a、b、both                                                                                                                          |
-| dishes                | name, kind, tag                                                                      | kind 为 dish（菜品）、shop（店家），没有 kind 的旧记录算菜品；tag 为 在家做、外食、外卖，店家没有在家做                                                               |
-| wishes                | title, why, plan                                                                     | 周末想去的地方                                                                                                                                                        |
+| todos                 | text, kind, who, done                                                                | kind 为 shop、todo、chore（界面只分购物和待办，chore 显示在待办里）；who 为 a、b、both                                                                                |
+| dishes                | name, kind, tag, ateOn                                                               | 界面不再区分菜品和店家，新记录 kind 都是 dish（旧的 shop 保留）；tag 为 在家做、外食（显示为出去吃）、外卖；ateOn 为最近一次「就吃这个」的日期                        |
+| wishes                | title, why, plan, done, doneOn                                                       | 想去的地方；界面只有一栏备注，存在 plan（why 是旧数据，编辑保存时并进 plan）；done 为去过了，doneOn 为去的日期                                                        |
 | dates                 | title, date, yearly                                                                  | 纪念日                                                                                                                                                                |
 | rsvps、guest_messages | —                                                                                    | 答谢宴旧数据，只读归档                                                                                                                                                |
 
@@ -48,19 +48,19 @@ ROADMAP 和提交记录里用这些编号。
 | M8  | 记账 | 导出 CSV                                         | 暂缓          |
 | M9  | 记账 | 多币种                                           | 不做          |
 | M10 | 记账 | 截图记账                                         | 第 1 期已完成 |
-| T1  | 清单 | 购物、待办、家务三类，指派，勾选                 | 已完成        |
+| T1  | 清单 | 购物、待办两类（家务并入待办），指派，勾选       | 已完成        |
 | T2  | 清单 | 编辑条目                                         | 已完成        |
 | T3  | 清单 | 重复任务，如每周倒垃圾                           | 待做          |
 | T4  | 清单 | 到期日与提醒                                     | 暂缓          |
 | T5  | 清单 | 家务轮换                                         | 待做          |
-| F1  | 吃啥 | 随机抽与菜单管理（菜品 / 店家）                  | 已完成        |
+| F1  | 吃啥 | 随机抽与菜单管理（按怎么吃分类）                 | 已完成        |
 | F2  | 吃啥 | 按当天情况 AI 推荐                               | 待定          |
-| F3  | 吃啥 | 记录吃过什么，抽签避开最近 3 天                  | 待做          |
+| F3  | 吃啥 | 记录吃过什么，抽签避开最近 3 天                  | 已完成        |
 | F4  | 吃啥 | 两人各有一次否决权                               | 待做          |
 | F5  | 吃啥 | 菜谱链接与备注                                   | 待做          |
 | W1  | 周末 | 收藏想去的地方                                   | 已完成        |
-| W2  | 周末 | 去过了转入回忆                                   | 待做          |
-| W3  | 周末 | 收藏项加链接和备注                               | 待做          |
+| W2  | 想去 | 去过了（记下日期），之后接入回忆                 | 已完成        |
+| W3  | 想去 | 收藏项加链接（备注已合成一栏）                   | 待做          |
 | W4  | 周末 | 两人各投一票选定                                 | 待做          |
 | D1  | 纪念 | 纪念日倒数、每年重复                             | 已完成        |
 | D2  | 纪念 | 回忆时间线                                       | 待做          |

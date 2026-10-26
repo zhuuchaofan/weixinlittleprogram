@@ -3,18 +3,23 @@
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
   <block wx:if="{{household}}">
-    <view class="section-head first">
-      <view class="section-title">纪念日</view>
-      <button class="primary btn-inline" bindtap="addDate">添加</button>
-    </view>
     <view wx:if="{{datesError}}" class="notice error">{{datesError}}<button class="text-button" bindtap="loadDates">重试</button></view>
-    <view wx:if="{{!dates.length && !datesError}}" class="empty">还没有纪念日。结婚纪念日、生日，都可以记在这里。</view>
-    <view wx:elif="{{dates.length}}" class="list">
+
+    <view wx:if="{{next}}" class="hero" data-id="{{next.id}}" bindtap="openDate" aria-role="button">
+      <view class="hero-label">{{next.title}}{{next.yearText ? ' · ' + next.yearText : ''}}</view>
+      <view wx:if="{{next.days === 0}}" class="hero-days">就是今天</view>
+      <view wx:else class="hero-days">还有 {{next.days}} 天</view>
+      <view class="hero-date">{{next.dateText}}</view>
+    </view>
+
+    <button class="primary add" bindtap="addDate"><text class="plus">+</text>添加纪念日</button>
+
+    <view wx:if="{{!dates.length && !next && !datesError}}" class="empty list-gap">还没有纪念日。结婚纪念日、生日，都可以记在这里。</view>
+    <view wx:elif="{{dates.length}}" class="list list-gap">
       <view wx:for="{{dates}}" wx:key="id" class="list-row {{item.passed ? 'date-passed' : ''}}" data-id="{{item.id}}" bindtap="openDate" hover-class="list-row-active">
-        <view class="tile tile-pink"><image class="tile-icon" src="/images/ui/calendar.svg" /></view>
         <view class="row-main">
           <view class="row-title">{{item.title}}</view>
-          <view class="row-sub">{{item.dateText}}{{item.yearly ? ' · 每年' : ''}}{{item.yearly && item.years > 0 ? ' · 第 ' + item.years + ' 年' : ''}}</view>
+          <view class="row-sub">{{item.dateText}}{{item.yearText ? ' · ' + item.yearText : ''}}</view>
         </view>
         <view class="row-trail date-days {{item.days === 0 && !item.passed ? 'date-today' : ''}}">
           <block wx:if="{{item.days === 0 && !item.passed}}">就是今天</block>
@@ -23,19 +28,13 @@
       </view>
     </view>
 
-    <view class="section">
-      <view class="section-head"><view class="section-title">回忆</view></view>
-      <view wx:if="{{household.archive === 'wedding-2026'}}" class="list">
-        <navigator class="list-row" url="/pages/archive/index" hover-class="list-row-active">
-          <view class="tile tile-accent"><image class="tile-icon" src="/images/ui/gift.svg" /></view>
-          <view class="row-main"><view class="row-title">答谢宴 · 登记与祝福</view><view class="row-sub">2026.09.28 亲友留下的话</view></view>
-          <text class="chevron">›</text>
-        </navigator>
-      </view>
-      <view wx:if="{{household.archive === 'wedding-2026'}}" class="small muted later">回忆时间线，之后开放。</view>
-      <view wx:else class="empty">回忆时间线，之后开放。</view>
+    <view wx:if="{{household.archive === 'wedding-2026'}}" class="list archive">
+      <navigator class="list-row" url="/pages/archive/index" hover-class="list-row-active">
+        <view class="tile tile-accent"><image class="tile-icon" src="/images/ui/gift.svg" /></view>
+        <view class="row-main"><view class="row-title">答谢宴的祝福</view><view class="row-sub">2026.09.28 亲友留下的话</view></view>
+        <text class="chevron">›</text>
+      </navigator>
     </view>
-
   </block>
   <view class="page-end"></view>
 </view>

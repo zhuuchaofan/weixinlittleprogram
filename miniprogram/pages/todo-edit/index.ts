@@ -2,7 +2,7 @@ import type { TodoKind, TodoWho } from '../../models';
 import { getHousehold, memberNames } from '../../services/household';
 import { getTodo, removeTodo, updateTodo } from '../../services/todos';
 import { errorMessage } from '../../services/cloud';
-import { LENGTHS, TODO_KINDS } from '../../config/options';
+import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 
 Page({
@@ -27,7 +27,7 @@ Page({
       this.setData({
         id: todo.id,
         text: todo.text,
-        kind: todo.kind,
+        kind: todoTab(todo.kind),
         who: todo.who,
       });
       const household = await getHousehold();
