@@ -141,10 +141,7 @@ test('A 修改称呼后 B 能读到；非成员不能修改', async () => {
     'VALIDATION',
   );
   assert.equal((await call('A', 'household.update', {})).code, 'VALIDATION');
-  assert.equal(
-    (await call('A', 'household.update', { name: '凡' })).ok,
-    true,
-  );
+  assert.equal((await call('A', 'household.update', { name: '凡' })).ok, true);
   const seenByB = await call('B', 'household.get');
   assert.equal(seenByB.data.members[0].name, '凡');
   assert.equal(seenByB.data.members[1].name, '佳益');

@@ -40,9 +40,7 @@ Page({
     if (this.data.busy) return;
     this.setData({ busy: true, error: '', message: '' });
     try {
-      this.show(
-        await updateHousehold({ name: this.data.myName.trim() }),
-      );
+      this.show(await updateHousehold({ name: this.data.myName.trim() }));
       this.setData({ message: '已保存。' });
     } catch (error) {
       this.setData({ error: errorMessage(error) });
