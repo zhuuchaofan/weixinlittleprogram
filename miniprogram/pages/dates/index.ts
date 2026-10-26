@@ -16,7 +16,7 @@ function toRow(item: Anniversary): Row {
     yearText: !item.yearly
       ? ''
       : item.years > 0
-        ? `第 ${item.years} 年`
+        ? `${item.years} 周年`
         : '每年',
   };
 }
