@@ -43,6 +43,24 @@ function createHouseholdRepository(db) {
     async update(id, fields) {
       await collection.where({ _id: id }).update(fields);
     },
+    async takeBillQuota(id, day, limit) {
+      // 条件更新保证两人同时识别也不会超出当天上限。换日后先把计数重置为 1。
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const today = await collection
+          .where({
+            _id: id,
+            'billQuota.day': day,
+            'billQuota.count': _.lt(limit),
+          })
+          .update({ 'billQuota.count': _.inc(1) });
+        if (today.updated === 1) return true;
+        const fresh = await collection
+          .where({ _id: id, 'billQuota.day': _.neq(day) })
+          .update({ billQuota: _.set({ day, count: 1 }) });
+        if (fresh.updated === 1) return true;
+      }
+      return false;
+    },
   };
 }
 

@@ -1,8 +1,8 @@
-import type { AiFoodItem, Dish, DishKind, DishTag } from '../../models';
+import type { Dish, DishKind, DishTag } from '../../models';
 import { requireHousehold } from '../../services/household';
 import { dishService } from '../../services/collections';
-import { aiAvailable, aiSuggest } from '../../services/ai';
 import { errorMessage } from '../../services/cloud';
+import { markLoaded, needsReload } from '../../services/snapshot';
 import {
   DISH_KINDS,
   LENGTHS,
@@ -31,20 +31,25 @@ Page({
     kind: 'dish' as DishKind,
     tags: tagsForKind('dish'),
     tag: '在家做' as DishTag,
-    city: '',
-    aiEnabled: false,
-    aiText: '',
-    aiItems: [] as AiFoodItem[],
-    aiBusy: false,
     loading: true,
     busy: false,
     error: '',
   },
-  onLoad() {
-    void aiAvailable('food').then((aiEnabled) => this.setData({ aiEnabled }));
-  },
   onShow() {
-    void this.load();
+    if (!this.data.dishes.length) {
+      const saved = dishService.peek();
+      if (saved) this.showDishes(saved);
+    }
+    if (needsReload('dishes')) void this.load();
+  },
+  showDishes(dishes: Dish[]) {
+    this.setData({
+      dishes: dishes.map((dish): Row => ({
+        ...dish,
+        kindText: kindLabel(dish.kind),
+      })),
+    });
+    this.applyFilter();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -55,13 +60,10 @@ Page({
     try {
       const household = await requireHousehold(force === true);
       if (!household) return;
-      const dishes = (await dishService.list()).map((dish): Row => ({
-        ...dish,
-        kindText: kindLabel(dish.kind),
-      }));
+      const dishes = await dishService.list();
       if (version !== loadVersion) return;
-      this.setData({ dishes, city: household.city });
-      this.applyFilter();
+      this.showDishes(dishes);
+      markLoaded('dishes');
     } catch (error) {
       if (version === loadVersion) this.setData({ error: errorMessage(error) });
     } finally {
@@ -146,13 +148,10 @@ Page({
       });
       return;
     }
-    await this.save(name, this.data.tag, this.data.kind);
-    this.setData({ name: '' });
-  },
-  async save(name: string, tag: DishTag, kind: DishKind = 'dish') {
     this.setData({ busy: true, error: '' });
     try {
-      await dishService.add({ name, kind, tag });
+      await dishService.add({ name, kind: this.data.kind, tag: this.data.tag });
+      this.setData({ name: '' });
       await this.load();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
@@ -164,29 +163,5 @@ Page({
     wx.navigateTo({
       url: `/pages/dish-edit/index?id=${event.currentTarget.dataset.id}`,
     });
-  },
-  inputAi(event: WechatMiniprogram.Input) {
-    this.setData({ aiText: event.detail.value });
-  },
-  async askAi() {
-    if (this.data.aiBusy) return;
-    this.setData({ aiBusy: true, error: '', aiItems: [] });
-    try {
-      const result = await aiSuggest<AiFoodItem>('food', {
-        text: this.data.aiText.trim(),
-        city: this.data.city,
-        dishes: this.data.dishes.map((dish) => dish.name),
-      });
-      if (result.disabled) this.setData({ aiEnabled: false });
-      else this.setData({ aiItems: result.items });
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ aiBusy: false });
-    }
-  },
-  async keepAi(event: WechatMiniprogram.TouchEvent) {
-    const item = this.data.aiItems[Number(event.currentTarget.dataset.index)];
-    if (item && !this.data.busy) await this.save(item.name, item.tag);
   },
 });

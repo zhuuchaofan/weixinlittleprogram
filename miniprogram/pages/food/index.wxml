@@ -23,20 +23,6 @@
 
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
 
-  <view wx:if="{{aiEnabled}}" class="section">
-    <view class="section-head"><view class="section-title">让 AI 推荐</view></view>
-    <view class="card">
-      <input value="{{aiText}}" maxlength="60" placeholder="例如：今天很冷，想吃清淡的" bindinput="inputAi" />
-      <button class="secondary ai-button" bindtap="askAi" loading="{{aiBusy}}" disabled="{{aiBusy}}">让 AI 推荐</button>
-    </view>
-    <view wx:if="{{aiItems.length}}" class="list list-gap">
-      <view wx:for="{{aiItems}}" wx:key="name" class="list-row">
-        <view class="row-main"><view class="row-title">{{item.name}}</view><view class="row-sub">{{item.tag}} · {{item.why}}</view></view>
-        <button class="text-button" data-index="{{index}}" bindtap="keepAi">加入菜单</button>
-      </view>
-    </view>
-  </view>
-
   <view class="section">
     <view class="section-head">
       <view class="section-title">菜单</view>

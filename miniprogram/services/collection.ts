@@ -1,8 +1,9 @@
 import { callApi } from './cloud';
+import { readSnapshot, saveSnapshot } from './snapshot';
 
 /**
  * 云函数 `${prefix}.list/get/add/update/remove` 的通用封装。
- * 最近一次列表按 id 缓存，编辑页先取缓存，没有时再向云端取。
+ * 最近一次列表按 id 缓存，编辑页先取缓存，没有时再向云端取；列表另存一份本机快照。
  */
 export function createCollectionService<
   T extends { id: string },
@@ -14,7 +15,12 @@ export function createCollectionService<
       const items = await callApi<T[]>(`${prefix}.list`);
       recent.clear();
       for (const item of items) recent.set(item.id, item);
+      saveSnapshot(prefix, items);
       return items;
+    },
+    /** 上次读到的列表（存在本机），没有时返回 undefined。 */
+    peek(): T[] | undefined {
+      return readSnapshot<T[]>(prefix);
     },
     async get(id: string): Promise<T> {
       const hit = recent.get(id);

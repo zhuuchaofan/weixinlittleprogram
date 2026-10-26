@@ -4,7 +4,6 @@ artifacts
 project.config.json
 project.private.config.json
 miniprogram/config/local.ts
-docs/legacy-wedding
 *.wxml
 *.wxss
 Claude outputs

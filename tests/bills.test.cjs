@@ -5,8 +5,8 @@ const {
   parseAmount,
   parseBillDate,
   parseReply,
-  similar,
-} = require('../cloudfunctions/api/bills');
+} = require('../cloudfunctions/api/bill-parse');
+const { similar } = require('../cloudfunctions/api/bill-match');
 const { createVision } = require('../cloudfunctions/api/vision');
 
 // 2026-10-25（周日）12:00 UTC+8
@@ -45,6 +45,13 @@ function memoryHouseholds() {
     },
     async update(id, fields) {
       docs.set(id, { ...docs.get(id), ...fields });
+    },
+    async takeBillQuota(id, day, limit) {
+      const d = docs.get(id);
+      const used = d.billQuota?.day === day ? d.billQuota.count : 0;
+      if (used >= limit) return false;
+      docs.set(id, { ...d, billQuota: { day, count: used + 1 } });
+      return true;
     },
   };
 }
@@ -140,7 +147,10 @@ const WECHAT = JSON.stringify({
   ],
 });
 
-async function setup(replies = { 'https://img/1': WECHAT }) {
+async function setup(
+  replies = { 'https://img/1': WECHAT },
+  clock = { now: NOW },
+) {
   const expenses = memoryExpenses();
   const vision = fakeVision(replies);
   const route = createRouter({
@@ -148,7 +158,7 @@ async function setup(replies = { 'https://img/1': WECHAT }) {
     archive: {},
     expenses,
     vision,
-    now: () => NOW,
+    now: () => clock.now,
   });
   const call = (openid, action, payload) => route({ action, payload }, openid);
   const created = await call('A', 'household.create', { name: '超凡' });
@@ -272,6 +282,30 @@ test('识别截图：需要模型配置，只有小家成员能用', async () =>
   );
   assert.equal(result.code, 'UNAVAILABLE');
   assert.match(result.message, /DASHSCOPE_API_KEY/);
+});
+
+test('识别截图：每个小家每天最多 20 张，两人合计，第二天重新计数', async () => {
+  const clock = { now: NOW };
+  const { call, vision } = await setup(undefined, clock);
+  for (let i = 0; i < 20; i++) {
+    const who = i % 2 ? 'B' : 'A';
+    const result = await call(who, 'bill.parse', { url: 'https://img/1' });
+    assert.equal(result.ok, true, result.message);
+  }
+  const over = await call('B', 'bill.parse', { url: 'https://img/1' });
+  assert.equal(over.code, 'LIMIT');
+  assert.match(over.message, /20 张/);
+  assert.equal(vision.calls.length, 20);
+  // 别的小家不受影响
+  assert.equal(
+    (await call('X', 'bill.parse', { url: 'https://img/1' })).ok,
+    true,
+  );
+  clock.now += 24 * 60 * 60 * 1000;
+  assert.equal(
+    (await call('A', 'bill.parse', { url: 'https://img/1' })).ok,
+    true,
+  );
 });
 
 test('查重：已导入过、很可能、可能重复、两人之间的转账，一条已有账目只对上一笔', async () => {

@@ -1,12 +1,18 @@
 import type { Todo, TodoInput, TodoKind } from '../models';
 import { callApi } from './cloud';
+import { readSnapshot, saveSnapshot } from './snapshot';
 
 const recent = new Map<string, Todo>();
 
 export async function listTodos(): Promise<Todo[]> {
   const todos = await callApi<Todo[]>('todo.list');
   for (const todo of todos) recent.set(todo.id, todo);
+  saveSnapshot('todos', todos);
   return todos;
+}
+
+export function peekTodos(): Todo[] | undefined {
+  return readSnapshot<Todo[]>('todos');
 }
 
 /** 先取列表缓存，没有时（如跨页跳转进入）再向云端取。 */

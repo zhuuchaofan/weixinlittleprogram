@@ -2,9 +2,11 @@ import type { Expense, Household, LedgerSummary } from '../../models';
 import {
   byPartner,
   memberNames,
+  peekHousehold,
   requireHousehold,
 } from '../../services/household';
-import { listMonth, settleMonth } from '../../services/ledger';
+import { listMonth, peekMonth, settleMonth } from '../../services/ledger';
+import { markLoaded, needsReload } from '../../services/snapshot';
 import { setPendingImages } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
 import {
@@ -71,7 +73,15 @@ Page({
     categories: [] as CategoryRow[],
   },
   onShow() {
-    void this.load();
+    if (!this.data.summary) this.showSnapshot();
+    if (needsReload(`ledger:${this.data.month}`)) void this.load();
+  },
+  /** 冷启动：先显示上次存在本机的本月账目，云端读完再替换。 */
+  showSnapshot() {
+    const saved = peekMonth(this.data.month);
+    household = peekHousehold();
+    if (saved && household)
+      this.show(memberNames(household), saved.records, saved.summary);
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -83,9 +93,11 @@ Page({
       household = await requireHousehold(force === true);
       if (!household) return;
       const names = memberNames(household);
-      const result = await listMonth(this.data.month);
+      const month = this.data.month;
+      const result = await listMonth(month);
       if (version !== loadVersion) return;
       this.show(names, result.records, result.summary);
+      markLoaded(`ledger:${month}`);
     } catch (error) {
       if (version === loadVersion) this.setData({ error: errorMessage(error) });
     } finally {

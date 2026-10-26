@@ -73,7 +73,6 @@ test('创建小家：默认东京、人民币，创建者为 a，记录 ts 与 b
   );
   const created = await call('A', 'household.create', { name: '超凡' });
   assert.equal(created.ok, true);
-  assert.equal(created.data.city, '东京');
   assert.equal(created.data.currency, 'CNY');
   assert.equal(created.data.myRole, 'a');
   assert.match(created.data.inviteCode, CODE_PATTERN);
@@ -129,25 +128,21 @@ test('加入小家：邀请码校验、最多 2 人、满员后邀请码失效',
   );
 });
 
-test('A 修改城市和称呼后 B 能读到；非成员不能修改', async () => {
+test('A 修改称呼后 B 能读到；非成员不能修改', async () => {
   const { call } = setup();
   const { data } = await call('A', 'household.create', { name: '超凡' });
   await call('B', 'household.join', { name: '佳益', code: data.inviteCode });
   assert.equal(
-    (await call('C', 'household.update', { city: '大阪' })).code,
+    (await call('C', 'household.update', { name: '凡' })).code,
     'NO_HOUSEHOLD',
   );
   assert.equal(
-    (await call('A', 'household.update', { city: ' ' })).code,
+    (await call('A', 'household.update', { name: ' ' })).code,
     'VALIDATION',
   );
   assert.equal((await call('A', 'household.update', {})).code, 'VALIDATION');
-  assert.equal(
-    (await call('A', 'household.update', { city: '大阪', name: '凡' })).ok,
-    true,
-  );
+  assert.equal((await call('A', 'household.update', { name: '凡' })).ok, true);
   const seenByB = await call('B', 'household.get');
-  assert.equal(seenByB.data.city, '大阪');
   assert.equal(seenByB.data.members[0].name, '凡');
   assert.equal(seenByB.data.members[1].name, '佳益');
 });

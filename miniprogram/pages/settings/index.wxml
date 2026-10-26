@@ -24,10 +24,6 @@
           <text class="field-label">我的称呼</text>
           <input value="{{myName}}" maxlength="12" bindinput="inputName" />
         </view>
-        <view class="field">
-          <text class="field-label">所在城市</text>
-          <input value="{{city}}" maxlength="20" bindinput="inputCity" />
-        </view>
         <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
       </view>
     </view>

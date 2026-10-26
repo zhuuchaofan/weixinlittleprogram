@@ -35,7 +35,8 @@ export const CONTRACT = {
   ],
   "billImport": {
     "maxImages": 9,
-    "maxItems": 100
+    "maxItems": 100,
+    "dailyImages": 20
   },
   "ratio": {
     "min": 0,
