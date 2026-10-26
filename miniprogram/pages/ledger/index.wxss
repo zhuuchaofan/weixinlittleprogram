@@ -18,7 +18,15 @@
 .categories { margin-top: 24rpx; padding: 28rpx 32rpx 16rpx; }
 .stack-bar { display: flex; gap: 4rpx; height: 16rpx; border-radius: 8rpx; overflow: hidden; margin-bottom: 8rpx; }
 .stack-seg { min-width: 4rpx; height: 100%; }
-.cat-row { display: flex; align-items: center; gap: 16rpx; min-height: 64rpx; }
+.cat-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16rpx; min-height: 64rpx; }
+/* 设了预算的分类：下面一行进度和「用了 N%」，80% 起变主色，超出变红 */
+.budget-line { width: 100%; display: flex; align-items: center; gap: 16rpx; padding: 0 0 12rpx 32rpx; color: var(--muted); }
+.budget-track { flex: 1; height: 8rpx; border-radius: 4rpx; background: var(--sunken); overflow: hidden; }
+.budget-bar { height: 100%; border-radius: 4rpx; background: var(--ok); }
+.budget-warn { color: var(--accent); }
+.budget-warn .budget-bar { background: var(--accent); }
+.budget-over { color: #a1302a; }
+.budget-over .budget-bar { background: #a1302a; }
 .cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
 .cat-name { flex: 1; min-width: 0; font-size: 28rpx; white-space: nowrap; }
 .cat-percent { width: 72rpx; flex-shrink: 0; text-align: right; }

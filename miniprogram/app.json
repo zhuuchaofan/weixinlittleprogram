@@ -5,6 +5,7 @@
     "pages/insight/index",
     "pages/goals/index",
     "pages/goal-edit/index",
+    "pages/budgets/index",
     "pages/lists/index",
     "pages/food/index",
     "pages/wishes/index",

@@ -16,6 +16,8 @@ export interface Household {
   archive: string;
   /** 两人分摊与结算；默认关闭，只记账。 */
   splitting: boolean;
+  /** 分类预算：{ 分类: 每月上限（分） }，没设的分类不在里面。 */
+  budgets: Record<string, number>;
   members: HouseholdMember[];
 }
 
@@ -62,6 +64,14 @@ export interface ExpenseInput {
   flow: Flow;
 }
 
+/** 记一笔 / 改一笔后这一类本月的预算用量；before 是保存前的用量。 */
+export interface BudgetUse {
+  cat: string;
+  limit: number;
+  used: number;
+  before: number;
+}
+
 export interface Expense extends ExpenseInput {
   id: string;
   ts: number;
@@ -71,6 +81,8 @@ export interface Expense extends ExpenseInput {
   /** 被修改过才有：最后一次修改的时间和人。 */
   editedAt?: number;
   editedByRole?: MemberRole | '';
+  /** 只在记一笔 / 改一笔的返回里有，且这一类设了预算。 */
+  budget?: BudgetUse;
 }
 
 export interface LedgerSummary {

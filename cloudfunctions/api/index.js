@@ -41,7 +41,14 @@ function createHouseholdRepository(db) {
       return result.updated === 1;
     },
     async update(id, fields) {
-      await collection.where({ _id: id }).update(fields);
+      // 对象字段（如 budgets）整体替换：直接传对象时云数据库会和旧值合并，删掉的分类会留着。
+      const changes = {};
+      for (const [key, value] of Object.entries(fields))
+        changes[key] =
+          value && typeof value === 'object' && !Array.isArray(value)
+            ? _.set(value)
+            : value;
+      await collection.where({ _id: id }).update(changes);
     },
     async takeQuota(id, field, day, limit) {
       // 每日次数（截图识别 billQuota、AI 小结 summaryQuota）。条件更新保证两人同时用也不会超出当天上限。换日后先把计数重置为 1。

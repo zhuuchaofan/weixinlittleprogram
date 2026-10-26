@@ -31,6 +31,10 @@
       <view class="cat-name">{{item.cat}}</view>
       <view class="cat-percent small muted">{{item.percent}}%</view>
       <view class="cat-amount">{{item.amountText}}</view>
+      <view wx:if="{{item.budget}}" class="budget-line budget-{{item.budget.tone}}">
+        <view class="budget-track"><view class="budget-bar" style="width: {{item.budget.percent}}%"></view></view>
+        <text class="small">{{item.budget.text}}</text>
+      </view>
     </view>
     <view class="insight-link" bindtap="openInsight" hover-class="insight-link-active" aria-role="button">和上月比、大额支出<text class="chevron">›</text></view>
   </view>

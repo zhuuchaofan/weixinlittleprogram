@@ -36,6 +36,10 @@
           <view class="row-main"><view>两人分摊与结算</view><view class="row-sub">关闭时只记账：不选怎么分，不算谁该给谁多少。两个人共用这个设置。</view></view>
           <switch checked="{{household.splitting}}" color="{{accent}}" bindchange="toggleSplitting" />
         </view>
+        <view class="list-row" bindtap="openBudgets" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view>分类预算</view><view class="row-sub">给某几类定每月上限，花到 80% 和超出时提醒。两个人共用。</view></view>
+          <text class="chevron">›</text>
+        </view>
       </view>
     </view>
 

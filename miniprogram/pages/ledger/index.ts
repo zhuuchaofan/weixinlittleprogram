@@ -19,6 +19,7 @@ import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
+import { budgetLine } from '../../utils/budget';
 
 type CategoryRow = {
   cat: string;
@@ -26,13 +27,19 @@ type CategoryRow = {
   percent: number;
   width: number;
   color: string;
+  budget: ReturnType<typeof budgetLine>;
 };
 
 /** 占比四舍五入到整数；条宽就是占比（占满整条是 100%），太小的类至少画 2% 以免看不见。 */
 function categoryRows(
   total: number,
   byCategory: LedgerSummary['byCategory'],
+  spending: LedgerSummary['byCategory'],
+  budgets: Record<string, number>,
 ): CategoryRow[] {
+  // 预算按所有支出算（同 summary.spending），开了两人分摊时也一样。
+  const spent = (cat: string) =>
+    spending.find((row) => row.cat === cat)?.amount || 0;
   return byCategory.map(({ cat, amount }) => {
     const percent = total ? Math.round((amount * 100) / total) : 0;
     return {
@@ -41,6 +48,7 @@ function categoryRows(
       percent,
       width: total ? Math.max(2, percent) : 0,
       color: categoryLook(cat).color,
+      budget: budgetLine(spent(cat), budgets[cat]),
     };
   });
 }
@@ -160,7 +168,12 @@ Page({
       names,
       summary,
       splitting,
-      categories: categoryRows(shown.total, shown.byCategory),
+      categories: categoryRows(
+        shown.total,
+        shown.byCategory,
+        summary.spending.byCategory,
+        household?.budgets || {},
+      ),
       // 总卡片里那条白色进度条：左边是 A 付的占比。
       shareA:
         shown.paid.a + shown.paid.b
