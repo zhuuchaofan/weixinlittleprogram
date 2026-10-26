@@ -1,10 +1,5 @@
 .composer { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; }
-.composer-input { flex: 1; min-width: 0; }
-.list-gap { margin-top: 24rpx; }
 .todo-row { padding: 0 20rpx 0 0; align-items: stretch; gap: 0; }
-.check { width: 96rpx; min-height: 104rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.box { width: 44rpx; height: 44rpx; border: 3rpx solid var(--ring); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24rpx; font-weight: 700; }
-.box-on { background: var(--accent-grad); border-color: transparent; }
 .todo-main { display: flex; align-items: center; gap: 16rpx; padding: 16rpx 0; }
 .todo-main .row-title { flex: 1; min-width: 0; }
 .todo-done { opacity: 0.7; }

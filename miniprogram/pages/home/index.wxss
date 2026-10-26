@@ -2,8 +2,7 @@
 .top-bar .icon-button { margin-right: -12rpx; }
 
 /* 两人都在：渐变大卡片，左边两人，右边下一个纪念日；点开进纪念 */
-.couple { position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; min-height: 220rpx; padding: 36rpx; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx var(--glow); }
-.couple::after { content: ''; position: absolute; right: -80rpx; top: -120rpx; width: 360rpx; height: 360rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
+.couple { display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; min-height: 220rpx; padding: 36rpx; }
 .couple-names { min-width: 0; }
 .couple-text { margin-top: 16rpx; font-size: 34rpx; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .avatars { display: flex; }

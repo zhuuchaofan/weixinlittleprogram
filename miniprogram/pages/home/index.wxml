@@ -25,7 +25,7 @@
       <view class="invite-code">{{household.inviteCode}}</view>
       <button class="primary" bindtap="copyCode">复制邀请码</button>
     </view>
-    <view wx:else class="couple" data-page="memory" bindtap="open" aria-role="button">
+    <view wx:else class="couple grad-card" data-page="memory" bindtap="open" aria-role="button">
       <view class="couple-names">
         <view class="avatars" aria-hidden="true">
           <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>

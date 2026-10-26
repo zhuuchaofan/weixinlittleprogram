@@ -8,7 +8,7 @@
 
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
-  <view class="hero">
+  <view class="hero grad-card">
     <view class="hero-label">{{monthText}} · {{splitting ? '共同支出' : '支出'}}</view>
     <view class="hero-total">{{summary ? summaryText.total : '—'}}</view>
     <view class="hero-track" aria-hidden="true"><view class="hero-share" style="width: {{shareA}}%"></view></view>
