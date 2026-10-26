@@ -1,5 +1,6 @@
 {
   "pages": [
+    "pages/home/index",
     "pages/ledger/index",
     "pages/lists/index",
     "pages/food/index",
@@ -21,44 +22,6 @@
     "navigationBarTextStyle": "black",
     "backgroundColor": "#FFF7F3",
     "backgroundTextStyle": "dark"
-  },
-  "tabBar": {
-    "color": "#A3948E",
-    "selectedColor": "#F2614F",
-    "backgroundColor": "#FFFFFF",
-    "borderStyle": "white",
-    "list": [
-      {
-        "pagePath": "pages/ledger/index",
-        "text": "记账",
-        "iconPath": "images/tab-ledger.png",
-        "selectedIconPath": "images/tab-ledger-on.png"
-      },
-      {
-        "pagePath": "pages/lists/index",
-        "text": "清单",
-        "iconPath": "images/tab-lists.png",
-        "selectedIconPath": "images/tab-lists-on.png"
-      },
-      {
-        "pagePath": "pages/food/index",
-        "text": "吃啥",
-        "iconPath": "images/tab-food.png",
-        "selectedIconPath": "images/tab-food-on.png"
-      },
-      {
-        "pagePath": "pages/weekend/index",
-        "text": "周末",
-        "iconPath": "images/tab-weekend.png",
-        "selectedIconPath": "images/tab-weekend-on.png"
-      },
-      {
-        "pagePath": "pages/memory/index",
-        "text": "纪念",
-        "iconPath": "images/tab-memory.png",
-        "selectedIconPath": "images/tab-memory-on.png"
-      }
-    ]
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",

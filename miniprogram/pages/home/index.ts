@@ -1,0 +1,96 @@
+import type { Anniversary, Household, LedgerMonth, Todo } from '../../models';
+import { peekHousehold, requireHousehold } from '../../services/household';
+import { listMonth, peekMonth } from '../../services/ledger';
+import { listTodos, peekTodos } from '../../services/todos';
+import { dateService } from '../../services/collections';
+import { pickBillScreenshots } from '../../services/bills';
+import { errorMessage } from '../../services/cloud';
+import { markLoaded, needsReload } from '../../services/snapshot';
+import { todayKey } from '../../utils/date';
+import { formatYuan } from '../../utils/money';
+
+/** 主页：一进来就是本月花了多少、下一个纪念日，各功能从这里点进去。 */
+Page({
+  data: {
+    loading: true,
+    error: '',
+    household: null as Household | null,
+    next: null as Anniversary | null,
+    monthText: `${Number(todayKey().slice(5, 7))}月`,
+    spentText: '',
+    countText: '',
+    todoText: '',
+  },
+  onShow() {
+    if (!this.data.household) this.showSnapshot();
+    // 还在等对方加入时每次都读，邀请码和成员才能及时更新。
+    if (needsReload('home') || this.data.household?.inviteCode)
+      void this.load();
+  },
+  /** 冷启动：先显示上次存在本机的内容，云端读完再替换。 */
+  showSnapshot() {
+    const household = peekHousehold();
+    if (!household) return;
+    this.setData({ household });
+    const month = peekMonth(todayKey().slice(0, 7));
+    if (month) this.showMonth(month);
+    const todos = peekTodos();
+    if (todos) this.showTodos(todos);
+    const dates = dateService.peek();
+    if (dates) this.showDates(dates);
+  },
+  onPullDownRefresh() {
+    void this.load(true).finally(() => wx.stopPullDownRefresh());
+  },
+  async load(force = false) {
+    this.setData({ loading: true, error: '' });
+    try {
+      const household = await requireHousehold(force === true);
+      if (!household) return;
+      this.setData({ household });
+      const [month, todos, dates] = await Promise.all([
+        listMonth(todayKey().slice(0, 7)),
+        listTodos(),
+        dateService.list(),
+      ]);
+      this.showMonth(month);
+      this.showTodos(todos);
+      this.showDates(dates);
+      markLoaded('home');
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+  showMonth({ records, summary }: LedgerMonth) {
+    // 和记账页一致：开了两人分摊看共同支出，没开看全部支出。
+    const splitting = this.data.household?.splitting === true;
+    const total = splitting ? summary.sharedTotal : summary.spending.total;
+    this.setData({
+      spentText: formatYuan(total),
+      countText: records.length ? `记了 ${records.length} 笔` : '还没有记账',
+    });
+  },
+  showTodos(todos: Todo[]) {
+    const open = todos.filter((todo) => !todo.done).length;
+    this.setData({ todoText: open ? `${open} 件没做完` : '都做完了' });
+  },
+  showDates(dates: Anniversary[]) {
+    // 云端已按「未过的在前、天数从近到远」排好，第一个就是下一个纪念日。
+    this.setData({ next: dates[0] && !dates[0].passed ? dates[0] : null });
+  },
+  open(event: WechatMiniprogram.TouchEvent) {
+    wx.navigateTo({ url: `/pages/${event.currentTarget.dataset.page}/index` });
+  },
+  addExpense() {
+    wx.navigateTo({ url: '/pages/expense-edit/index' });
+  },
+  importScreenshots() {
+    void pickBillScreenshots();
+  },
+  copyCode() {
+    const code = this.data.household?.inviteCode;
+    if (code) wx.setClipboardData({ data: code });
+  },
+});

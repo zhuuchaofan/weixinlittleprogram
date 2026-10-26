@@ -11,7 +11,6 @@ Page({
     error: '',
     household: null as Household | null,
     dates: [] as Array<Anniversary & { dateText: string }>,
-    next: null as Anniversary | null,
     datesError: '',
   },
   onShow() {
@@ -21,9 +20,7 @@ Page({
       if (household) this.setData({ household });
       if (dates) this.showDates(dates);
     }
-    // 还在等对方加入时每次都读，邀请码和成员才能及时更新。
-    if (needsReload('memory') || this.data.household?.inviteCode)
-      void this.load();
+    if (needsReload('memory')) void this.load();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -53,8 +50,6 @@ Page({
   },
   showDates(dates: Anniversary[]) {
     this.setData({
-      // 云端已按「未过的在前、天数从近到远」排好，第一个就是下一个纪念日。
-      next: dates[0] && !dates[0].passed ? dates[0] : null,
       dates: dates.map((item) => ({
         ...item,
         dateText: shortDate(item.nextDate),
@@ -68,12 +63,5 @@ Page({
     wx.navigateTo({
       url: `/pages/date-edit/index?id=${event.currentTarget.dataset.id}`,
     });
-  },
-  openSettings() {
-    wx.navigateTo({ url: '/pages/settings/index' });
-  },
-  copyCode() {
-    const code = this.data.household?.inviteCode;
-    if (code) wx.setClipboardData({ data: code });
   },
 });

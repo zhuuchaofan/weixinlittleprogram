@@ -1,11 +1,27 @@
 import type { BillItem } from '../models';
+import { BILL_IMPORT } from '../config/options';
 import { ApiError, callApi, initializeCloud } from './cloud';
 
-// 记账页选好的截图，导入页取走后清空。
+// 主页或记账页选好的截图，导入页取走后清空。
 let pending: string[] = [];
 
-export function setPendingImages(paths: string[]): void {
+/** 截图记账：从相册选微信 / 支付宝账单列表截图，到导入页识别和确认。 */
+export async function pickBillScreenshots(): Promise<void> {
+  let paths: string[];
+  try {
+    const result = await wx.chooseMedia({
+      count: BILL_IMPORT.maxImages,
+      mediaType: ['image'],
+      sourceType: ['album'],
+      sizeType: ['original'],
+    });
+    paths = result.tempFiles.map((file) => file.tempFilePath);
+  } catch {
+    return; // 取消选择
+  }
+  if (!paths.length) return;
   pending = paths;
+  wx.navigateTo({ url: '/pages/bill-import/index' });
 }
 
 export function takePendingImages(): string[] {
