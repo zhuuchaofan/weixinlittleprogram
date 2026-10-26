@@ -1,9 +1,11 @@
-import type { MonthInsight } from '../../models';
-import { getInsight } from '../../services/insight';
+import type { InsightSummary, MonthInsight } from '../../models';
+import { getInsight, writeSummary } from '../../services/insight';
+import { errorMessage } from '../../services/cloud';
 import { createLoader } from '../../services/page-load';
 import { categoryLook } from '../../config/options';
 import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
+import { formatTimestamp } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
 
 /** 和上月比：多了、少了、持平；上月没有时写「新增」。 */
@@ -25,10 +27,22 @@ function totalChange(total: number, prev: number): string {
   return `比上个月${diff > 0 ? '多' : '少'} ${formatYuan(Math.abs(diff))}（${percent}%）`;
 }
 
+function summaryView(summary: InsightSummary | null) {
+  return {
+    summaryText: summary?.text || '',
+    summaryNote: summary
+      ? summary.stale
+        ? '生成之后这个月的账有变动，可以重新生成'
+        : `${formatTimestamp(summary.ts)} 生成`
+      : '',
+  };
+}
+
 function view(insight: MonthInsight) {
   const top = Math.max(1, ...insight.byCategory.map((row) => row.amount));
   const peak = Math.max(1, ...insight.trend.map((row) => row.total));
   return {
+    ...summaryView(insight.summary),
     totalText: formatYuan(insight.total),
     changeText: totalChange(insight.total, insight.prevTotal),
     incomeText: insight.income ? formatYuan(insight.income) : '',
@@ -82,7 +96,10 @@ Page({
       byCategory: [],
       big: [],
       trend: [],
+      summary: null,
     }),
+    writing: false,
+    summaryError: '',
   },
   onLoad(query: Record<string, string | undefined>) {
     const month = /^\d{4}-\d{2}$/.test(query.month || '')
@@ -118,8 +135,20 @@ Page({
     const delta = Number(event.currentTarget.dataset.delta);
     if (delta > 0 && this.data.isCurrentMonth) return;
     this.setMonth(shiftMonth(this.data.month, delta));
-    this.setData({ ready: false });
+    this.setData({ ready: false, summaryText: '', summaryError: '' });
     void this.load();
+  },
+  async writeSummary() {
+    if (this.data.writing) return;
+    this.setData({ writing: true, summaryError: '' });
+    try {
+      const summary = await writeSummary(this.data.month);
+      this.setData(summaryView(summary));
+    } catch (error) {
+      this.setData({ summaryError: errorMessage(error) });
+    } finally {
+      this.setData({ writing: false });
+    }
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({

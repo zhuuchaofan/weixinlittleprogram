@@ -223,4 +223,13 @@ export interface MonthInsight {
   }>;
   /** 截至本月的近 6 个月，从早到晚。 */
   trend: Array<{ month: string; total: number }>;
+  /** AI 月度小结，还没生成时为 null。 */
+  summary: InsightSummary | null;
+}
+
+/** stale：生成之后这个月的账有变动，可以重新生成。 */
+export interface InsightSummary {
+  text: string;
+  ts: number;
+  stale: boolean;
 }

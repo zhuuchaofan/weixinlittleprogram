@@ -15,6 +15,21 @@
     <view wx:if="{{incomeText}}" class="hero-income">本月收入 {{incomeText}}（不算在支出里）</view>
   </view>
 
+  <view wx:if="{{ready && count}}" class="card ai">
+    <view class="ai-head">
+      <image class="ai-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" />
+      <view class="ai-title">喵喵小结</view>
+    </view>
+    <view wx:if="{{writing}}" class="ai-text muted">喵喵正在看账本…（十几秒）</view>
+    <view wx:elif="{{summaryText}}" class="ai-text">{{summaryText}}</view>
+    <view wx:else class="ai-text muted">让喵喵用几句话说说这个月钱花在哪、比上月有什么变化。只发汇总数字和大额单笔的备注，不发截图。</view>
+    <view wx:if="{{summaryError}}" class="ai-error small">{{summaryError}}</view>
+    <view class="ai-foot">
+      <text class="small muted">{{summaryNote}}</text>
+      <button class="ai-button" size="mini" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新生成' : '写小结'}}</button>
+    </view>
+  </view>
+
   <view wx:if="{{loading && !ready}}" class="status">正在读取…</view>
   <view wx:elif="{{ready && !categories.length}}" class="empty">这个月和上个月都还没有支出。</view>
 

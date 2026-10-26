@@ -76,9 +76,9 @@ function httpsPost(url, { headers, body, timeout }) {
 }
 
 /**
- * 视觉模型：read(imageUrl, prompt) 返回模型回复的文本。
+ * 千问模型：read(imageUrl, prompt) 读截图，write(prompt) 只发文字，都返回模型回复的文本。
  * Omni 系列只支持流式输出，所以一律用 stream 调用，读完整个回复再拼接。
- * 没有配置 DASHSCOPE_API_KEY 时返回 null，截图记账提示未开通。密钥只从环境变量读取。
+ * 没有配置 DASHSCOPE_API_KEY 时返回 null，截图记账和 AI 小结提示未开通。密钥只从环境变量读取。
  * post 可替换（测试用）：post(url, { headers, body, timeout }) → { status, text }。
  */
 function createVision(env = process.env, post = httpsPost) {
@@ -86,44 +86,48 @@ function createVision(env = process.env, post = httpsPost) {
   if (!apiKey) return null;
   const baseUrl = (env.BILL_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, '');
   const model = env.BILL_MODEL || DEFAULT_MODEL;
+  async function chat(content, temperature = 0) {
+    let response;
+    try {
+      response = await post(`${baseUrl}/chat/completions`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          temperature,
+          stream: true,
+          modalities: ['text'],
+          messages: [{ role: 'user', content }],
+        }),
+        timeout: TIMEOUT_MS,
+      });
+    } catch {
+      throw new ApiError(
+        'UNAVAILABLE',
+        '连不上识别服务（网络或超时），请稍后重试。',
+      );
+    }
+    // 不记录回复内容：里面是账单明细。
+    if (response.status !== 200)
+      throw failureFor(response.status, response.text);
+    const reply = joinStream(response.text);
+    if (!reply) throw failureFor(response.status, response.text);
+    return reply;
+  }
+
   return {
-    async read(imageUrl, prompt) {
-      let response;
-      try {
-        response = await post(`${baseUrl}/chat/completions`, {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model,
-            temperature: 0,
-            stream: true,
-            modalities: ['text'],
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  { type: 'image_url', image_url: { url: imageUrl } },
-                  { type: 'text', text: prompt },
-                ],
-              },
-            ],
-          }),
-          timeout: TIMEOUT_MS,
-        });
-      } catch {
-        throw new ApiError(
-          'UNAVAILABLE',
-          '连不上识别服务（网络或超时），请稍后重试。',
-        );
-      }
-      // 不记录回复内容：里面是账单明细。
-      if (response.status !== 200)
-        throw failureFor(response.status, response.text);
-      const content = joinStream(response.text);
-      if (!content) throw failureFor(response.status, response.text);
-      return content;
+    /** 读截图：图片加提示词。 */
+    read(imageUrl, prompt) {
+      return chat([
+        { type: 'image_url', image_url: { url: imageUrl } },
+        { type: 'text', text: prompt },
+      ]);
+    },
+    /** 只有文字（AI 月度小结）：发的是汇总，不含截图和明细。 */
+    write(prompt) {
+      return chat([{ type: 'text', text: prompt }], 0.3);
     },
   };
 }
