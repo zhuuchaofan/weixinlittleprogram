@@ -4,8 +4,8 @@
     "pages/ledger/index",
     "pages/lists/index",
     "pages/food/index",
-    "pages/weekend/index",
-    "pages/memory/index",
+    "pages/wishes/index",
+    "pages/dates/index",
     "pages/welcome/index",
     "pages/archive/index",
     "pages/expense-edit/index",
@@ -17,7 +17,7 @@
     "pages/settings/index"
   ],
   "window": {
-    "navigationBarTitleText": "小家",
+    "navigationBarTitleText": "喵喵记一笔",
     "navigationBarBackgroundColor": "#F8F5FC",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#F8F5FC",

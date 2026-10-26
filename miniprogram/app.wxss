@@ -56,6 +56,8 @@ view, button, input, textarea { box-sizing: border-box; }
 .row-sub { font-size: 24rpx; color: var(--muted); margin-top: 4rpx; }
 .row-trail { flex-shrink: 0; text-align: right; }
 .chevron { color: var(--muted); font-size: 40rpx; flex-shrink: 0; }
+/* 列表与上方内容的间距（清单、吃啥、想去、纪念日） */
+.list-gap { margin-top: 24rpx; }
 .list-label { font-size: 24rpx; color: var(--muted); margin: 32rpx 4rpx 12rpx; }
 
 /* 按钮：覆盖基础库默认的 184px 宽度与居中外边距 */
@@ -88,6 +90,18 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 .chip { min-height: 80rpx; padding: 0 28rpx; display: flex; align-items: center; justify-content: center; border: 1rpx solid var(--line); background: var(--surface); border-radius: 999rpx; font-size: 28rpx; white-space: nowrap; }
 .chip-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
 
+/* 顶部「写一条直接添加」的输入框（清单、吃啥、想去） */
+.composer-input { flex: 1; min-width: 0; }
+
+/* 列表行前面的勾选圈（清单、想去）：外层是点按区域 */
+.tick { width: 96rpx; min-height: 104rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tick-box { width: 44rpx; height: 44rpx; border: 3rpx solid var(--ring); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24rpx; font-weight: 700; }
+.tick-on { background: var(--accent-grad); border-color: transparent; }
+
+/* 渐变大卡片（主页两人、记账总额、吃啥抽签、纪念日最近一个）：右上角一个淡白圆 */
+.grad-card { position: relative; overflow: hidden; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx var(--glow); }
+.grad-card::after { content: ''; position: absolute; right: -80rpx; top: -120rpx; width: 360rpx; height: 360rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
+
 /* 状态 */
 .tag { display: inline-block; font-size: 22rpx; color: var(--accent); background: var(--accent-soft); padding: 4rpx 16rpx; border-radius: 999rpx; }
 .notice { background: var(--accent-soft); border-radius: var(--radius-sm); padding: 20rpx 24rpx; font-size: 26rpx; line-height: 1.6; margin: 24rpx 0; }
@@ -109,6 +123,6 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 .tile-orange { background: rgba(255, 138, 61, 0.12); }
 .tile-yellow { background: rgba(232, 163, 23, 0.14); }
 
-/* 两人头像：创建者暖橙，另一位蓝紫 */
+/* 两人头像：颜色跟主题走（config/themes.ts 的 avatarA / avatarB） */
 .avatar-a { background: var(--avatar-a); color: #fff; }
 .avatar-b { background: var(--avatar-b); color: #fff; }

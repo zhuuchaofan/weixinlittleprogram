@@ -6,7 +6,7 @@
   <block wx:if="{{household}}">
     <view wx:if="{{datesError}}" class="notice error">{{datesError}}<button class="text-button" bindtap="loadDates">重试</button></view>
 
-    <view wx:if="{{next}}" class="hero" data-id="{{next.id}}" bindtap="openDate" aria-role="button">
+    <view wx:if="{{next}}" class="hero grad-card" data-id="{{next.id}}" bindtap="openDate" aria-role="button">
       <view class="hero-label">{{next.title}}{{next.yearText ? ' · ' + next.yearText : ''}}</view>
       <view wx:if="{{next.days === 0}}" class="hero-days">就是今天</view>
       <view wx:else class="hero-days">还有 {{next.days}} 天</view>

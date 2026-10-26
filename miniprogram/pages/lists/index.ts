@@ -1,17 +1,8 @@
 import type { Household, Todo, TodoKind } from '../../models';
-import {
-  memberNames,
-  peekHousehold,
-  requireHousehold,
-} from '../../services/household';
-import {
-  addTodo,
-  clearDone,
-  listTodos,
-  peekTodos,
-  updateTodo,
-} from '../../services/todos';
-import { markLoaded, needsReload } from '../../services/snapshot';
+import { memberNames, peekHousehold } from '../../services/household';
+import { todoService } from '../../services/collections';
+import { needsReload } from '../../services/snapshot';
+import { createLoader } from '../../services/page-load';
 import { errorMessage } from '../../services/cloud';
 import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
@@ -19,7 +10,7 @@ import { applyTheme, themeData } from '../../services/theme';
 
 type Row = Todo & { whoName: string };
 
-let loadVersion = 0;
+const loader = createLoader();
 let household: Household | null = null;
 
 /** 默认「一起」不显示；指定了某个人才在行尾显示名字。 */
@@ -54,7 +45,7 @@ Page({
   },
   /** 冷启动：先显示上次存在本机的清单，云端读完再替换。 */
   showSnapshot() {
-    const saved = peekTodos();
+    const saved = todoService.peek();
     household = peekHousehold();
     if (!saved || !household) return;
     this.setData({ all: saved.map(toRow) });
@@ -63,22 +54,17 @@ Page({
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
   },
-  async load(force = false) {
-    const version = ++loadVersion;
-    this.setData({ loading: true, error: '' });
-    try {
-      household = await requireHousehold(force === true);
-      if (!household) return;
-      const todos = await listTodos();
-      if (version !== loadVersion) return;
-      this.setData({ all: todos.map(toRow) });
-      this.filter();
-      markLoaded('todos');
-    } catch (error) {
-      if (version === loadVersion) this.setData({ error: errorMessage(error) });
-    } finally {
-      if (version === loadVersion) this.setData({ loading: false });
-    }
+  load(force = false) {
+    return loader(this, {
+      key: 'todos',
+      force,
+      fetch: () => todoService.list(),
+      show: (todos, current) => {
+        household = current;
+        this.setData({ all: todos.map(toRow) });
+        this.filter();
+      },
+    });
   },
   filter() {
     const items = this.data.all.filter(
@@ -121,7 +107,7 @@ Page({
     }
     this.setData({ busy: true, error: '' });
     try {
-      const todo = await addTodo({
+      const todo = await todoService.add({
         text,
         kind: this.data.kind,
         who: 'both',
@@ -142,7 +128,7 @@ Page({
     this.setData({ [`pending.${id}`]: true, error: '' });
     this.replace(id, { ...current, done: !current.done });
     try {
-      const todo = await updateTodo(id, { done: !current.done });
+      const todo = await todoService.update(id, { done: !current.done });
       this.replace(id, toRow(todo));
     } catch (error) {
       this.replace(id, current);
@@ -175,7 +161,7 @@ Page({
     try {
       // 待办里还混着旧的「家务」，一起清掉。
       const kinds = [...new Set(this.data.done.map((todo) => todo.kind))];
-      for (const kind of kinds) await clearDone(kind);
+      for (const kind of kinds) await todoService.clearDone(kind);
       this.setData({
         all: this.data.all.filter(
           (item) => !(todoTab(item.kind) === this.data.kind && item.done),

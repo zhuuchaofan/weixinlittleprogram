@@ -3,10 +3,10 @@ import {
   byPartner,
   memberNames,
   peekHousehold,
-  requireHousehold,
 } from '../../services/household';
 import { listMonth, peekMonth, settleMonth } from '../../services/ledger';
-import { markLoaded, needsReload } from '../../services/snapshot';
+import { needsReload } from '../../services/snapshot';
+import { createLoader } from '../../services/page-load';
 import { pickBillScreenshots } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
 import {
@@ -62,7 +62,7 @@ type Row = Expense & {
 /** 明细一次显示的笔数；滑到底再显示下一批。整月账目仍一次读完（汇总要用），只是分批渲染。 */
 const BATCH = 30;
 
-let loadVersion = 0;
+const loader = createLoader();
 let household: Household | null = null;
 /** 当月全部明细；records 里只放已经显示的前若干笔。 */
 let allRows: Row[] = [];
@@ -101,23 +101,17 @@ Page({
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
   },
-  async load(force = false) {
-    const version = ++loadVersion;
-    this.setData({ loading: true, error: '' });
-    try {
-      household = await requireHousehold(force === true);
-      if (!household) return;
-      const names = memberNames(household);
-      const month = this.data.month;
-      const result = await listMonth(month);
-      if (version !== loadVersion) return;
-      this.show(names, result.records, result.summary);
-      markLoaded(`ledger:${month}`);
-    } catch (error) {
-      if (version === loadVersion) this.setData({ error: errorMessage(error) });
-    } finally {
-      if (version === loadVersion) this.setData({ loading: false });
-    }
+  load(force = false) {
+    const month = this.data.month;
+    return loader(this, {
+      key: `ledger:${month}`,
+      force,
+      fetch: () => listMonth(month),
+      show: (result, current) => {
+        household = current;
+        this.show(memberNames(current), result.records, result.summary);
+      },
+    });
   },
   show(
     names: { a: string; b: string },

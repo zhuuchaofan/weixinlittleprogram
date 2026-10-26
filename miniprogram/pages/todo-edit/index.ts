@@ -1,6 +1,6 @@
 import type { TodoKind, TodoWho } from '../../models';
 import { getHousehold, memberNames } from '../../services/household';
-import { getTodo, removeTodo, updateTodo } from '../../services/todos';
+import { todoService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
@@ -28,7 +28,7 @@ Page({
       return;
     }
     try {
-      const todo = await getTodo(options.id);
+      const todo = await todoService.get(options.id);
       this.setData({
         id: todo.id,
         text: todo.text,
@@ -60,7 +60,7 @@ Page({
     }
     this.setData({ busy: true, error: '' });
     try {
-      await updateTodo(this.data.id, {
+      await todoService.update(this.data.id, {
         text,
         kind: this.data.kind,
         who: this.data.who,
@@ -77,7 +77,7 @@ Page({
     if (!(await confirmAction('删除这条？', '删除后无法恢复。'))) return;
     this.setData({ busy: true, error: '' });
     try {
-      await removeTodo(this.data.id);
+      await todoService.remove(this.data.id);
       wx.navigateBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });

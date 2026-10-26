@@ -5,7 +5,7 @@
     <view wx:for="{{tags}}" wx:key="value" class="segment {{filter === item.value ? 'segment-on' : ''}}" data-value="{{item.value}}" bindtap="chooseFilter">{{item.label}}</view>
   </view>
 
-  <view class="draw-card">
+  <view class="draw-card grad-card">
     <block wx:if="{{picked}}">
       <view class="draw-label">今天就吃</view>
       <view class="picked-name">{{picked.name}}</view>

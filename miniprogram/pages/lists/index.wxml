@@ -15,7 +15,7 @@
 
   <view wx:if="{{open.length}}" class="list list-gap">
     <view wx:for="{{open}}" wx:key="id" class="list-row todo-row">
-      <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="完成 {{item.text}}"><view class="box"></view></view>
+      <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="完成 {{item.text}}"><view class="tick-box"></view></view>
       <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
         <view class="row-title">{{item.text}}</view>
         <text wx:if="{{item.whoName}}" class="tag">{{item.whoName}}</text>
@@ -40,7 +40,7 @@
     </view>
     <view wx:if="{{showDone}}" class="list">
       <view wx:for="{{done}}" wx:key="id" class="list-row todo-row todo-done">
-        <view class="check" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="box box-on">✓</view></view>
+        <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="tick-box tick-on">✓</view></view>
         <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active"><view class="row-title struck">{{item.text}}</view></view>
       </view>
     </view>

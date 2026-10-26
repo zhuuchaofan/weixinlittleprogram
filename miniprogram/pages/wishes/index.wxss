@@ -1,0 +1,5 @@
+.composer { display: flex; align-items: center; gap: 16rpx; }
+.wish-row { padding: 0 20rpx 0 0; align-items: stretch; gap: 0; }
+.wish-main { display: flex; flex-direction: column; justify-content: center; padding: 16rpx 0; }
+.wish-main .row-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fold-head { margin: 32rpx 4rpx 12rpx; font-size: 26rpx; color: var(--muted); }

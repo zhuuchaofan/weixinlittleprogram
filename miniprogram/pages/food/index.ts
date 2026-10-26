@@ -1,8 +1,8 @@
 import type { Dish, DishTag } from '../../models';
-import { requireHousehold } from '../../services/household';
 import { dishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
-import { markLoaded, needsReload } from '../../services/snapshot';
+import { needsReload } from '../../services/snapshot';
+import { createLoader } from '../../services/page-load';
 import { DISH_TAG_OPTIONS, LENGTHS, dishTagLabel } from '../../config/options';
 import { daysBetween, todayKey } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
@@ -25,7 +25,7 @@ const GROUP_LOOKS: Record<DishTag, { tile: string; icon: string }> = {
   外卖: { tile: 'tile-blue', icon: '/images/cat-icons/food.svg' },
 };
 
-let loadVersion = 0;
+const loader = createLoader();
 
 function toRow(dish: Dish, today: string): Row {
   const days = dish.ateOn ? daysBetween(dish.ateOn, today) : -1;
@@ -70,21 +70,13 @@ Page({
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
   },
-  async load(force = false) {
-    const version = ++loadVersion;
-    this.setData({ loading: true, error: '' });
-    try {
-      const household = await requireHousehold(force === true);
-      if (!household) return;
-      const dishes = await dishService.list();
-      if (version !== loadVersion) return;
-      this.showDishes(dishes);
-      markLoaded('dishes');
-    } catch (error) {
-      if (version === loadVersion) this.setData({ error: errorMessage(error) });
-    } finally {
-      if (version === loadVersion) this.setData({ loading: false });
-    }
+  load(force = false) {
+    return loader(this, {
+      key: 'dishes',
+      force,
+      fetch: () => dishService.list(),
+      show: (dishes) => this.showDishes(dishes),
+    });
   },
   applyFilter() {
     const { filter } = this.data;

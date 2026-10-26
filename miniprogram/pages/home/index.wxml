@@ -25,7 +25,7 @@
       <view class="invite-code">{{household.inviteCode}}</view>
       <button class="primary" bindtap="copyCode">复制邀请码</button>
     </view>
-    <view wx:else class="couple" data-page="memory" bindtap="open" aria-role="button">
+    <view wx:else class="couple grad-card" data-page="dates" bindtap="open" aria-role="button">
       <view class="couple-names">
         <view class="avatars" aria-hidden="true">
           <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>
@@ -34,7 +34,7 @@
         <view class="couple-text">{{household.members[0].name}} & {{household.members[1].name}}</view>
       </view>
       <view wx:if="{{next}}" class="couple-next">
-        <view class="couple-next-label">{{next.title}}{{next.days === 0 ? '' : ' 还有'}}</view>
+        <view class="couple-next-label">{{next.title}}{{next.yearly && next.years > 0 ? ' ' + next.years + ' 周年' : ''}}{{next.days === 0 ? '' : ' 还有'}}</view>
         <view wx:if="{{next.days === 0}}" class="couple-next-today">就是今天</view>
         <view wx:else class="couple-next-days">{{next.days}}<text class="couple-next-unit">天</text></view>
       </view>
@@ -65,13 +65,13 @@
         <view class="grid-title">吃啥</view>
         <view class="small muted">抽一个今天吃的</view>
       </view>
-      <view class="grid-cell" data-page="weekend" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-blue"><image class="tile-icon" src="/images/themes/{{themeId}}/home-weekend.png" /></view>
+      <view class="grid-cell" data-page="wishes" bindtap="open" hover-class="grid-cell-active" aria-role="button">
+        <view class="tile tile-blue"><image class="tile-icon" src="/images/themes/{{themeId}}/home-wishes.png" /></view>
         <view class="grid-title">想去</view>
         <view class="small muted">想去的地方和想做的事</view>
       </view>
-      <view class="grid-cell" data-page="memory" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-memory.png" /></view>
+      <view class="grid-cell" data-page="dates" bindtap="open" hover-class="grid-cell-active" aria-role="button">
+        <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-dates.png" /></view>
         <view class="grid-title">纪念日</view>
         <view class="small muted">倒数和已经多少天</view>
       </view>

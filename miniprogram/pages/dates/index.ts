@@ -16,7 +16,7 @@ function toRow(item: Anniversary): Row {
     yearText: !item.yearly
       ? ''
       : item.years > 0
-        ? `第 ${item.years} 年`
+        ? `${item.years} 周年`
         : '每年',
   };
 }
@@ -40,7 +40,7 @@ Page({
       if (household) this.setData({ household });
       if (dates) this.showDates(dates);
     }
-    if (needsReload('memory')) void this.load();
+    if (needsReload('dates')) void this.load();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -63,7 +63,7 @@ Page({
     try {
       this.showDates(await dateService.list());
       this.setData({ datesError: '' });
-      markLoaded('memory');
+      markLoaded('dates');
     } catch (error) {
       this.setData({ datesError: errorMessage(error) });
     }
