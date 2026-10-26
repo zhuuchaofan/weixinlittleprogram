@@ -71,8 +71,8 @@
       </view>
       <view class="grid-cell" data-page="memory" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-pink"><image class="tile-icon" src="/images/home-memory.png" /></view>
-        <view class="grid-title">纪念</view>
-        <view class="small muted">纪念日和回忆</view>
+        <view class="grid-title">纪念日</view>
+        <view class="small muted">倒数和已经多少天</view>
       </view>
     </view>
   </block>
