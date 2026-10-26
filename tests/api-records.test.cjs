@@ -56,6 +56,14 @@ function memoryRecords(prefix) {
         .filter((d) => d.date.slice(0, 7) === month)
         .map((d) => ({ ...d }));
     },
+    async listRange(householdId, fromMonth, toMonth) {
+      return own(householdId)
+        .filter((d) => {
+          const month = d.date.slice(0, 7);
+          return month >= fromMonth && month <= toMonth;
+        })
+        .map((d) => ({ ...d }));
+    },
     async get(householdId, id) {
       const d = docs.get(id);
       return d && d.householdId === householdId ? { ...d } : null;
@@ -957,4 +965,98 @@ test('只记账：两人分摊默认关闭，可以打开；spending 统计所�
   const on = await call('B', 'household.update', { splitting: true });
   assert.equal(on.data.splitting, true);
   assert.equal((await call('A', 'household.get')).data.splitting, true);
+});
+
+test('花销分析：和上月按分类比、大额单笔、近 6 个月，不含结算、收入和别人家', async () => {
+  const { call } = await setup();
+  const rows = [
+    ['A', { amount: 300000, cat: '房租', date: '2026-10-01' }],
+    ['A', { amount: 98000, cat: '旅行', note: '国庆机票', date: '2026-10-03' }],
+    ['B', { amount: 2500, cat: '吃饭', date: '2026-10-04', payer: 'b' }],
+    ['B', { amount: 3500, cat: '吃饭', date: '2026-10-08', payer: 'b' }],
+    ['A', { amount: 1200, cat: '日用', date: '2026-10-09' }],
+    ['A', { amount: 800, cat: '日用', date: '2026-10-10', split: 'self' }],
+    [
+      'A',
+      {
+        amount: 500000,
+        cat: '其他',
+        date: '2026-10-12',
+        flow: 'in',
+        split: 'self',
+      },
+    ],
+    ['A', { amount: 300000, cat: '房租', date: '2026-09-01' }],
+    ['A', { amount: 4000, cat: '吃饭', date: '2026-09-10' }],
+    ['A', { amount: 1500, cat: '交通', date: '2026-09-11' }],
+    ['A', { amount: 7000, cat: '吃饭', date: '2026-05-10' }],
+    ['A', { amount: 9999, cat: '吃饭', date: '2026-04-30' }],
+    ['X', { amount: 777700, cat: '旅行', date: '2026-10-05' }],
+  ];
+  for (const [who, row] of rows) {
+    const added = await call(who, 'expense.add', expense(row));
+    assert.equal(added.ok, true, JSON.stringify(row));
+  }
+  assert.equal(
+    (await call('A', 'expense.settle', { month: '2026-10' })).ok,
+    true,
+  );
+  assert.equal(
+    (await call('A', 'insight.get', { month: '2026-13' })).code,
+    'VALIDATION',
+  );
+
+  const { data } = await call('B', 'insight.get', { month: '2026-10' });
+  assert.equal(data.prevMonth, '2026-09');
+  assert.equal(data.total, 300000 + 98000 + 2500 + 3500 + 1200 + 800);
+  assert.equal(data.count, 6);
+  assert.equal(data.prevTotal, 305500);
+  assert.equal(data.income, 500000);
+  assert.deepEqual(data.byCategory, [
+    { cat: '房租', amount: 300000, count: 1, prev: 300000 },
+    { cat: '旅行', amount: 98000, count: 1, prev: 0 },
+    { cat: '吃饭', amount: 6000, count: 2, prev: 4000 },
+    { cat: '日用', amount: 2000, count: 2, prev: 0 },
+    { cat: '交通', amount: 0, count: 0, prev: 1500 },
+  ]);
+  // 前 3 笔一定列出，之后只列 ¥500 及以上的。
+  assert.deepEqual(
+    data.big.map((row) => [row.cat, row.note, row.amount]),
+    [
+      ['房租', '超市', 300000],
+      ['旅行', '国庆机票', 98000],
+      ['吃饭', '超市', 3500],
+    ],
+  );
+  assert.equal(typeof data.big[0].id, 'string');
+  assert.deepEqual(data.trend, [
+    { month: '2026-05', total: 7000 },
+    { month: '2026-06', total: 0 },
+    { month: '2026-07', total: 0 },
+    { month: '2026-08', total: 0 },
+    { month: '2026-09', total: 305500 },
+    { month: '2026-10', total: data.total },
+  ]);
+});
+
+test('花销分析：大额单笔最多 5 笔，没有备注时用截图商户名', async () => {
+  const { analyze } = require('../cloudfunctions/api/insight');
+  const records = [60000, 70000, 80000, 90000, 100000, 110000, 100].map(
+    (amount, index) => ({
+      _id: 'e' + index,
+      amount,
+      cat: '食费',
+      note: index === 5 ? '' : 'n' + index,
+      src: { merchant: '某某超市' },
+      date: '2026-10-0' + (index + 1),
+    }),
+  );
+  const result = analyze('2026-10', records);
+  assert.deepEqual(
+    result.big.map((row) => row.amount),
+    [110000, 100000, 90000, 80000, 70000],
+  );
+  assert.equal(result.big[0].note, '某某超市');
+  assert.equal(result.big[0].cat, '吃饭');
+  assert.equal(result.prevTotal, 0);
 });

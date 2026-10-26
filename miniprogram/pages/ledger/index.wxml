@@ -32,6 +32,7 @@
       <view class="cat-percent small muted">{{item.percent}}%</view>
       <view class="cat-amount">{{item.amountText}}</view>
     </view>
+    <view class="insight-link" bindtap="openInsight" hover-class="insight-link-active" aria-role="button">和上月比、大额支出<text class="chevron">›</text></view>
   </view>
 
   <view class="section-head">

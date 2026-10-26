@@ -208,6 +208,9 @@ Page({
   add() {
     wx.navigateTo({ url: '/pages/expense-edit/index' });
   },
+  openInsight() {
+    wx.navigateTo({ url: `/pages/insight/index?month=${this.data.month}` });
+  },
   importScreenshots() {
     void pickBillScreenshots();
   },

@@ -197,3 +197,30 @@ export interface Anniversary extends AnniversaryInput, RecordMeta {
   /** 每年重复时，下一次是第几周年。 */
   years: number;
 }
+
+/** 花销分析（insight.get）：口径同 LedgerSummary.spending。 */
+export interface MonthInsight {
+  month: string;
+  prevMonth: string;
+  total: number;
+  prevTotal: number;
+  count: number;
+  income: number;
+  /** 本月和上月按分类，本月金额从大到小。 */
+  byCategory: Array<{
+    cat: string;
+    amount: number;
+    count: number;
+    prev: number;
+  }>;
+  /** 大额单笔：本月前 3 笔，再加上 ¥500 及以上的，最多 5 笔。 */
+  big: Array<{
+    id: string;
+    date: string;
+    cat: string;
+    note: string;
+    amount: number;
+  }>;
+  /** 截至本月的近 6 个月，从早到晚。 */
+  trend: Array<{ month: string; total: number }>;
+}

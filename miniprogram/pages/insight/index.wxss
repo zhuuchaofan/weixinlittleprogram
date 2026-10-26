@@ -1,0 +1,39 @@
+.month-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16rpx; }
+.month-arrow { width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 48rpx; color: var(--accent); }
+.month-arrow-active { background: var(--sunken); }
+.month-arrow-off { color: var(--line); }
+.month-text { font-size: 34rpx; font-weight: 700; white-space: nowrap; }
+
+.hero { padding: 36rpx 36rpx 32rpx; }
+.hero-label { font-size: 24rpx; opacity: 0.92; }
+.hero-total { font-size: 80rpx; font-weight: 800; line-height: 1.2; margin: 8rpx 0 12rpx; letter-spacing: -1rpx; }
+.hero-change { font-size: 28rpx; font-weight: 600; }
+.hero-income { margin-top: 8rpx; font-size: 24rpx; opacity: 0.92; }
+
+.section-head { margin-top: 32rpx; }
+
+/* 按分类对比：每类一行文字 + 一条按本月最大一类缩放的进度条 */
+.compare { padding: 20rpx 32rpx; }
+.compare-row { padding: 12rpx 0; }
+.compare-line { display: flex; align-items: center; gap: 16rpx; min-height: 56rpx; }
+.cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
+.cat-name { flex: 1; min-width: 0; font-size: 28rpx; white-space: nowrap; }
+.compare-change { flex-shrink: 0; color: var(--muted); white-space: nowrap; }
+.compare-change.up { color: var(--accent); }
+.compare-change.down { color: var(--ok); }
+.cat-amount { width: 170rpx; flex-shrink: 0; text-align: right; font-size: 28rpx; font-weight: 600; white-space: nowrap; }
+.compare-track { height: 10rpx; margin-left: 32rpx; border-radius: 5rpx; background: var(--sunken); overflow: hidden; }
+.compare-bar { height: 100%; border-radius: 5rpx; }
+
+.big-amount { font-size: 32rpx; }
+
+/* 近 6 个月：竖条，本月用主色 */
+.trend { display: flex; align-items: flex-end; gap: 12rpx; padding: 28rpx 24rpx 20rpx; }
+.trend-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.trend-value { font-size: 18rpx; white-space: nowrap; height: 32rpx; }
+.trend-track { width: 100%; height: 200rpx; display: flex; align-items: flex-end; justify-content: center; }
+.trend-bar { width: 56%; border-radius: 10rpx 10rpx 4rpx 4rpx; background: var(--ring); }
+.trend-current { background: var(--accent); }
+.trend-label { margin-top: 8rpx; }
+
+.page-end { height: 80rpx; }

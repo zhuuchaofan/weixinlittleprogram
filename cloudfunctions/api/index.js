@@ -75,6 +75,11 @@ function createRecordRepository(db, collectionName) {
         householdId,
         date: _.gte(`${month}-01`).and(_.lte(`${month}-31`)),
       }),
+    listRange: (householdId, fromMonth, toMonth) =>
+      listAll(collection, {
+        householdId,
+        date: _.gte(`${fromMonth}-01`).and(_.lte(`${toMonth}-31`)),
+      }),
     readComplete: (householdId) => readComplete(collection, { householdId }),
     async get(householdId, id) {
       const result = await collection
