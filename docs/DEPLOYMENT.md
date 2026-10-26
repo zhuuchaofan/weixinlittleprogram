@@ -6,13 +6,13 @@
 
 1. 在云开发控制台新建集合 `households`，权限设为「自定义安全规则」：`{ "read": false, "write": false }`。
 2. 确认旧集合 `rsvps`、`guest_messages` 仍在，规则保持 `{ "read": false, "write": false }`。归档页通过云函数读取，不需要放宽。
-3. 旧集合 `photo_content`、`event_program` 不再使用，暂时不要删除。
+3. 旧集合 `photo_content`、`event_program` 不再使用，可以删除（2026-10-26 确认不留）。
 
 ## 2. 云函数
 
 1. 开发者工具中右键 `cloudfunctions/api` →「上传并部署：云端安装依赖」。
 2. `api` 不需要配置任何环境变量。
-3. 后台已部署的旧函数 `weddingApi` 新版本不再调用，可以先保留；确认阶段 1 验收通过后再决定是否删除。
+3. 旧云函数 `weddingApi` 不再调用，可以删除。
 
 ## 3. 验收
 
