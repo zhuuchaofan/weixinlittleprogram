@@ -1,6 +1,10 @@
 import { localConfig } from '../config/local';
+import { noteWrite } from './snapshot';
 
 let initialized = false;
+
+// 只读不写的 action；其余都算写，成功后各 tab 切回时重新读取。
+const READ_ONLY = /\.(get|list|parse|match|export)$/;
 
 export class ApiError extends Error {
   constructor(
@@ -51,6 +55,7 @@ export async function callApi<T>(
       result?.message || '云端返回异常，请重试。',
       result?.code || 'UNKNOWN',
     );
+  if (!READ_ONLY.test(action)) noteWrite();
   return result.data as T;
 }
 

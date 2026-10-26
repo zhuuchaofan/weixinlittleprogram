@@ -19,6 +19,8 @@
 ### 约定
 
 - 纪念日 2 月 29 日在平年按 2 月 28 日计算。
+- 截图识别每个小家每天最多 20 张（两人合计，`shared/contract.json` 的 `billImport.dailyImages`），识别失败也算一次。
+- 各 tab 的列表在本机存一份快照，打开小程序先显示快照再从云端更新；切回 tab 时只有本机改过数据或超过 60 秒才重新读，下拉刷新总是重新读（`miniprogram/services/snapshot.ts`）。
 - 底部 tab 图标在 `miniprogram/images/`，由 Pillow 生成，选中时填充为主色。
 
 ### 记账规则的落地细节

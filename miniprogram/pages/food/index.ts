@@ -2,6 +2,7 @@ import type { Dish, DishKind, DishTag } from '../../models';
 import { requireHousehold } from '../../services/household';
 import { dishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
+import { markLoaded, needsReload } from '../../services/snapshot';
 import {
   DISH_KINDS,
   LENGTHS,
@@ -35,7 +36,20 @@ Page({
     error: '',
   },
   onShow() {
-    void this.load();
+    if (!this.data.dishes.length) {
+      const saved = dishService.peek();
+      if (saved) this.showDishes(saved);
+    }
+    if (needsReload('dishes')) void this.load();
+  },
+  showDishes(dishes: Dish[]) {
+    this.setData({
+      dishes: dishes.map((dish): Row => ({
+        ...dish,
+        kindText: kindLabel(dish.kind),
+      })),
+    });
+    this.applyFilter();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -46,13 +60,10 @@ Page({
     try {
       const household = await requireHousehold(force === true);
       if (!household) return;
-      const dishes = (await dishService.list()).map((dish): Row => ({
-        ...dish,
-        kindText: kindLabel(dish.kind),
-      }));
+      const dishes = await dishService.list();
       if (version !== loadVersion) return;
-      this.setData({ dishes });
-      this.applyFilter();
+      this.showDishes(dishes);
+      markLoaded('dishes');
     } catch (error) {
       if (version === loadVersion) this.setData({ error: errorMessage(error) });
     } finally {

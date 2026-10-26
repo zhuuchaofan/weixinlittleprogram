@@ -1,7 +1,8 @@
 import type { Anniversary, Household } from '../../models';
-import { requireHousehold } from '../../services/household';
+import { peekHousehold, requireHousehold } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { dateService } from '../../services/collections';
+import { markLoaded, needsReload } from '../../services/snapshot';
 import { shortDate } from '../../utils/date';
 
 Page({
@@ -13,7 +14,15 @@ Page({
     datesError: '',
   },
   onShow() {
-    void this.load();
+    if (!this.data.household) {
+      const household = peekHousehold();
+      const dates = dateService.peek();
+      if (household) this.setData({ household });
+      if (dates) this.showDates(dates);
+    }
+    // 还在等对方加入时每次都读，邀请码和成员才能及时更新。
+    if (needsReload('memory') || this.data.household?.inviteCode)
+      void this.load();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -34,17 +43,20 @@ Page({
   },
   async loadDates() {
     try {
-      const dates = await dateService.list();
-      this.setData({
-        datesError: '',
-        dates: dates.map((item) => ({
-          ...item,
-          dateText: shortDate(item.nextDate),
-        })),
-      });
+      this.showDates(await dateService.list());
+      this.setData({ datesError: '' });
+      markLoaded('memory');
     } catch (error) {
       this.setData({ datesError: errorMessage(error) });
     }
+  },
+  showDates(dates: Anniversary[]) {
+    this.setData({
+      dates: dates.map((item) => ({
+        ...item,
+        dateText: shortDate(item.nextDate),
+      })),
+    });
   },
   addDate() {
     wx.navigateTo({ url: '/pages/date-edit/index' });

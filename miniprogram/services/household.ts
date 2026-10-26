@@ -1,5 +1,6 @@
 import type { Household } from '../models';
 import { callApi } from './cloud';
+import { readSnapshot, saveSnapshot } from './snapshot';
 
 // undefined = 还没读取过；null = 已确认未加入小家。
 let cached: Household | null | undefined;
@@ -11,7 +12,13 @@ const MAX_AGE_MS = 60 * 1000;
 function remember(household: Household | null): Household | null {
   cached = household;
   cachedAt = Date.now();
+  if (household) saveSnapshot('household', household);
   return household;
+}
+
+/** 不读云端，立即返回手头的小家信息（冷启动时是上次存在本机的），用来先把页面画出来。 */
+export function peekHousehold(): Household | null {
+  return cached || readSnapshot<Household>('household') || null;
 }
 
 function fresh(): boolean {

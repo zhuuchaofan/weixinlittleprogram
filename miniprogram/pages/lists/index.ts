@@ -2,14 +2,17 @@ import type { Household, Todo, TodoKind, TodoWho } from '../../models';
 import {
   byPartner,
   memberNames,
+  peekHousehold,
   requireHousehold,
 } from '../../services/household';
 import {
   addTodo,
   clearDone,
   listTodos,
+  peekTodos,
   updateTodo,
 } from '../../services/todos';
+import { markLoaded, needsReload } from '../../services/snapshot';
 import { errorMessage } from '../../services/cloud';
 import { LENGTHS, TODO_KINDS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
@@ -45,7 +48,16 @@ Page({
     error: '',
   },
   onShow() {
-    void this.load();
+    if (!this.data.all.length) this.showSnapshot();
+    if (needsReload('todos')) void this.load();
+  },
+  /** 冷启动：先显示上次存在本机的清单，云端读完再替换。 */
+  showSnapshot() {
+    const saved = peekTodos();
+    household = peekHousehold();
+    if (!saved || !household) return;
+    this.setData({ names: memberNames(household), all: saved.map(toRow) });
+    this.filter();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -60,6 +72,7 @@ Page({
       if (version !== loadVersion) return;
       this.setData({ names: memberNames(household), all: todos.map(toRow) });
       this.filter();
+      markLoaded('todos');
     } catch (error) {
       if (version === loadVersion) this.setData({ error: errorMessage(error) });
     } finally {

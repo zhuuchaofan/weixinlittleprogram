@@ -2,6 +2,7 @@ import type { Wish } from '../../models';
 import { requireHousehold } from '../../services/household';
 import { wishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
+import { markLoaded, needsReload } from '../../services/snapshot';
 
 let loadVersion = 0;
 
@@ -13,7 +14,9 @@ Page({
     error: '',
   },
   onShow() {
-    void this.load();
+    if (!this.data.wishes.length)
+      this.setData({ wishes: wishService.peek() || [] });
+    if (needsReload('wishes')) void this.load();
   },
   onPullDownRefresh() {
     void this.load(true).finally(() => wx.stopPullDownRefresh());
@@ -25,7 +28,9 @@ Page({
       const household = await requireHousehold(force === true);
       if (!household) return;
       const wishes = await wishService.list();
-      if (version === loadVersion) this.setData({ wishes });
+      if (version !== loadVersion) return;
+      this.setData({ wishes });
+      markLoaded('wishes');
     } catch (error) {
       if (version === loadVersion) this.setData({ error: errorMessage(error) });
     } finally {
