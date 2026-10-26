@@ -27,6 +27,8 @@ const {
 } = require('./bill-parse');
 const { matchItems } = require('./bill-match');
 
+const DAILY_IMAGES = CONTRACT.billImport.dailyImages;
+
 const BAD_SOURCE = '截图信息无效，请重新识别。';
 
 /** 前端送回来的截图原始字段（bill.parse 给出的 src）：逐项校验后重新算 key，不相信前端的 key。 */
@@ -95,12 +97,19 @@ function itemList(payload) {
 
 /**
  * repository：expenses 集合（listMonth、insertWithId）。
+ * households：takeBillQuota(id, day, limit) -> boolean，每个小家每天最多识别 DAILY_IMAGES 张。
  * vision：{ read(imageUrl, prompt) -> 模型回复文本 }；没有配置模型时为 null。
  */
-function createBillHandler({ repository, requireMembership, now, vision }) {
+function createBillHandler({
+  repository,
+  households,
+  requireMembership,
+  now,
+  vision,
+}) {
   return {
     async 'bill.parse'(openid, payload) {
-      await requireMembership(openid);
+      const household = await requireMembership(openid);
       if (!vision)
         throw new ApiError(
           'UNAVAILABLE',
@@ -109,7 +118,14 @@ function createBillHandler({ repository, requireMembership, now, vision }) {
       const url = str(payload?.url);
       if (!/^https:\/\/\S{1,1000}$/.test(url))
         throw new ApiError('VALIDATION', '截图上传失败，请重试。');
-      return parseReply(await vision.read(url, PROMPT), todayKey(now()));
+      const today = todayKey(now());
+      // 先占额度再调模型：识别失败也算一次，避免反复重试刷用量。
+      if (!(await households.takeBillQuota(household._id, today, DAILY_IMAGES)))
+        throw new ApiError(
+          'LIMIT',
+          `今天已经识别了 ${DAILY_IMAGES} 张截图，明天再来吧。`,
+        );
+      return parseReply(await vision.read(url, PROMPT), today);
     },
     async 'bill.match'(openid, payload) {
       const household = await requireMembership(openid);

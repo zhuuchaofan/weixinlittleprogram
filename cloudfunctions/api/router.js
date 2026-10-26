@@ -27,6 +27,7 @@ function createRouter({
     ...createExpenseHandler({ repository: expenses, requireMembership, now }),
     ...createBillHandler({
       repository: expenses,
+      households,
       requireMembership,
       now,
       vision,
