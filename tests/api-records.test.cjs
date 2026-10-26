@@ -465,6 +465,41 @@ test('周末：收藏想去的地方，可编辑与删除', async () => {
   assert.equal((await call('B', 'wish.remove', { id: wish.data.id })).ok, true);
 });
 
+test('想去：打勾「去过了」记下日期，取消时清空，改备注不影响', async () => {
+  const { call } = await setup();
+  const wish = await call('A', 'wish.add', { title: '箱根' });
+  assert.deepEqual([wish.data.done, wish.data.doneOn], [false, '']);
+  const went = await call('B', 'wish.update', {
+    id: wish.data.id,
+    done: true,
+    doneOn: '2026-10-12',
+  });
+  assert.deepEqual([went.data.done, went.data.doneOn], [true, '2026-10-12']);
+  const noted = await call('A', 'wish.update', {
+    id: wish.data.id,
+    plan: '住一晚',
+  });
+  assert.deepEqual(
+    [noted.data.done, noted.data.doneOn, noted.data.plan],
+    [true, '2026-10-12', '住一晚'],
+  );
+  const undone = await call('A', 'wish.update', {
+    id: wish.data.id,
+    done: false,
+  });
+  assert.deepEqual([undone.data.done, undone.data.doneOn], [false, '']);
+  assert.equal(
+    (
+      await call('A', 'wish.update', {
+        id: wish.data.id,
+        done: true,
+        doneOn: '昨天',
+      })
+    ).code,
+    'VALIDATION',
+  );
+});
+
 test('纪念日：列表带倒数，按剩余天数排序，已过的不重复日期放最后', async () => {
   const { call } = await setup();
   // 今天 2026-10-20（UTC+8）

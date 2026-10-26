@@ -41,7 +41,7 @@
     <view class="section">
       <view class="section-head"><view class="section-title">数据备份</view></view>
       <view class="card">
-        <view class="small muted">把记账、清单、菜单、周末收藏和纪念日全部复制为文本（JSON），粘贴到备忘录或文件里保存。</view>
+        <view class="small muted">把记账、清单、菜单、想去和纪念日全部复制为文本（JSON），粘贴到备忘录或文件里保存。</view>
         <button class="secondary export-button" bindtap="exportData" loading="{{exporting}}" disabled="{{exporting}}">复制全部数据</button>
       </view>
     </view>

@@ -142,7 +142,9 @@ function dish(payload) {
   };
 }
 
+/** 想去的一条。界面上只有「备注」一栏（存在 plan），why 是旧数据。 */
 function wish(payload) {
+  const done = payload?.done === true;
   return {
     title: text(payload?.title, {
       field: '地点或活动',
@@ -150,7 +152,10 @@ function wish(payload) {
       max: LENGTHS.wishTitle,
     }),
     why: text(payload.why, { field: '想去的理由', max: LENGTHS.wishWhy }),
-    plan: text(payload.plan, { field: '计划', max: LENGTHS.wishPlan }),
+    plan: text(payload.plan, { field: '备注', max: LENGTHS.wishPlan }),
+    done,
+    // 去过的日期；取消「去过了」时清空。
+    doneOn: done ? optionalDate(payload.doneOn) : '',
   };
 }
 

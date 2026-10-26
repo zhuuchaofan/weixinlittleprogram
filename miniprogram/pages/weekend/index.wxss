@@ -1,2 +1,10 @@
-.wish-title { font-size: 32rpx; font-weight: 600; }
-.wish-plan { margin-top: 10rpx; padding: 12rpx 18rpx; font-size: 24rpx; background: var(--paper); border-radius: var(--radius-sm); white-space: pre-wrap; }
+.composer { display: flex; align-items: center; gap: 16rpx; }
+.composer-input { flex: 1; min-width: 0; }
+.list-gap { margin-top: 24rpx; }
+.wish-row { padding: 0 20rpx 0 0; align-items: stretch; gap: 0; }
+.check { width: 96rpx; min-height: 104rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.box { width: 44rpx; height: 44rpx; border: 3rpx solid #ffb39e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24rpx; font-weight: 700; }
+.box-on { background: var(--accent-grad); border-color: transparent; }
+.wish-main { display: flex; flex-direction: column; justify-content: center; padding: 16rpx 0; }
+.wish-main .row-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fold-head { margin: 32rpx 4rpx 12rpx; font-size: 26rpx; color: var(--muted); }

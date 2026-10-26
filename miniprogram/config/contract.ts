@@ -72,7 +72,7 @@ export const CONTRACT = {
     "dishName": 20,
     "wishTitle": 30,
     "wishWhy": 100,
-    "wishPlan": 200,
+    "wishPlan": 300,
     "dateTitle": 20
   }
 } as const;

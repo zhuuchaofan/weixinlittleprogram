@@ -66,8 +66,8 @@
       </view>
       <view class="grid-cell" data-page="weekend" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-blue"><image class="tile-icon" src="/images/home-weekend.png" /></view>
-        <view class="grid-title">周末</view>
-        <view class="small muted">想去的地方</view>
+        <view class="grid-title">想去</view>
+        <view class="small muted">想去的地方和想做的事</view>
       </view>
       <view class="grid-cell" data-page="memory" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-pink"><image class="tile-icon" src="/images/home-memory.png" /></view>

@@ -7,10 +7,10 @@ const DISH_FIELDS = ['name', 'kind', 'tag', 'ateOn'];
 
 /** 没有 kind 的旧记录当作菜品。 */
 const withDishKind = (view) => ({ ...view, kind: view.kind || 'dish' });
-const WISH_FIELDS = ['title', 'why', 'plan'];
+const WISH_FIELDS = ['title', 'why', 'plan', 'done', 'doneOn'];
 const DATE_FIELDS = ['title', 'date', 'yearly'];
 
-/** 吃啥（dishes）、周末（wishes）、纪念日（dates）。 */
+/** 吃啥（dishes）、想去（wishes）、纪念日（dates）。 */
 function createCollectionHandlers({
   dishes,
   wishes,

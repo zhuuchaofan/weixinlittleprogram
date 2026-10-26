@@ -2,7 +2,7 @@
   <view class="hero">
     <view class="home-tile"><image class="home-icon" src="/images/ui/home.svg" /></view>
     <view class="title">两个人的小家</view>
-    <view class="lead">记账、清单、吃啥、周末和纪念日，只给我们俩用。</view>
+    <view class="lead">记账、清单、吃啥、想去和纪念日，只给我们俩用。</view>
     <view class="pair" aria-hidden="true">
       <view class="avatar-lg avatar-a">我</view>
       <view class="pair-line"></view>
