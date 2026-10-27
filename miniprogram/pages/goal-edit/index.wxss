@@ -1,2 +1,2 @@
-.save { margin-top: 40rpx; }
+.save, button.save:not([size='mini']) { margin-top: 40rpx; }
 .list { margin-bottom: 24rpx; }
