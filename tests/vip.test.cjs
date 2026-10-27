@@ -430,3 +430,56 @@ test('次数用完时只给非会员附开通提示', () => {
   assert.equal(upgradeHint({ vip: { until: NOW + DAY } }, NOW, hint), '');
   assert.equal(upgradeHint({ vip: { until: NOW - DAY } }, NOW, hint), hint);
 });
+
+test('vip.confirm：付款后主动查单开通，不用等推送', async () => {
+  const ctx = await setup();
+  const { order } = await buy(ctx);
+  const confirm = (outTradeNo, openid = 'oA') =>
+    ctx.route({ action: 'vip.confirm', payload: { outTradeNo } }, openid);
+  // 还没付款：不开通
+  let result = await confirm(order.outTradeNo);
+  assert.equal(result.ok, true);
+  assert.equal(result.data.delivered, false);
+  assert.equal(result.data.active, false);
+  // 付款后：开通，重复查不会重复加天数
+  pay(ctx, order);
+  result = await confirm(order.outTradeNo);
+  assert.equal(result.data.delivered, true);
+  assert.equal(result.data.until, NOW + VIP.plans[0].days * DAY);
+  await confirm(order.outTradeNo);
+  assert.equal(ctx.wechat.calls.query, 2);
+  assert.equal(
+    (await ctx.route({ action: 'vip.get' }, 'oA')).data.until,
+    NOW + VIP.plans[0].days * DAY,
+  );
+  // 之后再来推送也不会多加
+  assert.equal((await ctx.route.deliver(deliverEvent(order))).ErrCode, 0);
+  assert.equal(
+    (await ctx.route({ action: 'vip.get' }, 'oA')).data.until,
+    NOW + VIP.plans[0].days * DAY,
+  );
+});
+
+test('vip.confirm：别的小家的订单、不存在的订单都查不了', async () => {
+  const ctx = await setup();
+  const { order } = await buy(ctx);
+  pay(ctx, order);
+  await ctx.route(
+    { action: 'household.create', payload: { name: '小黑' } },
+    'oC',
+  );
+  const other = await ctx.route(
+    { action: 'vip.confirm', payload: { outTradeNo: order.outTradeNo } },
+    'oC',
+  );
+  assert.equal(other.code, 'NOT_FOUND');
+  const missing = await ctx.route(
+    { action: 'vip.confirm', payload: { outTradeNo: 'V-nope-0001' } },
+    'oA',
+  );
+  assert.equal(missing.code, 'NOT_FOUND');
+  assert.equal(
+    (await ctx.route({ action: 'vip.get' }, 'oA')).data.active,
+    false,
+  );
+});

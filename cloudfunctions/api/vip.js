@@ -72,6 +72,25 @@ function createVipHandler({
     throw new ApiError('UNAVAILABLE', '会员开通冲突，请稍后重试。');
   }
 
+  /**
+   * 向微信查单，已支付、金额对得上就给小家加天数并标记已发货。
+   * 发货推送和小程序付款后的主动查单都走这里；返回这笔是否已经到账。
+   * 查单失败会抛出，由调用方决定重试。
+   */
+  async function settle(order) {
+    if (order.status === 'delivered') return true;
+    const paid = await xpay.queryOrder(order);
+    if (
+      !paid ||
+      !PAID_STATUSES.includes(paid.status) ||
+      paid.order_fee !== order.price
+    )
+      return false;
+    await grant(order.householdId, order);
+    await orders.markDelivered(order.outTradeNo);
+    return true;
+  }
+
   return {
     actions: {
       async 'vip.get'(openid) {
@@ -126,6 +145,22 @@ function createVipHandler({
           ...xpay.sign(signData, sessionKey),
         };
       },
+      /**
+       * 小程序付款成功后主动查单：沙箱不发发货推送，现网推送也可能丢，
+       * 所以不只等推送。是否到账以微信查单为准，客户端只给订单号。
+       */
+      async 'vip.confirm'(openid, payload) {
+        const household = await requireMembership(openid);
+        if (!xpay) throw new ApiError('UNAVAILABLE', '会员购买还没开通。');
+        const outTradeNo =
+          typeof payload?.outTradeNo === 'string' ? payload.outTradeNo : '';
+        const order = outTradeNo ? await orders.get(outTradeNo) : null;
+        if (!order || order.householdId !== household._id)
+          throw new ApiError('NOT_FOUND', '找不到这笔订单。');
+        const delivered = await settle(order);
+        const fresh = (await households.findById(household._id)) || household;
+        return { delivered, ...vipView(fresh, now()) };
+      },
     },
     /**
      * 微信的发货推送入口（不经过 openid 身份）。推送本身不带签名，任何人都能伪造，
@@ -146,22 +181,8 @@ function createVipHandler({
         order.productId !== push.productId
       )
         return fail('order mismatch');
-      if (order.status === 'delivered') return done;
-      let paid;
       try {
-        paid = await xpay.queryOrder(order);
-      } catch {
-        return fail('query order failed');
-      }
-      if (
-        !paid ||
-        !PAID_STATUSES.includes(paid.status) ||
-        paid.order_fee !== order.price
-      )
-        return fail('not paid');
-      try {
-        await grant(order.householdId, order);
-        await orders.markDelivered(order.outTradeNo);
+        if (!(await settle(order))) return fail('not paid');
       } catch {
         return fail('deliver failed');
       }

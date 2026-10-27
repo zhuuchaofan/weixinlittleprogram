@@ -60,20 +60,33 @@ function requestPayment(order: VipOrder): Promise<void> {
 
 const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
+interface VipConfirm {
+  delivered: boolean;
+  active: boolean;
+  until: number;
+}
+
 /**
- * 购买会员：云端下单并签名 → 拉起支付 → 等微信的发货推送让会员生效。
- * 返回最新的会员状态；等了一阵还没生效时 info.until 不变，由页面提示稍后刷新。
+ * 购买会员：云端下单并签名 → 拉起支付 → 让云端向微信查单开通。
+ * 不只等发货推送（沙箱不发推送，现网也可能丢）。返回最新的会员状态；
+ * 等了一阵还没到账时 info.until 不变，由页面提示稍后刷新。
  */
 export async function buyVip(planId: string): Promise<VipInfo> {
   const before = await getVip();
   const { code } = await wx.login();
   const order = await callApi<VipOrder>('vip.order', { plan: planId, code });
+  const { outTradeNo } = JSON.parse(order.signData) as { outTradeNo: string };
   await requestPayment(order);
   let info = before;
   for (let i = 0; i < POLL_TIMES; i++) {
     await wait(POLL_GAP_MS);
-    info = await getVip();
-    if (info.until > before.until) break;
+    try {
+      const result = await callApi<VipConfirm>('vip.confirm', { outTradeNo });
+      info = { ...info, active: result.active, until: result.until };
+      if (result.delivered) break;
+    } catch {
+      // 查单偶尔失败不要紧，下一轮再查；发货推送也会补上。
+    }
   }
   // 设置页等处读的是小家信息里的会员状态，顺手刷新。
   await getHousehold(true);
