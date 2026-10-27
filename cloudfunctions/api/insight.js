@@ -114,23 +114,38 @@ function yuan(fen) {
 
 const monthText = (month) => `${Number(month.slice(5))}月`;
 
-/** 发给模型的全部内容：只有汇总数字和大额单笔的备注。 */
+/**
+ * 发给模型的全部内容：只有汇总数字和大额单笔的备注。
+ * 上个月合计为 0 多半是还没开始用或没记，不是真的没花钱，这时不让模型和上个月比；
+ * 走势也只列记过账的月份。
+ */
 function summaryPrompt(insight) {
+  const compare = insight.prevTotal > 0;
   const lines = [
     '你是一对小夫妻记账本里的小猫助手「喵喵」。下面是他们这个月的支出汇总（金额单位：元），请只根据这些数据写一段月度小结：',
     '- 3 到 5 句，总共不超过 150 字，口吻亲切，称呼「你们」；',
-    '- 说清钱主要花在哪、和上个月比哪几类明显变多或变少、有没有一次性的大额支出（去掉它和平时比怎么样）；',
+    compare
+      ? '- 说清钱主要花在哪、和上个月比哪几类明显变多或变少、有没有一次性的大额支出（去掉它和平时比怎么样）；'
+      : '- 说清钱主要花在哪、有没有一次性的大额支出（去掉它之后大概多少）；上个月没有记账，不要和上个月比，也不要说哪类变多、变少或新增；',
     '- 最后给一条具体、做得到的省钱建议；',
     '- 不要编造数据里没有的数字，不要标题、列表或 Markdown 符号。',
     '',
-    `${monthText(insight.month)}支出合计 ${yuan(insight.total)} 元，共 ${insight.count} 笔；上个月（${monthText(insight.prevMonth)}）${yuan(insight.prevTotal)} 元。`,
+    compare
+      ? `${monthText(insight.month)}支出合计 ${yuan(insight.total)} 元，共 ${insight.count} 笔；上个月（${monthText(insight.prevMonth)}）${yuan(insight.prevTotal)} 元。`
+      : `${monthText(insight.month)}支出合计 ${yuan(insight.total)} 元，共 ${insight.count} 笔；上个月（${monthText(insight.prevMonth)}）没有记账（刚开始用或者没记），没法对比。`,
   ];
   if (insight.income)
     lines.push(`本月收入 ${yuan(insight.income)} 元（不算在支出里）。`);
-  lines.push('按分类（本月 / 上个月 / 本月笔数）：');
+  lines.push(
+    compare
+      ? '按分类（本月 / 上个月 / 本月笔数）：'
+      : '按分类（本月 / 笔数）：',
+  );
   for (const row of insight.byCategory)
     lines.push(
-      `- ${row.cat}：${yuan(row.amount)} / ${yuan(row.prev)} / ${row.count} 笔`,
+      compare
+        ? `- ${row.cat}：${yuan(row.amount)} / ${yuan(row.prev)} / ${row.count} 笔`
+        : `- ${row.cat}：${yuan(row.amount)} / ${row.count} 笔`,
     );
   if (insight.big.length) {
     lines.push('本月大额单笔：');
@@ -139,12 +154,14 @@ function summaryPrompt(insight) {
         `- ${Number(row.date.slice(5, 7))}月${Number(row.date.slice(8))}日 ${row.cat} ${yuan(row.amount)} 元${row.note ? `「${row.note.slice(0, NOTE_MAX)}」` : ''}`,
       );
   }
-  lines.push(
-    '近 6 个月每月支出：' +
-      insight.trend
-        .map((row) => `${monthText(row.month)} ${yuan(row.total)}`)
-        .join('，'),
-  );
+  const months = insight.trend.filter((row) => row.total > 0);
+  if (months.length > 1)
+    lines.push(
+      '记过账的月份每月支出：' +
+        months
+          .map((row) => `${monthText(row.month)} ${yuan(row.total)}`)
+          .join('，'),
+    );
   return lines.join('\n');
 }
 

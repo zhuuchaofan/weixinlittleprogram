@@ -6,6 +6,8 @@ const DEFAULT_BASE_URL =
 const DEFAULT_MODEL = 'qwen3.8-omni-flash';
 // 要比云函数超时（60 秒）短，留出查重和返回的时间。
 const TIMEOUT_MS = 50 * 1000;
+// 小结 150 字以内，中文大约 1 字 1 token；封顶防止模型写长了拖时间。
+const SUMMARY_MAX_TOKENS = 300;
 
 /** 流式回复（SSE）拼回完整文本：每行 `data: {...}`，以 `data: [DONE]` 结束。 */
 function joinStream(body) {
@@ -86,7 +88,9 @@ function createVision(env = process.env, post = httpsPost) {
   if (!apiKey) return null;
   const baseUrl = (env.BILL_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, '');
   const model = env.BILL_MODEL || DEFAULT_MODEL;
-  async function chat(content, temperature = 0) {
+  // 小结只有文字，可以单独换一个更快的纯文本模型（例如 qwen-flash），不填就和截图识别用同一个。
+  const summaryModel = env.SUMMARY_MODEL || model;
+  async function chat(content, options = {}) {
     let response;
     try {
       response = await post(`${baseUrl}/chat/completions`, {
@@ -95,8 +99,11 @@ function createVision(env = process.env, post = httpsPost) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model,
-          temperature,
+          model: options.model || model,
+          temperature: options.temperature || 0,
+          ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
+          // 不要思考过程：只拼正文，思考只会让人多等。
+          enable_thinking: false,
           stream: true,
           modalities: ['text'],
           messages: [{ role: 'user', content }],
@@ -127,7 +134,11 @@ function createVision(env = process.env, post = httpsPost) {
     },
     /** 只有文字（AI 月度小结）：发的是汇总，不含截图和明细。 */
     write(prompt) {
-      return chat([{ type: 'text', text: prompt }], 0.3);
+      return chat([{ type: 'text', text: prompt }], {
+        model: summaryModel,
+        temperature: 0.3,
+        maxTokens: SUMMARY_MAX_TOKENS,
+      });
     },
   };
 }

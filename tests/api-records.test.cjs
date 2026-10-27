@@ -1170,6 +1170,21 @@ test('AI 小结：备注截到 12 字', () => {
   assert.match(prompt, /「一二三四五六七八九十甲乙」/);
 });
 
+test('AI 小结：上个月没记账时不让模型和上个月比', () => {
+  const { summaryPrompt, analyze } = require('../cloudfunctions/api/insight');
+  const prompt = summaryPrompt(
+    analyze('2026-10', [
+      { _id: 'e1', amount: 2000, cat: '吃饭', date: '2026-10-01' },
+      { _id: 'e2', amount: 369651, cat: '娱乐', date: '2026-10-23' },
+    ]),
+  );
+  assert.match(prompt, /上个月（9月）没有记账（刚开始用或者没记），没法对比/);
+  assert.match(prompt, /不要和上个月比/);
+  assert.match(prompt, /- 娱乐：3696\.51 \/ 1 笔/);
+  assert.equal(prompt.includes('上个月比哪几类'), false);
+  assert.equal(prompt.includes('每月支出'), false, '只有一个月时不列走势');
+});
+
 test('攒钱目标：每月要存、存了一笔、本月还差、改正已存、别人家看不到', async () => {
   const { call, goals } = await setup();
   for (const bad of [
