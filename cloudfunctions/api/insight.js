@@ -20,6 +20,7 @@ const {
 } = require('./contract.json');
 const { normalizeCategory } = require('./ledger');
 const { todayKey } = require('./dates');
+const { dailyLimits } = require('./vip');
 
 const TREND_MONTHS = 6;
 const BIG_AMOUNT = 50000;
@@ -294,18 +295,21 @@ function createInsightHandler({
       const insight = await load(household, month);
       if (!insight.count)
         throw new ApiError('VALIDATION', '这个月还没有支出，记几笔再来吧。');
-      // 先占额度再调模型：失败也算一次，避免反复重试刷用量。
+      // 先占额度再调模型：失败也算一次，避免反复重试刷用量。会员的每日次数更多。
+      const limit = dailyLimits(household, now(), {
+        summaries: DAILY_SUMMARIES,
+      }).summaries;
       if (
         !(await households.takeQuota(
           household._id,
           'summaryQuota',
           todayKey(now()),
-          DAILY_SUMMARIES,
+          limit,
         ))
       )
         throw new ApiError(
           'LIMIT',
-          `今天已经生成了 ${DAILY_SUMMARIES} 次小结，明天再来吧。`,
+          `今天已经生成了 ${limit} 次小结，明天再来吧。`,
         );
       const text = cleanSummary(await writer.write(summaryPrompt(insight)));
       if (!text)

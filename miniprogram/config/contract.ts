@@ -41,6 +41,24 @@ export const CONTRACT = {
   "aiSummary": {
     "daily": 5
   },
+  "vip": {
+    "dailyImages": 100,
+    "dailySummaries": 30,
+    "plans": [
+      {
+        "id": "vip_month",
+        "name": "月度会员",
+        "days": 31,
+        "price": 900
+      },
+      {
+        "id": "vip_year",
+        "name": "年度会员",
+        "days": 366,
+        "price": 6800
+      }
+    ]
+  },
   "ratio": {
     "min": 0,
     "max": 100

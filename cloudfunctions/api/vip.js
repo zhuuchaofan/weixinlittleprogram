@@ -1,0 +1,153 @@
+const { randomBytes } = require('node:crypto');
+const { ApiError } = require('./errors');
+const { vip: VIP } = require('./contract.json');
+const { DELIVER_EVENT, parseDeliver } = require('./xpay');
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const GRANT_ATTEMPTS = 5;
+// 小家文档里只留最近几个已到账的订单号，用来让重复推送不会重复加天数。
+const KEEP_ORDERS = 10;
+
+/** 会员属于整个小家：一人开通，两人都享受。 */
+function isVip(household, at) {
+  return Number(household?.vip?.until) > at;
+}
+
+/** 返回给小程序的会员状态。 */
+function vipView(household, at) {
+  const until = Number(household?.vip?.until) || 0;
+  return { active: until > at, until };
+}
+
+/** 截图识别、AI 小结的每日次数：会员更多。 */
+function dailyLimits(household, at, base) {
+  const vip = isVip(household, at);
+  return {
+    images: vip ? VIP.dailyImages : base.images,
+    summaries: vip ? VIP.dailySummaries : base.summaries,
+  };
+}
+
+function newOutTradeNo(at) {
+  // 微信要求 8–32 位，这里 1 + 9 + 12 = 22 位。
+  return `V${at.toString(36)}${randomBytes(6).toString('hex')}`;
+}
+
+/**
+ * households：findById(id)、setVip(id, expectedUntil, vip) -> boolean（条件更新，until 没变才写入）。
+ * orders：insert(doc)、get(outTradeNo)、markDelivered(outTradeNo)。
+ * xpay：createXpay() 的返回值；没有配置时为 null。
+ */
+function createVipHandler({
+  households,
+  orders,
+  xpay,
+  requireMembership,
+  now,
+}) {
+  /** 在原有到期日（已过期则从现在）之后加上天数；同一个订单号只加一次。 */
+  async function grant(householdId, order) {
+    for (let attempt = 0; attempt < GRANT_ATTEMPTS; attempt++) {
+      const household = await households.findById(householdId);
+      if (!household) throw new ApiError('NOT_FOUND', '小家不存在。');
+      const last = household.vip?.last || [];
+      if (last.includes(order.outTradeNo)) return;
+      const current = Number(household.vip?.until) || 0;
+      const at = now();
+      const until = Math.max(current, at) + order.days * DAY_MS;
+      const vip = {
+        until,
+        last: [...last, order.outTradeNo].slice(-KEEP_ORDERS),
+      };
+      if (await households.setVip(householdId, household.vip?.until, vip))
+        return;
+    }
+    throw new ApiError('UNAVAILABLE', '会员开通冲突，请稍后重试。');
+  }
+
+  return {
+    actions: {
+      async 'vip.get'(openid) {
+        const household = await requireMembership(openid);
+        return {
+          ...vipView(household, now()),
+          available: xpay !== null,
+          plans: VIP.plans,
+          dailyImages: VIP.dailyImages,
+          dailySummaries: VIP.dailySummaries,
+        };
+      },
+      async 'vip.order'(openid, payload) {
+        const household = await requireMembership(openid);
+        if (!xpay)
+          throw new ApiError(
+            'UNAVAILABLE',
+            '会员购买还没开通：需要在云函数 api 里配置虚拟支付。',
+          );
+        const plan = VIP.plans.find((item) => item.id === payload?.plan);
+        if (!plan) throw new ApiError('VALIDATION', '没有这个会员套餐。');
+        const code = typeof payload?.code === 'string' ? payload.code : '';
+        if (!code) throw new ApiError('VALIDATION', '登录状态过期，请重试。');
+        const sessionKey = await xpay.sessionKey(code, openid);
+        const outTradeNo = newOutTradeNo(now());
+        // 价格、商品 ID 都以云端为准，客户端传来的只有套餐 ID。
+        const signData = JSON.stringify({
+          offerId: xpay.offerId,
+          buyQuantity: 1,
+          env: xpay.env,
+          currencyType: 'CNY',
+          productId: plan.id,
+          goodsPrice: plan.price,
+          outTradeNo,
+          // 透传数据，发货推送里原样带回；这里放小家 ID 方便对账。
+          attach: household._id,
+        });
+        await orders.insert({
+          outTradeNo,
+          openid,
+          householdId: household._id,
+          productId: plan.id,
+          price: plan.price,
+          days: plan.days,
+          env: xpay.env,
+          status: 'pending',
+          ts: now(),
+        });
+        return {
+          mode: 'short_series_goods',
+          signData,
+          ...xpay.sign(signData, sessionKey),
+        };
+      },
+    },
+    /**
+     * 微信的发货推送入口（不经过 openid 身份）。验签通过、订单对得上才加会员；
+     * 重复推送是正常的，所以整个过程要幂等。返回 ErrCode 0 微信才不再重试。
+     */
+    async deliver(event) {
+      const fail = (message) => ({ ErrCode: 1, ErrMsg: message });
+      if (event?.Event !== DELIVER_EVENT) return fail('unsupported event');
+      if (!xpay) return fail('xpay not configured');
+      if (!xpay.verifyDeliver(event)) return fail('bad signature');
+      const push = parseDeliver(event);
+      const order = await orders.get(push.outTradeNo);
+      if (
+        !order ||
+        order.openid !== push.openid ||
+        order.productId !== push.productId ||
+        order.price !== push.paid ||
+        order.env !== push.env
+      )
+        return fail('order mismatch');
+      try {
+        await grant(order.householdId, order);
+        await orders.markDelivered(order.outTradeNo);
+      } catch {
+        return fail('deliver failed');
+      }
+      return { ErrCode: 0, ErrMsg: 'Success' };
+    },
+  };
+}
+
+module.exports = { createVipHandler, isVip, vipView, dailyLimits };

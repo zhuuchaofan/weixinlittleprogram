@@ -231,3 +231,14 @@
 
 1. 第一次点「截图记账」（主页或记账页）：先弹「截图记账说明」。点「不用了」不打开相册；点「知道了」打开相册，以后不再弹。
 2. 花销分析页：「喵喵小结」标题右边有「AI 生成」；生成后小结下面有一行「以上内容由 AI 根据账目汇总生成，仅供参考」。
+
+## 会员订阅（微信虚拟支付，道具直购）
+
+会员属于整个小家，一人开通两人共用；权益是截图识别、AI 小结每日次数更多（数值和套餐见 `shared/contract.json` 的 `vip`，改完跑 `npm run contract`）。
+
+1. 云开发控制台 → 数据库 → 新建 `orders`，权限选「自定义安全规则」`{ "read": false, "write": false }`。
+2. 公众平台 → 支付与交易 → 虚拟支付：开通后在「基本配置」取 OfferID、现网 AppKey、沙箱 AppKey；在「道具管理」建两个道具，**道具 ID 和价格必须和 `contract.json` 里的套餐一致**（`vip_month` 9 元、`vip_year` 68 元，价格单位是分）。
+3. 云函数 `api` 环境变量：`XPAY_OFFER_ID`、`XPAY_APP_KEY`、`XPAY_SANDBOX_APP_KEY`、`WX_APPID`、`WX_APPSECRET`；联调时加 `XPAY_ENV=1` 走沙箱，上线前删掉。
+4. 「消息推送」把发货推送（`xpay_goods_deliver_notify`）配置成云函数 `api`，用控制台的「模拟推送」测一次：返回 `ErrCode: 0` 才算通。
+5. 验签按 `PayEventSig = HMAC-SHA256(AppKey, Event + "&" + Payload)` 实现（见 `cloudfunctions/api/xpay.js` 的 `verifyDeliver`）。**这一条要用模拟推送确认**：推送的包体结构和文档不一致时，会员不会到账，改这个函数即可。
+6. 到账只以发货推送为准；同一订单重复推送不会重复加天数。

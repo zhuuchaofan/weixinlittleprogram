@@ -8,6 +8,7 @@ const { createExportHandler } = require('./export');
 const { createInsightHandler } = require('./insight');
 const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
+const { createVipHandler } = require('./vip');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
 function createRouter({
@@ -21,12 +22,22 @@ function createRouter({
   insights = null,
   goals = null,
   vision = null,
+  orders = null,
+  xpay = null,
   now = () => Date.now(),
 }) {
   const household = createHouseholdHandler({ repository: households, now });
   const requireMembership = household.requireMembership;
+  const vip = createVipHandler({
+    households,
+    orders,
+    xpay,
+    requireMembership,
+    now,
+  });
   const actions = {
     ...household.actions,
+    ...vip.actions,
     ...createArchiveHandler({ repository: archive, requireMembership }),
     ...createExpenseHandler({ repository: expenses, requireMembership, now }),
     ...createBillHandler({
@@ -64,7 +75,7 @@ function createRouter({
       now,
     }),
   };
-  return async function route(event, openid) {
+  async function route(event, openid) {
     try {
       if (typeof openid !== 'string' || !openid)
         throw new ApiError(
@@ -81,7 +92,10 @@ function createRouter({
     } catch (error) {
       return failure(error);
     }
-  };
+  }
+  /** 微信虚拟支付的发货推送：自带签名，不用 openid。 */
+  route.deliver = vip.deliver;
+  return route;
 }
 
 module.exports = { createRouter };

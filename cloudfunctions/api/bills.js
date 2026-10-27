@@ -11,6 +11,7 @@ const validate = require('./validate');
 const CONTRACT = require('./contract.json');
 const { SETTLEMENT } = require('./ledger');
 const { todayKey } = require('./dates');
+const { dailyLimits } = require('./vip');
 const {
   KINDS,
   MAX_ITEMS,
@@ -119,18 +120,22 @@ function createBillHandler({
       if (!/^https:\/\/\S{1,1000}$/.test(url))
         throw new ApiError('VALIDATION', '截图上传失败，请重试。');
       const today = todayKey(now());
+      // 会员的每日次数更多（整个小家共用）。
+      const limit = dailyLimits(household, now(), {
+        images: DAILY_IMAGES,
+      }).images;
       // 先占额度再调模型：识别失败也算一次，避免反复重试刷用量。
       if (
         !(await households.takeQuota(
           household._id,
           'billQuota',
           today,
-          DAILY_IMAGES,
+          limit,
         ))
       )
         throw new ApiError(
           'LIMIT',
-          `今天已经识别了 ${DAILY_IMAGES} 张截图，明天再来吧。`,
+          `今天已经识别了 ${limit} 张截图，明天再来吧。`,
         );
       return parseReply(await vision.read(url, PROMPT), today);
     },

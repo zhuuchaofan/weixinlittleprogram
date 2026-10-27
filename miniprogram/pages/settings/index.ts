@@ -96,6 +96,9 @@ Page({
     const code = this.data.household?.inviteCode;
     if (code) wx.setClipboardData({ data: code });
   },
+  openVip() {
+    wx.navigateTo({ url: '/pages/vip/index' });
+  },
   openBudgets() {
     wx.navigateTo({ url: '/pages/budgets/index' });
   },

@@ -1,0 +1,34 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view wx:if="{{loading && !info}}" class="status">正在读取…</view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{message}}" class="notice">{{message}}</view>
+
+  <block wx:if="{{info}}">
+    <view class="card status-card">
+      <view class="row-title">{{info.active ? '会员有效中' : '还不是会员'}}</view>
+      <view class="row-sub">{{info.active ? '到期日 ' + untilText + '，你们两个人共用。' : '一个人开通，两个人都能用。'}}</view>
+    </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">会员权益</view></view>
+      <view class="list">
+        <view class="list-row"><view class="row-main"><view>截图记账每天识别 {{info.dailyImages}} 张</view><view class="row-sub">不开通时每天 {{baseImages}} 张</view></view></view>
+        <view class="list-row"><view class="row-main"><view>喵喵小结每天生成 {{info.dailySummaries}} 次</view><view class="row-sub">不开通时每天 {{baseSummaries}} 次</view></view></view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">{{info.active ? '续费' : '选择套餐'}}</view></view>
+      <view wx:if="{{!info.available}}" class="notice">会员购买还没开通，请稍后再来。</view>
+      <view class="list">
+        <view wx:for="{{plans}}" wx:key="id" class="list-row">
+          <view class="row-main"><view class="row-title">{{item.name}}</view><view class="row-sub">{{item.days}} 天 · {{item.price}}</view></view>
+          <button class="primary buy" data-id="{{item.id}}" bindtap="buy" loading="{{busy === item.id}}" disabled="{{!!busy || !info.available}}">{{info.active ? '续费' : '开通'}}</button>
+        </view>
+      </view>
+      <view class="small muted fine-print">费用按虚拟商品由微信支付收取；到期后不会自动续费。</view>
+    </view>
+  </block>
+  <view class="page-end"></view>
+</view>
