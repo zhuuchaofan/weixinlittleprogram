@@ -5,6 +5,7 @@
 - 数据模型、记账规则、功能编号：[docs/PLAN.md](docs/PLAN.md)
 - 接下来做什么：[docs/ROADMAP.md](docs/ROADMAP.md)
 - 云端部署与每次改动的验收步骤：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- 界面设计规范（颜色、间距、按钮）：[docs/DESIGN.md](docs/DESIGN.md)
 
 ## 功能
 

@@ -4,7 +4,6 @@
 .hero-days { margin: 8rpx 0 4rpx; font-size: 72rpx; font-weight: 800; line-height: 1.2; }
 .hero-date { font-size: 24rpx; opacity: 0.9; }
 .add, button.add:not([size='mini']) { margin-top: 24rpx; }
-.plus { margin-right: 8rpx; }
 .date-days { display: flex; align-items: baseline; gap: 6rpx; color: var(--accent); }
 .days-number { font-size: 44rpx; font-weight: 700; }
 .date-today { font-size: 28rpx; font-weight: 600; padding: 6rpx 18rpx; border-radius: 999rpx; background: var(--accent-soft); }

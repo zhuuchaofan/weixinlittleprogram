@@ -8,4 +8,4 @@
 .draw-button, button.draw-button:not([size='mini']) { position: relative; z-index: 1; margin-top: 12rpx; background: #fff; color: var(--accent); font-weight: 600; }
 .draw-ghost, button.draw-ghost:not([size='mini']) { background: rgba(255, 255, 255, 0.24); color: #fff; }
 .draw-hint { position: relative; z-index: 1; font-size: 22rpx; opacity: 0.85; }
-.composer { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; }
+.composer { margin-top: 24rpx; }

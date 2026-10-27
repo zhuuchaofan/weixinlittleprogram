@@ -1,9 +1,3 @@
-.month-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16rpx; }
-.month-arrow { width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 48rpx; color: var(--accent); }
-.month-arrow-active { background: var(--sunken); }
-.month-arrow-off { color: var(--line); }
-.month-text { font-size: 34rpx; font-weight: 700; white-space: nowrap; }
-
 /* 本月总额：渐变大卡片 */
 .hero { padding: 36rpx 36rpx 32rpx; }
 .hero-label { font-size: 24rpx; opacity: 0.92; }
@@ -25,9 +19,8 @@
 .budget-bar { height: 100%; border-radius: 4rpx; background: var(--ok); }
 .budget-warn { color: var(--accent); }
 .budget-warn .budget-bar { background: var(--accent); }
-.budget-over { color: #a1302a; }
-.budget-over .budget-bar { background: #a1302a; }
-.cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
+.budget-over { color: var(--danger); }
+.budget-over .budget-bar { background: var(--danger); }
 .cat-name { flex: 1; min-width: 0; font-size: 28rpx; white-space: nowrap; }
 .cat-percent { width: 72rpx; flex-shrink: 0; text-align: right; }
 .insight-link { display: flex; align-items: center; justify-content: flex-end; gap: 8rpx; min-height: 88rpx; margin-top: 8rpx; border-top: 1rpx solid var(--line); color: var(--accent); font-size: 26rpx; }
@@ -36,7 +29,7 @@
 .cat-amount { width: 180rpx; flex-shrink: 0; text-align: right; font-size: 28rpx; font-weight: 600; white-space: nowrap; }
 
 /* 明细 */
-.section-head { margin-top: 24rpx; }
+.section-head { margin-top: 32rpx; }
 .amount { font-size: 32rpx; }
 .income { color: var(--ok); }
 .row-settlement .row-title, .row-settlement .amount { color: var(--muted); }
