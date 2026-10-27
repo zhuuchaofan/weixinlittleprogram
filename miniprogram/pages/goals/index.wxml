@@ -14,7 +14,7 @@
     <view class="goal-plan small">{{item.planText}}</view>
     <view class="goal-foot">
       <text class="small {{item.behind ? 'goal-behind' : 'goal-ok'}}">{{item.monthText}}</text>
-      <button wx:if="{{!item.done}}" class="goal-button" data-id="{{item.id}}" bindtap="deposit" disabled="{{busy}}">存了一笔</button>
+      <button wx:if="{{!item.done}}" class="btn-small" data-id="{{item.id}}" bindtap="deposit" disabled="{{busy}}">存了一笔</button>
     </view>
   </view>
 

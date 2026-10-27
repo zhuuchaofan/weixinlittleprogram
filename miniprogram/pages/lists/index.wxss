@@ -1,8 +1,7 @@
-.composer { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; }
+.composer { margin-top: 24rpx; }
 .todo-row { padding: 0 20rpx 0 0; align-items: stretch; gap: 0; }
 .todo-main { display: flex; align-items: center; gap: 16rpx; padding: 16rpx 0; }
 .todo-main .row-title { flex: 1; min-width: 0; }
 .todo-done { opacity: 0.7; }
 .struck { text-decoration: line-through; color: var(--muted); }
-.fold-head { display: flex; align-items: center; justify-content: space-between; margin: 24rpx 4rpx 8rpx; font-size: 26rpx; color: var(--muted); }
 .fold-head .text-button { font-size: 26rpx; }

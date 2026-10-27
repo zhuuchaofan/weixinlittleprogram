@@ -1,9 +1,3 @@
-.month-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16rpx; }
-.month-arrow { width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 48rpx; color: var(--accent); }
-.month-arrow-active { background: var(--sunken); }
-.month-arrow-off { color: var(--line); }
-.month-text { font-size: 34rpx; font-weight: 700; white-space: nowrap; }
-
 .hero { padding: 36rpx 36rpx 32rpx; }
 .hero-label { font-size: 24rpx; opacity: 0.92; }
 .hero-total { font-size: 80rpx; font-weight: 800; line-height: 1.2; margin: 8rpx 0 12rpx; letter-spacing: -1rpx; }
@@ -18,16 +12,13 @@
 .ai-cat { width: 44rpx; height: 44rpx; }
 .ai-title { font-size: 30rpx; font-weight: 700; }
 .ai-text { font-size: 28rpx; line-height: 1.8; white-space: pre-line; }
-.ai-error { margin-top: 12rpx; color: #a1302a; }
+.ai-error { margin-top: 12rpx; color: var(--danger); }
 .ai-foot { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 16rpx; }
-/* 同攒钱页的小按钮：不用 size="mini"，固定高度让字上下居中 */
-.ai-button, button.ai-button:not([size='mini']) { width: auto; min-height: 0; height: 64rpx; padding: 0 28rpx; line-height: 1; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); font-size: 26rpx; font-weight: 600; }
 
 /* 按分类对比：每类一行文字 + 一条按本月最大一类缩放的进度条 */
 .compare { padding: 20rpx 32rpx; }
 .compare-row { padding: 12rpx 0; }
 .compare-line { display: flex; align-items: center; gap: 16rpx; min-height: 56rpx; }
-.cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
 .cat-name { flex: 1; min-width: 0; font-size: 28rpx; white-space: nowrap; }
 .compare-change { flex-shrink: 0; color: var(--muted); white-space: nowrap; }
 .compare-change.up { color: var(--accent); }

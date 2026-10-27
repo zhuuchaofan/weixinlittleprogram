@@ -1,4 +1,4 @@
-/* 小家：全局设计变量与公共组件。页面 wxss 只写本页特有的布局。 */
+/* 小家：全局设计变量与公共组件。页面 wxss 只写本页特有的布局。规则见 docs/DESIGN.md。 */
 page {
   --paper: #f8f5fc;
   --surface: #ffffff;
@@ -12,6 +12,10 @@ page {
   --dark: #26211f;
   --ok: #24a466;
   --ok-soft: #e2f5ea;
+  /* 出错、超支、警告：不跟主题变，所有主题都用这一组 */
+  --danger: #a1302a;
+  --danger-soft: #fde3df;
+  --warn: #9a6a1f;
   --shadow: 0 8rpx 32rpx rgba(110, 80, 150, 0.08);
   /* 主题色衍生：勾选圈、主色阴影、卡片阴影、头像。换主题见 config/themes.ts，这里是默认（香芋紫）。 */
   --ring: #cfb8f2;
@@ -21,6 +25,12 @@ page {
   --avatar-b: linear-gradient(135deg, #7cc4f2, #5b9cf0);
   --radius: 32rpx;
   --radius-sm: 20rpx;
+  /* 间距阶梯（docs/DESIGN.md）：行内 8，元素之间 16，卡片之间 24，卡片内边距 32，大块之间 48 */
+  --gap-xs: 8rpx;
+  --gap-sm: 16rpx;
+  --gap: 24rpx;
+  --gap-lg: 32rpx;
+  --gap-xl: 48rpx;
   background: var(--paper);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -39,14 +49,14 @@ view, button, input, textarea { box-sizing: border-box; }
 .muted { color: var(--muted); }
 .small { font-size: 24rpx; }
 .inline { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; }
-.section { margin-top: 48rpx; }
+.section { margin-top: var(--gap-xl); }
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; min-height: 88rpx; margin-bottom: 12rpx; }
 .section-title { font-size: 34rpx; font-weight: 700; }
 .section-head .section-title { margin: 0; }
 
 /* 卡片与列表 */
 .card { background: var(--surface); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
-.card + .card { margin-top: 24rpx; }
+.card + .card { margin-top: var(--gap); }
 .list { background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .list-row { position: relative; display: flex; align-items: center; gap: 20rpx; min-height: 112rpx; padding: 20rpx 28rpx; }
 .list-row + .list-row::before { content: ''; position: absolute; top: 0; left: 28rpx; right: 28rpx; border-top: 1rpx solid var(--line); }
@@ -57,7 +67,7 @@ view, button, input, textarea { box-sizing: border-box; }
 .row-trail { flex-shrink: 0; text-align: right; }
 .chevron { color: var(--muted); font-size: 40rpx; flex-shrink: 0; }
 /* 列表与上方内容的间距（清单、吃啥、想去、纪念日） */
-.list-gap { margin-top: 24rpx; }
+.list-gap { margin-top: var(--gap); }
 .list-label { font-size: 24rpx; color: var(--muted); margin: 32rpx 4rpx 12rpx; }
 
 /* 按钮：覆盖基础库默认的 184px 宽度与居中外边距 */
@@ -69,8 +79,13 @@ button[disabled] { background: var(--sunken) !important; color: var(--muted) !im
 .secondary { background: var(--surface); box-shadow: var(--shadow); }
 .btn-inline, button.btn-inline:not([size='mini']) { width: auto; flex-shrink: 0; padding: 0 36rpx; min-height: 80rpx; font-size: 28rpx; }
 .text-button, button.text-button:not([size='mini']) { width: auto; color: var(--accent); padding: 20rpx 12rpx; min-height: 88rpx; }
-.danger-button, button.danger-button:not([size='mini']) { width: auto; margin: 32rpx auto 0; color: #a23b33; padding: 20rpx 24rpx; }
+.danger-button, button.danger-button:not([size='mini']) { width: auto; margin: 32rpx auto 0; color: var(--danger); padding: 20rpx 24rpx; }
 .stack > button + button { margin-top: 20rpx; }
+/* 卡片里的小按钮（存了一笔、写小结）。不要用 size="mini"：它自带的行高和上面的 flex 冲突，字会偏上。
+   固定高度 + line-height: 1，字就上下居中。 */
+.btn-small, button.btn-small:not([size='mini']) { width: auto; min-height: 0; height: 64rpx; padding: 0 28rpx; line-height: 1; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); font-size: 26rpx; font-weight: 600; }
+/* 按钮文字前的「+」 */
+.plus { font-size: 40rpx; font-weight: 400; line-height: 1; margin-right: 8rpx; }
 
 /* 表单 */
 .field { margin-bottom: 32rpx; }
@@ -91,7 +106,21 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 .chip-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
 
 /* 顶部「写一条直接添加」的输入框（清单、吃啥、想去） */
+.composer { display: flex; align-items: center; gap: var(--gap-sm); }
 .composer-input { flex: 1; min-width: 0; }
+
+/* 列表下方可折叠的「已完成 / 去过的」小标题 */
+.fold-head { display: flex; align-items: center; justify-content: space-between; margin: 32rpx 4rpx 12rpx; font-size: 26rpx; color: var(--muted); }
+
+/* 月份切换（记账、花销分析） */
+.month-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--gap-sm); }
+.month-arrow { width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 48rpx; color: var(--accent); }
+.month-arrow-active { background: var(--sunken); }
+.month-arrow-off { color: var(--line); }
+.month-text { font-size: 34rpx; font-weight: 700; white-space: nowrap; }
+
+/* 分类色点（颜色写在 style 里，来自 config/options.ts） */
+.cat-dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex-shrink: 0; }
 
 /* 列表行前面的勾选圈（清单、想去）：外层是点按区域 */
 .tick { width: 96rpx; min-height: 104rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -105,7 +134,7 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 /* 状态 */
 .tag { display: inline-block; font-size: 22rpx; color: var(--accent); background: var(--accent-soft); padding: 4rpx 16rpx; border-radius: 999rpx; }
 .notice { background: var(--accent-soft); border-radius: var(--radius-sm); padding: 20rpx 24rpx; font-size: 26rpx; line-height: 1.6; margin: 24rpx 0; }
-.error { background: #fde3df; color: #a1302a; }
+.error { background: var(--danger-soft); color: var(--danger); }
 .status { padding: 48rpx 20rpx; text-align: center; color: var(--muted); font-size: 26rpx; }
 .empty { padding: 56rpx 24rpx; text-align: center; color: var(--muted); font-size: 26rpx; border: 1rpx dashed var(--line); border-radius: var(--radius); }
 
