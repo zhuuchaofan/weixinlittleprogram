@@ -9,6 +9,7 @@ const { ApiError } = require('./errors');
 const PAY_URI = 'requestVirtualPayment';
 const QUERY_URI = '/xpay/query_order';
 const DELIVER_EVENT = 'xpay_goods_deliver_notify';
+const REFUND_EVENT = 'xpay_refund_notify';
 const API = 'https://api.weixin.qq.com';
 const TIMEOUT_MS = 8 * 1000;
 // access_token 提前这么久换新的。
@@ -166,10 +167,30 @@ function parseDeliver(event) {
   };
 }
 
+/**
+ * 从退款推送里取出需要的字段；MchOrderId 是被退那笔支付单的商户单号（即 outTradeNo）。
+ * 格式不对返回 null。
+ */
+function parseRefund(event) {
+  if (
+    typeof event?.MchOrderId !== 'string' ||
+    typeof event?.OpenId !== 'string'
+  )
+    return null;
+  return {
+    outTradeNo: event.MchOrderId,
+    openid: event.OpenId,
+    // RetCode 0 是退款成功，其余是退款失败（钱没退出去）。
+    success: Number(event.RetCode) === 0,
+  };
+}
+
 module.exports = {
   createXpay,
   parseDeliver,
+  parseRefund,
   DELIVER_EVENT,
+  REFUND_EVENT,
   PAY_URI,
   QUERY_URI,
 };

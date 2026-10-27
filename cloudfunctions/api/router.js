@@ -95,6 +95,8 @@ function createRouter({
   }
   /** 微信虚拟支付的发货推送：不用 openid，发货前向微信查单。 */
   route.deliver = vip.deliver;
+  /** 微信虚拟支付的退款推送：查单确认后收回会员天数。 */
+  route.refund = vip.refund;
   return route;
 }
 

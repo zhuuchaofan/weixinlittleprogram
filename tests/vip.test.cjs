@@ -70,6 +70,9 @@ function memoryOrders() {
     async markDelivered(outTradeNo) {
       docs.set(outTradeNo, { ...docs.get(outTradeNo), status: 'delivered' });
     },
+    async markRefunded(outTradeNo, refunded) {
+      docs.set(outTradeNo, { ...docs.get(outTradeNo), refunded });
+    },
   };
 }
 
@@ -150,6 +153,26 @@ function deliverEvent(order, override = {}) {
       ActualPrice: order.price,
       Attach: order.householdId,
     },
+    ...override,
+  };
+}
+
+/** 微信推到云函数的退款推送。 */
+function refundEvent(order, override = {}) {
+  return {
+    ToUserName: 'gh_xxx',
+    FromUserName: order.openid,
+    CreateTime: 1761364800,
+    MsgType: 'event',
+    Event: 'xpay_refund_notify',
+    OpenId: order.openid,
+    WxRefundId: 'WR1',
+    MchRefundId: 'MR1',
+    WxOrderId: 'WO1',
+    MchOrderId: order.outTradeNo,
+    RefundFee: order.price,
+    RetCode: 0,
+    RetMsg: '',
     ...override,
   };
 }
@@ -482,4 +505,85 @@ test('vip.confirm：别的小家的订单、不存在的订单都查不了', asy
     (await ctx.route({ action: 'vip.get' }, 'oA')).data.active,
     false,
   );
+});
+
+/** 买一单、到账，再在假微信那边退掉 refunded 分。 */
+async function boughtAndRefunded(ctx, plan, refunded) {
+  const { order } = await buy(ctx, plan);
+  pay(ctx, order);
+  await ctx.route.deliver(deliverEvent(order));
+  pay(ctx, order, {
+    status: refunded === order.price ? 5 : 4,
+    left_fee: order.price - refunded,
+  });
+  return order;
+}
+
+const vipOf = async (ctx) =>
+  (await ctx.route({ action: 'vip.get' }, 'oA')).data;
+
+test('退款推送：全额退款收回这一单的天数，重复推送只扣一次', async () => {
+  const ctx = await setup();
+  const order = await boughtAndRefunded(ctx, 'vip_year', 6800);
+  const reply = await ctx.route.refund(refundEvent(order));
+  assert.deepEqual(reply, { ErrCode: 0, ErrMsg: 'Success' });
+  const after = await vipOf(ctx);
+  assert.equal(after.active, false);
+  assert.equal(after.until, NOW);
+  assert.equal(ctx.orders.docs.get(order.outTradeNo).refunded, 6800);
+  assert.equal((await ctx.route.refund(refundEvent(order))).ErrCode, 0);
+  assert.equal((await vipOf(ctx)).until, NOW);
+});
+
+test('退款推送：只扣被退那一单，另一单的天数还在', async () => {
+  const ctx = await setup();
+  const { order: kept } = await buy(ctx, 'vip_month');
+  pay(ctx, kept);
+  await ctx.route.deliver(deliverEvent(kept));
+  const order = await boughtAndRefunded(ctx, 'vip_year', 6800);
+  await ctx.route.refund(refundEvent(order));
+  const month = VIP.plans.find((plan) => plan.id === 'vip_month').days;
+  const after = await vipOf(ctx);
+  assert.equal(after.active, true);
+  assert.equal(after.until, NOW + month * DAY);
+});
+
+test('退款推送：部分退款按比例扣，再退剩下的只扣差额', async () => {
+  const ctx = await setup();
+  const order = await boughtAndRefunded(ctx, 'vip_year', 3400);
+  await ctx.route.refund(refundEvent(order));
+  const year = VIP.plans.find((plan) => plan.id === 'vip_year').days;
+  assert.equal((await vipOf(ctx)).until, NOW + (year * DAY) / 2);
+  pay(ctx, order, { status: 5, left_fee: 0 });
+  await ctx.route.refund(refundEvent(order));
+  assert.equal((await vipOf(ctx)).until, NOW);
+});
+
+test('退款推送：不可信，以查单为准；退款失败、伪造的推送不扣天数', async () => {
+  const ctx = await setup();
+  const { order } = await buy(ctx, 'vip_year');
+  pay(ctx, order);
+  await ctx.route.deliver(deliverEvent(order));
+  const before = (await vipOf(ctx)).until;
+  // 微信那边并没有退款
+  assert.equal((await ctx.route.refund(refundEvent(order))).ErrCode, 0);
+  for (const event of [
+    refundEvent(order, { RetCode: 1 }),
+    refundEvent(order, { OpenId: 'oB' }),
+    refundEvent(order, { MchOrderId: 'V-not-ours-0001' }),
+    refundEvent(order, { MchOrderId: undefined }),
+    { ...refundEvent(order), Event: 'other_event' },
+  ])
+    await ctx.route.refund(event);
+  assert.equal((await vipOf(ctx)).until, before);
+});
+
+test('退款推送：没开通过的订单退款只记账，之后也不会再开通', async () => {
+  const ctx = await setup();
+  const { order } = await buy(ctx, 'vip_month');
+  pay(ctx, order, { status: 5, left_fee: 0 });
+  assert.equal((await ctx.route.refund(refundEvent(order))).ErrCode, 0);
+  assert.equal(ctx.orders.docs.get(order.outTradeNo).refunded, 900);
+  await ctx.route.deliver(deliverEvent(order));
+  assert.equal((await vipOf(ctx)).active, false);
 });

@@ -6,7 +6,7 @@ const {
 } = require('./invocation');
 const { listAll, readComplete } = require('./paging');
 const { createVision } = require('./vision');
-const { createXpay, DELIVER_EVENT } = require('./xpay');
+const { createXpay, DELIVER_EVENT, REFUND_EVENT } = require('./xpay');
 
 function createHouseholdRepository(db) {
   const collection = db.collection('households');
@@ -87,7 +87,7 @@ function createHouseholdRepository(db) {
   };
 }
 
-/** 会员订单：下单时记一条 pending，收到微信发货推送并到账后标记 delivered。 */
+/** 会员订单：下单时记一条 pending，到账后标记 delivered，退款后记下退了多少（分）。 */
 function createOrderRepository(db) {
   const collection = db.collection('orders');
   return {
@@ -103,6 +103,11 @@ function createOrderRepository(db) {
       await collection
         .where({ outTradeNo, status: 'pending' })
         .update({ status: 'delivered', deliveredAt: Date.now() });
+    },
+    async markRefunded(outTradeNo, refunded) {
+      await collection
+        .where({ outTradeNo })
+        .update({ refunded, refundedAt: Date.now() });
     },
   };
 }
@@ -175,8 +180,9 @@ function createRecordRepository(db, collectionName) {
 }
 
 exports.main = async (event, context) => {
-  // 微信的发货推送：不靠 openid，真假靠向微信查单（见 vip.js 的 deliver）。
+  // 微信的发货、退款推送：不靠 openid，真假靠向微信查单（见 vip.js 的 deliver、refund）。
   const isDeliver = event?.Event === DELIVER_EVENT;
+  const isRefund = event?.Event === REFUND_EVENT;
   const { openid, envId } = invocationFromContext(
     context,
     cloudbase.parseContext,
@@ -203,5 +209,6 @@ exports.main = async (event, context) => {
     xpay: createXpay(),
   });
   if (isDeliver) return route.deliver(event);
+  if (isRefund) return route.refund(event);
   return route(event, openid);
 };
