@@ -284,18 +284,18 @@ test('识别截图：需要模型配置，只有小家成员能用', async () =>
   assert.match(result.message, /DASHSCOPE_API_KEY/);
 });
 
-test('识别截图：每个小家每天最多 20 张，两人合计，第二天重新计数', async () => {
+test('识别截图：每个小家每天最多 5 张，两人合计，第二天重新计数', async () => {
   const clock = { now: NOW };
   const { call, vision } = await setup(undefined, clock);
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 5; i++) {
     const who = i % 2 ? 'B' : 'A';
     const result = await call(who, 'bill.parse', { url: 'https://img/1' });
     assert.equal(result.ok, true, result.message);
   }
   const over = await call('B', 'bill.parse', { url: 'https://img/1' });
   assert.equal(over.code, 'LIMIT');
-  assert.match(over.message, /20 张/);
-  assert.equal(vision.calls.length, 20);
+  assert.match(over.message, /已经识别了 5 张/);
+  assert.equal(vision.calls.length, 5);
   // 别的小家不受影响
   assert.equal(
     (await call('X', 'bill.parse', { url: 'https://img/1' })).ok,

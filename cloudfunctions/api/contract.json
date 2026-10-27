@@ -16,7 +16,7 @@
   "splits": ["half", "other", "self", "ratio"],
   "flows": ["out", "in"],
   "billApps": ["wechat", "alipay"],
-  "billImport": { "maxImages": 9, "maxItems": 100, "dailyImages": 20 },
+  "billImport": { "maxImages": 9, "maxItems": 100, "dailyImages": 5 },
   "aiSummary": { "daily": 5 },
   "vip": {
     "dailyImages": 100,
