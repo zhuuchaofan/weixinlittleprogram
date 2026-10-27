@@ -5,6 +5,14 @@ import { formatYuan } from '../../utils/money';
 import { todayKey } from '../../utils/date';
 import { CONTRACT } from '../../config/contract';
 
+const EACH = { day: '每天', month: '每月' } as const;
+
+/** 会员权益：每项 AI 功能会员和不开通时的次数，来自契约（shared/contract.json 的 ai）。 */
+const PERKS = Object.values(CONTRACT.ai).map((quota) => ({
+  title: `${quota.name}${EACH[quota.per]}${quota.verb} ${quota.vip} ${quota.unit}`,
+  sub: `不开通时${EACH[quota.per]} ${quota.free} ${quota.unit}`,
+}));
+
 Page({
   data: {
     ...themeData(),
@@ -13,9 +21,7 @@ Page({
     error: '',
     message: '',
     info: null as VipInfo | null,
-    // 不开通时的每日次数，来自契约。
-    baseImages: CONTRACT.billImport.dailyImages,
-    baseSummaries: CONTRACT.aiSummary.daily,
+    perks: PERKS,
     untilText: '',
     plans: [] as { id: string; name: string; days: number; price: string }[],
     // 购买须知里的「月度会员 31 天，年度会员 366 天」。

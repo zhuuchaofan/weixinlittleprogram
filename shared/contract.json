@@ -16,11 +16,28 @@
   "splits": ["half", "other", "self", "ratio"],
   "flows": ["out", "in"],
   "billApps": ["wechat", "alipay"],
-  "billImport": { "maxImages": 9, "maxItems": 100, "dailyImages": 5 },
-  "aiSummary": { "daily": 5 },
+  "billImport": { "maxImages": 9, "maxItems": 100 },
+  "ai": {
+    "billImage": {
+      "name": "截图记账",
+      "verb": "识别",
+      "unit": "张",
+      "what": "截图",
+      "per": "day",
+      "free": 5,
+      "vip": 100
+    },
+    "summary": {
+      "name": "喵喵小结",
+      "verb": "生成",
+      "unit": "次",
+      "what": "小结",
+      "per": "day",
+      "free": 5,
+      "vip": 30
+    }
+  },
   "vip": {
-    "dailyImages": 100,
-    "dailySummaries": 30,
     "plans": [
       { "id": "vip_month", "name": "月度会员", "days": 31, "price": 900 },
       { "id": "vip_year", "name": "年度会员", "days": 366, "price": 6800 }

@@ -10,15 +10,27 @@
 | --------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | households            | members[{openid, role, name}], memberCount, inviteCode, currency, splitting, archive | role 为 a（创建者）或 b，最多 2 人；currency 为 CNY；splitting 为「两人分摊与结算」开关，默认关；budgets 为分类预算 {分类: 每月上限（分）}；archive 为 `wedding-2026` 时可看答谢宴归档。旧记录里的 city 不再使用 |
 | expenses              | amount, note, cat, date, payer, split, ratio, flow, src, editedBy, editedAt          | amount 单位为分；split 为 half、self、other、ratio；ratio 为 0–100 的整数，只在 split 为 ratio 时有值；flow 为 out / in；src 为截图导入的原始字段                                                                |
-| todos                 | text, kind, who, done                                                                | kind 为 shop、todo、chore（界面只分购物和待办，chore 显示在待办里）；who 为 a、b、both                                                                                                                           |
+| todos                 | text, kind, who, done, doneOn                                                        | kind 为 shop、todo、chore（界面只分购物和待办，chore 显示在待办里）；who 为 a、b、both；doneOn 为勾完那天（1.7.0 起，旧记录没有）                                                                                |
 | dishes                | name, kind, tag, ateOn                                                               | 界面不再区分菜品和店家，新记录 kind 都是 dish（旧的 shop 保留）；tag 为 在家做、外食（显示为出去吃）、外卖；ateOn 为最近一次「就吃这个」的日期                                                                   |
 | wishes                | title, why, plan, done, doneOn                                                       | 想去的地方；界面只有一栏备注，存在 plan（why 是旧数据，编辑保存时并进 plan）；done 为去过了，doneOn 为去的日期                                                                                                   |
 | insights              | month, text, fingerprint                                                             | AI 月度小结，每小家每月一份，_id 为 `householdId-YYYY-MM`；fingerprint 是生成时的「合计/笔数」，账目变了就提示重新生成                                                                                           |
 | goals                 | title, target, deadline, saved, log                                                  | 攒钱目标；target、saved 单位为分；deadline 为 YYYY-MM（最后一个月）；log 为每次「存了一笔」[{amount, date, role, ts}]，role 为 a / b                                                                             |
 | dates                 | title, date, yearly                                                                  | 纪念日                                                                                                                                                                                                           |
+| activity              | type, refId, title, date, kind                                                       | 年度回顾用的「做过的事」：type 为 dish（就吃这个）、todo（勾完）、wish（去过了）；title 是当时的名字；_id 为 `type_refId_date`，同一天只一条；原记录删了也保留                                                   |
+| ai_usage              | calls, failed, input, output, cost, features                                         | 每天一条 AI 用量，_id 为日期；cost 为估算费用（元）；features 按功能各记一份；不含内容和 openid                                                                                                                  |
 | rsvps、guest_messages | —                                                                                    | 答谢宴旧数据，只读归档                                                                                                                                                                                           |
 
 分类、标签、字段长度等前后端共用的取值写在 `shared/contract.json`。
+
+## AI 功能
+
+- 所有 AI 调用都走 `cloudfunctions/api/ai.js`：每个功能登记一次（档位、模型、温度、最长输出），键和 `shared/contract.json` 的 `ai` 一一对应。
+- 两档：`organize`「AI 整理」（截图识别这类，结果要用户确认才保存）；`write`「AI 写文字」（喵喵小结这类，界面标「AI 生成 · 仅供参考」）。环境变量 `AI_WRITE_OFF=1` 关掉所有 `write`。
+- 顺序固定：`ai.ensure(功能)`（总开关、全站费用上限）→ `quota.takeQuota`（小家的次数，先占后调，失败也算）→ `ai.read / ai.write`。
+- 次数：`contract.json` 的 `ai.<功能>` 写 `free`、`vip`、`per`（day / month）；计数存在 `households.<功能>Quota`（截图和小结沿用 `billQuota`、`summaryQuota`）。
+- 全站费用：每次调用按 `ai.js` 的估算单价记进 `ai_usage`；当天到 `AI_DAILY_BUDGET`（默认 20 元）的 80% 停 `write`、100% 停 `organize`。
+- 发给模型的只有这个功能需要的文字，不发名字和 openid；日志只记功能名、模型、耗时、token 数和错误码。
+- 「先确认再保存」的列表是组件 `components/draft-list`，行的计算在 `utils/drafts.ts`。
 
 ## 记账规则
 
@@ -34,7 +46,7 @@
 - 记为已结算：新增一条记录，amount 为 round(|net|)，payer 为欠款方，split 为 other，cat 为 结算，note 为 结算。
 - 按月统计，月份由 date 的前 7 位（YYYY-MM）决定。
 - 花销分析（`insight.get`）：口径同 `summary.spending`，所有支出、不含结算和收入、不管怎么分。本月和上月按分类对比；大额单笔是本月支出前 3 笔，再加上 ¥500 及以上的，最多 5 笔；走势是截至本月的近 6 个月每月支出。
-- AI 月度小结（`insight.write`）：只把上面这份汇总写成文字发给千问，大额单笔带备注或商户名（截到 12 字），不发截图、明细和名字；每小家每天最多生成 5 次（`households.summaryQuota`），失败也算一次。
+- AI 月度小结（`insight.write`）：只把上面这份汇总写成文字发给千问，大额单笔带备注或商户名（截到 12 字），不发截图、明细和名字；每小家每天的次数见 `shared/contract.json` 的 `ai.summary`（`households.summaryQuota`），失败也算一次。
 - 攒钱目标：进度只靠手动「存了一笔」（`goal.deposit`，`saved` 累加并记 `log`），存入不是支出，不进记账统计。每月要存 = 月初还差的 ÷ 本月到截止月（含）的月数，向上取整；已过截止月时是还差的全部；攒够了为 0。本月还差 = 每月要存 − 本月存入（不超过还差的）。省钱建议：前 3 个整月里除房租、水电网外各类的月均支出，取最多的 3 类，算少花 10% / 20% 每月能多存多少。
 - 分类预算：按所有支出算（同 `summary.spending`），开了两人分摊也一样。记一笔 / 改一笔的返回里带这一类本月的 `budget: {cat, limit, used, before}`（没设预算或不是支出时不带）；小程序在刚跨过 80% 或超出 100% 时弹一次提示，只在小程序里，不发微信消息。
 

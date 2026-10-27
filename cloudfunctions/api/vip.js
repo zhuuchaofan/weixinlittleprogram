@@ -1,6 +1,6 @@
 const { randomBytes } = require('node:crypto');
 const { ApiError } = require('./errors');
-const { vip: VIP } = require('./contract.json');
+const { vip: VIP, ai: QUOTAS } = require('./contract.json');
 const {
   DELIVER_EVENT,
   REFUND_EVENT,
@@ -26,20 +26,6 @@ function isVip(household, at) {
 function vipView(household, at) {
   const until = Number(household?.vip?.until) || 0;
   return { active: until > at, until };
-}
-
-/** 非会员用完当天次数时附上的开通提示；会员返回空串。 */
-function upgradeHint(household, at, text) {
-  return isVip(household, at) ? '' : text;
-}
-
-/** 截图识别、AI 小结的每日次数：会员更多。 */
-function dailyLimits(household, at, base) {
-  const vip = isVip(household, at);
-  return {
-    images: vip ? VIP.dailyImages : base.images,
-    summaries: vip ? VIP.dailySummaries : base.summaries,
-  };
 }
 
 /** 微信查单结果里这笔一共退了多少钱（分），不超过订单价。 */
@@ -162,8 +148,14 @@ function createVipHandler({
           ...vipView(household, now()),
           available: xpay !== null,
           plans: VIP.plans,
-          dailyImages: VIP.dailyImages,
-          dailySummaries: VIP.dailySummaries,
+          // 每项 AI 功能的免费 / 会员次数，会员页照着列。
+          quotas: Object.entries(QUOTAS).map(([id, quota]) => ({
+            id,
+            ...quota,
+          })),
+          // 1.6.0 的会员页读这两个，留着兼容。
+          dailyImages: QUOTAS.billImage.vip,
+          dailySummaries: QUOTAS.summary.vip,
         };
       },
       async 'vip.order'(openid, payload) {
@@ -280,6 +272,4 @@ module.exports = {
   createVipHandler,
   isVip,
   vipView,
-  dailyLimits,
-  upgradeHint,
 };

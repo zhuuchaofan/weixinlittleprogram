@@ -11,7 +11,7 @@ const validate = require('./validate');
 const CONTRACT = require('./contract.json');
 const { SETTLEMENT } = require('./ledger');
 const { todayKey } = require('./dates');
-const { dailyLimits, upgradeHint } = require('./vip');
+const { takeQuota } = require('./quota');
 const {
   KINDS,
   MAX_ITEMS,
@@ -27,8 +27,6 @@ const {
   parseReply,
 } = require('./bill-parse');
 const { matchItems } = require('./bill-match');
-
-const DAILY_IMAGES = CONTRACT.billImport.dailyImages;
 
 const BAD_SOURCE = '截图信息无效，请重新识别。';
 
@@ -98,20 +96,20 @@ function itemList(payload) {
 
 /**
  * repository：expenses 集合（listMonth、insertWithId）。
- * households：takeQuota(id, 'billQuota', day, limit) -> boolean，每个小家每天最多识别 DAILY_IMAGES 张。
- * vision：{ read(imageUrl, prompt) -> 模型回复文本 }；没有配置模型时为 null。
+ * households：takeQuota(id, field, day, limit) -> boolean，每个小家每天的张数见 contract.json 的 ai.billImage。
+ * ai：createAi() 的返回值（ai.js）；没有配置模型时为 null。
  */
 function createBillHandler({
   repository,
   households,
   requireMembership,
   now,
-  vision,
+  ai,
 }) {
   return {
     async 'bill.parse'(openid, payload) {
       const household = await requireMembership(openid);
-      if (!vision)
+      if (!ai)
         throw new ApiError(
           'UNAVAILABLE',
           '截图记账还没开通：需要在云函数 api 里配置 DASHSCOPE_API_KEY。',
@@ -120,24 +118,10 @@ function createBillHandler({
       if (!/^https:\/\/\S{1,1000}$/.test(url))
         throw new ApiError('VALIDATION', '截图上传失败，请重试。');
       const today = todayKey(now());
-      // 会员的每日次数更多（整个小家共用）。
-      const limit = dailyLimits(household, now(), {
-        images: DAILY_IMAGES,
-      }).images;
-      // 先占额度再调模型：识别失败也算一次，避免反复重试刷用量。
-      if (
-        !(await households.takeQuota(household._id, 'billQuota', today, limit))
-      )
-        throw new ApiError(
-          'LIMIT',
-          `今天已经识别了 ${limit} 张截图，明天再来吧。` +
-            upgradeHint(
-              household,
-              now(),
-              `开通会员每天可以识别 ${CONTRACT.vip.dailyImages} 张。`,
-            ),
-        );
-      return parseReply(await vision.read(url, PROMPT), today);
+      await ai.ensure('billImage');
+      // 会员的每日张数更多（整个小家共用）。
+      await takeQuota(households, household, 'billImage', now());
+      return parseReply(await ai.read('billImage', url, PROMPT), today);
     },
     async 'bill.match'(openid, payload) {
       const household = await requireMembership(openid);

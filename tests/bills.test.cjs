@@ -8,6 +8,7 @@ const {
 } = require('../cloudfunctions/api/bill-parse');
 const { similar, matchItems } = require('../cloudfunctions/api/bill-match');
 const { createVision } = require('../cloudfunctions/api/vision');
+const { createAi } = require('../cloudfunctions/api/ai');
 
 // 2026-10-25（周日）12:00 UTC+8
 const NOW = Date.parse('2026-10-25T04:00:00Z');
@@ -90,12 +91,14 @@ function memoryExpenses() {
 }
 
 /** 假的视觉模型：按图片地址返回事先写好的回复，记录收到的请求。 */
+/** 假的 AI 入口（ai.js 的 createAi）：按截图地址给固定回复，记下每次调用。 */
 function fakeVision(replies) {
   const calls = [];
   return {
     calls,
-    async read(url, prompt) {
-      calls.push({ url, prompt });
+    async ensure() {},
+    async read(feature, url, prompt) {
+      calls.push({ feature, url, prompt });
       return replies[url];
     },
   };
@@ -157,7 +160,7 @@ async function setup(
     households: memoryHouseholds(),
     archive: {},
     expenses,
-    vision,
+    ai: vision,
     now: () => clock.now,
   });
   const call = (openid, action, payload) => route({ action, payload }, openid);
@@ -256,6 +259,7 @@ test('识别截图：需要模型配置，只有小家成员能用', async () =>
   const parsed = await call('A', 'bill.parse', { url: 'https://img/1' });
   assert.equal(parsed.ok, true, parsed.message);
   assert.equal(vision.calls.length, 1);
+  assert.equal(vision.calls[0].feature, 'billImage');
   assert.match(vision.calls[0].prompt, /账单列表截图/);
   const [lunch, dinner, refund, transfer, conbini] = parsed.data.items;
   assert.equal(lunch.date, TODAY);
@@ -498,9 +502,11 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
   const requests = [];
   const chunk = (content) =>
     `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
-  const vision = createVision(
-    { DASHSCOPE_API_KEY: 'sk-test', BILL_MODEL: 'qwen-vl-max' },
-    async (url, options) => {
+  const env = { DASHSCOPE_API_KEY: 'sk-test', BILL_MODEL: 'qwen-vl-max' };
+  const vision = createAi({
+    env,
+    log: () => {},
+    client: createVision(env, async (url, options) => {
       requests.push({ url, options });
       return {
         status: 200,
@@ -509,9 +515,12 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
           chunk(':[]}') +
           'data: {"choices":[],"usage":{"total_tokens":9}}\n\ndata: [DONE]\n\n',
       };
-    },
+    }),
+  });
+  assert.equal(
+    await vision.read('billImage', 'https://img/1', '读账单'),
+    '{"items":[]}',
   );
-  assert.equal(await vision.read('https://img/1', '读账单'), '{"items":[]}');
   const body = JSON.parse(requests[0].options.body);
   assert.equal(
     requests[0].url,
@@ -525,16 +534,22 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
     image_url: { url: 'https://img/1' },
   });
   assert.equal(body.enable_thinking, false);
+  assert.deepEqual(body.stream_options, { include_usage: true });
   assert.equal(body.max_tokens, undefined);
 
-  const summary = createVision(
-    { DASHSCOPE_API_KEY: 'sk-test', SUMMARY_MODEL: 'qwen-flash' },
-    async (url, options) => {
+  const summaryEnv = {
+    DASHSCOPE_API_KEY: 'sk-test',
+    SUMMARY_MODEL: 'qwen-flash',
+  };
+  const summary = createAi({
+    env: summaryEnv,
+    log: () => {},
+    client: createVision(summaryEnv, async (url, options) => {
       requests.push({ url, options });
       return { status: 200, text: chunk('喵') + 'data: [DONE]\n\n' };
-    },
-  );
-  assert.equal(await summary.write('写小结'), '喵');
+    }),
+  });
+  assert.equal(await summary.write('summary', '写小结'), '喵');
   const written = JSON.parse(requests[1].options.body);
   assert.equal(written.model, 'qwen-flash', '小结可以单独换模型');
   assert.equal(written.max_tokens, 300);
@@ -542,11 +557,15 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
   assert.deepEqual(written.messages[0].content, [
     { type: 'text', text: '写小结' },
   ]);
+  const read = (client) =>
+    client.chat([{ type: 'text', text: '读账单' }], { model: 'qwen-flash' });
   const failing = (status, text) =>
-    createVision({ DASHSCOPE_API_KEY: 'sk-test' }, async () => ({
-      status,
-      text,
-    })).read('https://img/1', '读账单');
+    read(
+      createVision({ DASHSCOPE_API_KEY: 'sk-test' }, async () => ({
+        status,
+        text,
+      })),
+    );
   await assert.rejects(
     failing(
       401,
@@ -570,7 +589,7 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
   const offline = createVision({ DASHSCOPE_API_KEY: 'sk-test' }, async () => {
     throw new Error('ECONNRESET');
   });
-  await assert.rejects(offline.read('https://img/1', '读账单'), {
+  await assert.rejects(read(offline), {
     message: /连不上识别服务/,
   });
 });

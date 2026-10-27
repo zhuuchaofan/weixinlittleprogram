@@ -15,6 +15,8 @@
 | `wishes`                  | `householdId` 升序               | 想去                                                                                                                                |
 | `dates`                   | `householdId` 升序               | 纪念日                                                                                                                              |
 | `insights`                | —                                | AI 月度小结，每小家每月一份（_id 带小家和月份，不用建索引）                                                                         |
+| `activity`                | `householdId` 升序               | 年度回顾用：每次「就吃这个」、勾完待办、想去「去过了」各一条（1.7.0 起）                                                            |
+| `ai_usage`                | —                                | 每天一条 AI 用量（_id 是日期）：调用次数、失败次数、token 数、估算费用（元），按功能分开；只有数字（1.7.0 起）                      |
 | `rsvps`、`guest_messages` | —                                | 答谢宴旧数据，只读归档，保留                                                                                                        |
 
 答谢宴归档：在 `households` 里你们的小家文档（`members` 里有你们两人）加字段 `archive`，类型字符串，值 `wedding-2026`。不加的话你们自己也看不到「登记与祝福」。
@@ -25,7 +27,9 @@
 2. 云开发控制台 → 云函数 → `api` → 函数配置：
    - **超时时间 60 秒**（识别一张截图要 5～15 秒，默认 3 秒会超时）；
    - 环境变量 `DASHSCOPE_API_KEY`：千问的 API Key（见下）。密钥只放这里，不要写进代码或提交到 git；
-   - 可选：`BILL_MODEL` 换模型（默认 `qwen3.8-omni-flash`）；`BILL_BASE_URL` 换接口地址（默认 `https://cn-beijing.maas.qianwenaiapi.com/compatible-mode/v1`）。
+   - 可选：`BILL_MODEL` 换模型（默认 `qwen3.8-omni-flash`）；`SUMMARY_MODEL` 单独换喵喵小结的模型（例如 `qwen-flash`）；`BILL_BASE_URL` 换接口地址（默认 `https://cn-beijing.maas.qianwenaiapi.com/compatible-mode/v1`）；
+   - 可选：`AI_DAILY_BUDGET` 全站每天 AI 费用上限，单位元，默认 20。到 80% 先停「写文字」的功能（喵喵小结），到 100% 再停截图识别，第二天自动恢复；
+   - 可选：`AI_WRITE_OFF` 填 `1` 时关掉所有「写文字」的 AI 功能（审核要求下架时用，不用发版），截图识别不受影响。
 3. 云存储不用新建目录：截图临时上传到 `bill-screenshots/`，识别完马上删除。
 
 ### 开通通义千问（截图记账）
@@ -232,9 +236,29 @@
 1. 第一次点「截图记账」（主页或记账页）：先弹「截图记账说明」。点「不用了」不打开相册；点「知道了」打开相册，以后不再弹。
 2. 花销分析页：「喵喵小结」标题右边有「AI 生成」；生成后小结下面有一行「以上内容由 AI 根据账目汇总生成，仅供参考」。
 
+## 1.7.0 AI 地基
+
+界面基本不变：AI 调用走统一入口（记用量、全站费用上限、写文字类总开关），会员页的权益列表按 `shared/contract.json` 的 `ai` 生成，截图记账的确认列表做成了组件，线上出错会记日志，开始给年度回顾攒数据。
+
+### 部署
+
+1. 云开发控制台 → 数据库 → 新建集合 `activity`（索引加 `householdId` 升序）和 `ai_usage`（不用索引），权限都选「自定义安全规则」`{ "read": false, "write": false }`。没建也不会报错，只是不记。
+2. 可选：`api` 环境变量加 `AI_DAILY_BUDGET`（默认 20 元）。
+3. 重新部署 `cloudfunctions/api`；开发者工具「清缓存 → 全部清除」后编译，上传体验版，版本号填 `1.7.0`。
+
+### 真机验收
+
+1. 截图记账识别一张：确认列表和以前一样（勾选、点开改金额 / 备注 / 日期 / 分类 / 收支、保存）。
+2. 云开发控制台 → 数据库 → `ai_usage`：今天的日期有一条，`calls` 是 1，`features.billImage` 下有 token 数和 `cost`；云函数 `api` 的日志里有一行 `"event":"ai"`，里面没有账单内容。
+3. 写一次喵喵小结：`ai_usage` 里多出 `features.summary`。
+4. 在 `api` 环境变量加 `AI_WRITE_OFF=1` 再部署：写小结提示「喵喵写文字的功能暂时关闭了」，截图识别照常。验完删掉再部署。
+5. 会员页「会员权益」两行：截图记账每天识别 100 张（不开通时 5 张）、喵喵小结每天生成 30 次（不开通时 5 次）。
+6. 吃啥点「就吃这个」、清单勾完一条待办、想去打勾「去过了」：`activity` 里各多一条；待办取消勾选，那条消失。「清除已完成」后 `activity` 里的还在。
+7. 小程序后台 → 开发管理 → 运维中心 → 实时日志：断网时点一次刷新，能搜到 `api` 和 `NETWORK`。
+
 ## 会员订阅（微信虚拟支付，道具直购）
 
-会员属于整个小家，一人开通两人共用；权益是截图识别、AI 小结每日次数更多（数值和套餐见 `shared/contract.json` 的 `vip`，改完跑 `npm run contract`）。
+会员属于整个小家，一人开通两人共用；权益是截图识别、AI 小结每日次数更多（套餐见 `shared/contract.json` 的 `vip`，各功能免费 / 会员次数见 `ai`，改完跑 `npm run contract`）。
 
 1. 云开发控制台 → 数据库 → 新建 `orders`，权限选「自定义安全规则」`{ "read": false, "write": false }`；加索引 `outTradeNo`（唯一）。
 2. 公众平台 → 虚拟支付：开通后在「基本配置」取 OfferID、现网 AppKey、沙箱 AppKey；在「道具管理」建两个道具，**道具 ID 和价格必须和 `contract.json` 里的套餐一致**（`vip_month` 9 元、`vip_year` 68 元，`contract.json` 里价格单位是分）。

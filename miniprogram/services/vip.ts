@@ -16,8 +16,6 @@ export interface VipInfo {
   /** 云端是否配置好了虚拟支付 */
   available: boolean;
   plans: VipPlan[];
-  dailyImages: number;
-  dailySummaries: number;
 }
 
 interface VipOrder {

@@ -162,6 +162,8 @@ export interface Todo extends TodoInput {
   id: string;
   ts: number;
   done: boolean;
+  /** 勾完那天，YYYY-MM-DD；没勾为空（旧记录没有）。 */
+  doneOn?: string;
   byRole: MemberRole | '';
 }
 

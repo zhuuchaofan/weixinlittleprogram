@@ -4,6 +4,7 @@ const { publicRecord, requireRecord } = require('./records');
 /**
  * 一类业务记录的增删改查：`${prefix}.list/get/add/update/remove`。
  * 更新时把已有字段与传入字段合并后整体校验，只改部分字段也安全。
+ * onUpdate(household, openid, id, before, after)：改完之后调用（记年度回顾用的 activity）。
  */
 function createCrudHandler({
   prefix,
@@ -14,6 +15,7 @@ function createCrudHandler({
   fields,
   present = (view) => view,
   sort = (a, b) => b.ts - a.ts,
+  onUpdate = async () => {},
 }) {
   const view = (record, household) =>
     present(publicRecord(record, household, fields), now);
@@ -45,6 +47,7 @@ function createCrudHandler({
       const existing = await requireRecord(repository, household, id);
       const changes = check({ ...existing, ...payload });
       await repository.update(household._id, id, changes);
+      await onUpdate(household, openid, id, existing, changes);
       return view({ ...existing, ...changes }, household);
     },
     async [`${prefix}.remove`](openid, payload) {

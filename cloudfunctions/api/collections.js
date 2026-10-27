@@ -10,11 +10,15 @@ const withDishKind = (view) => ({ ...view, kind: view.kind || 'dish' });
 const WISH_FIELDS = ['title', 'why', 'plan', 'done', 'doneOn'];
 const DATE_FIELDS = ['title', 'date', 'yearly'];
 
-/** 吃啥（dishes）、想去（wishes）、纪念日（dates）。 */
+/**
+ * 吃啥（dishes）、想去（wishes）、纪念日（dates）。
+ * activity：createActivityLog() 的返回值，记下每次「就吃这个」和「去过了」；没有时不记。
+ */
 function createCollectionHandlers({
   dishes,
   wishes,
   dates,
+  activity = null,
   requireMembership,
   now,
 }) {
@@ -28,6 +32,15 @@ function createCollectionHandlers({
       fields: DISH_FIELDS,
       present: withDishKind,
       sort: (a, b) => a.name.localeCompare(b.name, 'zh'),
+      async onUpdate(household, openid, id, before, after) {
+        if (activity && after.ateOn && after.ateOn !== before.ateOn)
+          await activity.add(household, openid, {
+            type: 'dish',
+            refId: id,
+            title: after.name,
+            date: after.ateOn,
+          });
+      },
     }),
     ...createCrudHandler({
       ...shared,
@@ -35,6 +48,22 @@ function createCollectionHandlers({
       repository: wishes,
       check: validate.wish,
       fields: WISH_FIELDS,
+      async onUpdate(household, openid, id, before, after) {
+        if (!activity || Boolean(before.done) === after.done) return;
+        if (after.done)
+          await activity.add(household, openid, {
+            type: 'wish',
+            refId: id,
+            title: after.title,
+            date: after.doneOn || todayKey(now()),
+          });
+        else
+          await activity.remove(household, {
+            type: 'wish',
+            refId: id,
+            date: before.doneOn,
+          });
+      },
     }),
     ...createCrudHandler({
       ...shared,

@@ -35,15 +35,29 @@ export const CONTRACT = {
   ],
   "billImport": {
     "maxImages": 9,
-    "maxItems": 100,
-    "dailyImages": 5
+    "maxItems": 100
   },
-  "aiSummary": {
-    "daily": 5
+  "ai": {
+    "billImage": {
+      "name": "截图记账",
+      "verb": "识别",
+      "unit": "张",
+      "what": "截图",
+      "per": "day",
+      "free": 5,
+      "vip": 100
+    },
+    "summary": {
+      "name": "喵喵小结",
+      "verb": "生成",
+      "unit": "次",
+      "what": "小结",
+      "per": "day",
+      "free": 5,
+      "vip": 30
+    }
   },
   "vip": {
-    "dailyImages": 100,
-    "dailySummaries": 30,
     "plans": [
       {
         "id": "vip_month",

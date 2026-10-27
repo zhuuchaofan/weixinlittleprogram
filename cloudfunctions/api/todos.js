@@ -1,10 +1,20 @@
 const validate = require('./validate');
 const { publicRecord, requireRecord } = require('./records');
+const { todayKey } = require('./dates');
 
-const FIELDS = ['text', 'kind', 'who', 'done'];
+// doneOn：勾完那天（YYYY-MM-DD），没勾或取消勾选为空；年度回顾按它数。
+const FIELDS = ['text', 'kind', 'who', 'done', 'doneOn'];
 
-/** repository: listAll(householdId)、get、insert、update、remove、removeWhere */
-function createTodoHandler({ repository, requireMembership, now }) {
+/**
+ * repository: listAll(householdId)、get、insert、update、remove、removeWhere。
+ * activity：createActivityLog() 的返回值，勾完一条记一笔（「清除已完成」后也还在）；没有时不记。
+ */
+function createTodoHandler({
+  repository,
+  activity = null,
+  requireMembership,
+  now,
+}) {
   const view = (record, household) => publicRecord(record, household, FIELDS);
   return {
     async 'todo.list'(openid) {
@@ -23,6 +33,7 @@ function createTodoHandler({ repository, requireMembership, now }) {
       const household = await requireMembership(openid);
       const record = {
         ...validate.todo({ ...payload, done: false }),
+        doneOn: '',
         householdId: household._id,
         ts: now(),
         by: openid,
@@ -34,8 +45,31 @@ function createTodoHandler({ repository, requireMembership, now }) {
       const household = await requireMembership(openid);
       const id = validate.id(payload.id);
       const existing = await requireRecord(repository, household, id);
-      const fields = validate.todo({ ...existing, ...payload });
+      const checked = validate.todo({ ...existing, ...payload });
+      const justDone = checked.done && !existing.done;
+      const fields = {
+        ...checked,
+        doneOn: !checked.done
+          ? ''
+          : justDone
+            ? todayKey(now())
+            : existing.doneOn || '',
+      };
       await repository.update(household._id, id, fields);
+      if (activity && justDone)
+        await activity.add(household, openid, {
+          type: 'todo',
+          refId: id,
+          title: fields.text,
+          kind: fields.kind,
+          date: fields.doneOn,
+        });
+      if (activity && existing.done && !checked.done)
+        await activity.remove(household, {
+          type: 'todo',
+          refId: id,
+          date: existing.doneOn,
+        });
       return view({ ...existing, ...fields }, household);
     },
     /** 清除某一类清单里所有已完成的条目，返回删除条数。 */

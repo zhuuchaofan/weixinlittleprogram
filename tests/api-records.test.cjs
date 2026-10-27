@@ -112,6 +112,7 @@ function memoryRecords(prefix) {
 const NOW = Date.parse('2026-10-20T04:00:00Z');
 
 async function setup({ vision = null } = {}) {
+  const activity = memoryRecords('a');
   const expenses = memoryRecords('e');
   const insights = memoryRecords('i');
   const goals = memoryRecords('g');
@@ -138,7 +139,8 @@ async function setup({ vision = null } = {}) {
     dates,
     insights,
     goals,
-    vision,
+    activity,
+    ai: vision,
     now: () => NOW,
   });
   const call = (openid, action, payload) => route({ action, payload }, openid);
@@ -148,7 +150,17 @@ async function setup({ vision = null } = {}) {
     code: created.data.inviteCode,
   });
   await call('X', 'household.create', { name: '别人家' });
-  return { call, expenses, todos, dishes, wishes, dates, insights, goals };
+  return {
+    call,
+    expenses,
+    todos,
+    dishes,
+    wishes,
+    dates,
+    insights,
+    goals,
+    activity,
+  };
 }
 
 const expense = (overrides = {}) => ({
@@ -1096,7 +1108,9 @@ test('AI 小结：只发汇总、存下来、账目变了提示重新生成、�
   );
   const prompts = [];
   const vision = {
-    async write(prompt) {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'summary');
       prompts.push(prompt);
       return '**这个月**花得最多的是房租。\n\n\n机票是一次性的。';
     },
@@ -1406,4 +1420,64 @@ test('分类预算：整体替换、校验分类和金额，记账后返回本�
     used: 500,
     before: 0,
   });
+});
+
+test('年度回顾的记录：就吃这个、勾完待办、去过了都留一条，清除已完成后还在', async () => {
+  const { call, activity } = await setup();
+  const entries = () =>
+    [...activity.docs.values()].map((d) => [d.type, d.title, d.date]).sort();
+
+  const dish = await call('A', 'dish.add', { name: '火锅', tag: '外食' });
+  await call('A', 'dish.update', { id: dish.data.id, ateOn: '2026-10-20' });
+  // 同一天再点一次不重复，改名不影响
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-10-20' });
+  await call('B', 'dish.update', { id: dish.data.id, name: '重庆火锅' });
+  await call('A', 'dish.update', { id: dish.data.id, ateOn: '2026-10-22' });
+
+  const todo = await call('A', 'todo.add', {
+    text: '倒垃圾',
+    kind: 'todo',
+    who: 'b',
+  });
+  assert.equal(todo.data.doneOn, '');
+  const done = await call('B', 'todo.update', { id: todo.data.id, done: true });
+  assert.equal(done.data.doneOn, '2026-10-20');
+  // 改文字不改完成日期
+  const edited = await call('B', 'todo.update', {
+    id: todo.data.id,
+    text: '倒垃圾和纸箱',
+  });
+  assert.equal(edited.data.doneOn, '2026-10-20');
+
+  const slip = await call('A', 'todo.add', {
+    text: '买猫砂',
+    kind: 'shop',
+    who: 'a',
+  });
+  await call('A', 'todo.update', { id: slip.data.id, done: true });
+  // 勾错了取消：那天的记录删掉，完成日期清空
+  const undone = await call('A', 'todo.update', {
+    id: slip.data.id,
+    done: false,
+  });
+  assert.equal(undone.data.doneOn, '');
+
+  const wish = await call('A', 'wish.add', {
+    title: '大阪',
+    why: '',
+    plan: '',
+  });
+  await call('A', 'wish.update', {
+    id: wish.data.id,
+    done: true,
+    doneOn: '2026-10-05',
+  });
+
+  await call('A', 'todo.clearDone', { kind: 'todo' });
+  assert.deepEqual(entries(), [
+    ['dish', '火锅', '2026-10-20'],
+    ['dish', '重庆火锅', '2026-10-22'],
+    ['todo', '倒垃圾', '2026-10-20'],
+    ['wish', '大阪', '2026-10-05'],
+  ]);
 });
