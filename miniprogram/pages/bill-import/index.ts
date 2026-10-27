@@ -1,9 +1,11 @@
-import type { BillItem, Household } from '../../models';
+import type { BillItem, FileSkipped, Household } from '../../models';
 import { getHousehold, memberNames } from '../../services/household';
 import {
   importBills,
   matchBills,
+  parseBillFile,
   parseScreenshot,
+  takePendingFile,
   takePendingImages,
 } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
@@ -14,6 +16,8 @@ import { applyTheme, themeData } from '../../services/theme';
 
 // 一次同时识别几张：太多容易超时，太少等得久。
 const PARALLEL = 3;
+// 保存时每次提交几笔（expense.addMany 的上限）。
+const SAVE_BATCH = 100;
 
 // 等待时轮流显示的小提示。
 const TIPS = [
@@ -31,6 +35,45 @@ function stopTips(): void {
 }
 
 let household: Household | null = null;
+// 确认列表的全部行。账单文件一次可能上千笔，页面上只放当前月份的那些，其余留在这里。
+let allRows: DraftRow[] = [];
+
+interface MonthTab {
+  month: string;
+  label: string;
+  count: number;
+}
+
+function monthTabs(rows: DraftRow[]): MonthTab[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const month = row.date.slice(0, 7) || '';
+    counts.set(month, (counts.get(month) || 0) + 1);
+  }
+  const months = [...counts.keys()].sort((a, b) =>
+    (b || '9').localeCompare(a || '9'),
+  );
+  // 跨年时（导了一整年）带上年份，免得两个「11月」分不清。
+  const years = new Set(months.filter(Boolean).map((m) => m.slice(0, 4)));
+  return months.map((month) => ({
+    month,
+    label: !month
+      ? '日期待补'
+      : (years.size > 1 ? `${month.slice(2, 4)}年` : '') +
+        `${Number(month.slice(5))}月`,
+    count: counts.get(month) || 0,
+  }));
+}
+
+function skippedText(skipped: FileSkipped): string {
+  const parts = [
+    skipped.refunded && `${skipped.refunded} 笔退款已从原账扣掉`,
+    skipped.neutral && `${skipped.neutral} 笔提现、零钱通等不计收支`,
+    skipped.closed && `${skipped.closed} 笔没付成`,
+    skipped.broken && `${skipped.broken} 笔读不全`,
+  ].filter(Boolean);
+  return parts.length ? `已跳过：${parts.join('，')}。` : '';
+}
 
 function matchText(item: BillItem): string {
   const match = item.match;
@@ -47,6 +90,7 @@ const present = (item: BillItem): DraftRow => toRow(item, matchText(item));
 Page({
   data: {
     ...themeData(),
+    mode: 'screenshot' as 'screenshot' | 'file',
     phase: 'reading' as 'reading' | 'review' | 'empty',
     progressText: '',
     tip: TIPS[0],
@@ -54,8 +98,13 @@ Page({
     // 今天的识别次数用完了：失败提示下面给一个去会员页的入口。
     limitHit: false,
     rows: [] as DraftRow[],
+    // 账单文件按月分页；截图导入只有一页，不显示月份。
+    months: [] as MonthTab[],
+    month: '',
+    skippedText: '',
     selectedCount: 0,
     summaryText: '',
+    saveText: '',
     today: todayKey(),
     busy: false,
     error: '',
@@ -63,7 +112,19 @@ Page({
   onShow() {
     applyTheme(this);
   },
-  onLoad() {
+  onLoad(query: Record<string, string | undefined>) {
+    allRows = [];
+    if (query.mode === 'file') {
+      const path = takePendingFile();
+      if (!path) {
+        wx.navigateBack();
+        return;
+      }
+      wx.setNavigationBarTitle({ title: '导入账单文件' });
+      this.setData({ mode: 'file', progressText: '正在读取账单文件…' });
+      void this.readFile(path);
+      return;
+    }
     const paths = takePendingImages();
     if (!paths.length) {
       wx.navigateBack();
@@ -132,28 +193,76 @@ Page({
       return;
     }
     this.setData({ phase: 'review', failures });
-    this.show(arrange(matched.map(present)));
+    allRows = matched.map(present);
+    this.show();
   },
-  show(rows: DraftRow[]) {
-    const selected = rows.filter((row) => row.selected).length;
-    const flagged = rows.filter(
+  /** 账单文件：手机上读出几列 → 云端整理、查重。文件读完就丢，不上传。 */
+  async readFile(path: string) {
+    try {
+      household = await getHousehold();
+      const { items, skipped } = await parseBillFile(path);
+      if (!items.length) {
+        this.setData({
+          phase: 'empty',
+          error: `这份账单里没有要记的账。${skippedText(skipped)}`,
+        });
+        return;
+      }
+      allRows = items.map(present);
+      const months = monthTabs(allRows);
+      this.setData({
+        phase: 'review',
+        months,
+        month: months[0].month,
+        skippedText: skippedText(skipped),
+      });
+      this.show();
+    } catch (error) {
+      this.setData({ phase: 'empty', error: errorMessage(error) });
+    }
+  },
+  /** 当前月份的行放进页面，顶部统计按全部行算。 */
+  show() {
+    const file = this.data.mode === 'file';
+    const visible = file
+      ? allRows.filter((row) => row.date.slice(0, 7) === this.data.month)
+      : allRows;
+    const selected = allRows.filter((row) => row.selected).length;
+    const flagged = allRows.filter(
       (row) => row.status && row.status !== 'new' && !row.selected,
     ).length;
     this.setData({
-      rows,
+      rows: arrange(visible),
       selectedCount: selected,
       summaryText:
-        `识别出 ${rows.length} 笔` +
+        `${file ? '读出' : '识别出'} ${allRows.length} 笔` +
         (flagged ? `，${flagged} 笔可能已记过或不用记，已取消勾选` : ''),
     });
   },
-  /** 确认列表里勾选或改了一笔。 */
+  /** 确认列表里勾选或改了一笔：换掉 allRows 里对应的行。 */
   changeRows(event: WechatMiniprogram.CustomEvent<{ rows: DraftRow[] }>) {
-    this.show(event.detail.rows);
+    const changed = new Map(event.detail.rows.map((row) => [row.key, row]));
+    allRows = allRows.map((row) => changed.get(row.key) || row);
+    this.show();
+  },
+  chooseMonth(event: WechatMiniprogram.TouchEvent) {
+    this.setData({ month: String(event.currentTarget.dataset.month) });
+    this.show();
+    wx.pageScrollTo({ scrollTop: 0, duration: 0 });
+  },
+  /** 这个月全选或全不选；读不全的不勾。 */
+  selectMonth(event: WechatMiniprogram.TouchEvent) {
+    const on = event.currentTarget.dataset.on === true;
+    allRows = allRows.map((row) =>
+      row.date.slice(0, 7) === this.data.month
+        ? { ...row, selected: on && !row.problem }
+        : row,
+    );
+    this.show();
   },
   async save() {
     if (this.data.busy) return;
-    const chosen = this.data.rows.filter((row) => row.selected);
+    const chosen = allRows.filter((row) => row.selected);
     if (!chosen.length) return;
     const broken = chosen.find((row) => row.problem);
     if (broken) {
@@ -161,17 +270,25 @@ Page({
       return;
     }
     this.setData({ busy: true, error: '' });
+    const result = { added: 0, skipped: 0 };
     try {
-      const result = await importBills(
-        chosen.map((row) => ({
-          amount: row.amount,
-          note: row.note.trim(),
-          cat: row.cat,
-          date: row.date,
-          flow: row.flow,
-          src: row.src,
-        })),
-      );
+      // 分批提交；中途失败时已保存的不会重复（_id 由交易指纹决定），重试即可。
+      for (let i = 0; i < chosen.length; i += SAVE_BATCH) {
+        if (chosen.length > SAVE_BATCH)
+          this.setData({ saveText: `正在保存 ${i}/${chosen.length} 笔…` });
+        const batch = await importBills(
+          chosen.slice(i, i + SAVE_BATCH).map((row) => ({
+            amount: row.amount,
+            note: row.note.trim(),
+            cat: row.cat,
+            date: row.date,
+            flow: row.flow,
+            src: row.src,
+          })),
+        );
+        result.added += batch.added;
+        result.skipped += batch.skipped;
+      }
       wx.showToast({
         title: result.skipped
           ? `已记 ${result.added} 笔，${result.skipped} 笔之前导入过`
@@ -180,7 +297,15 @@ Page({
       });
       setTimeout(() => wx.navigateBack(), 800);
     } catch (error) {
-      this.setData({ error: errorMessage(error), busy: false });
+      this.setData({
+        error:
+          errorMessage(error) +
+          (result.added
+            ? `（已保存 ${result.added} 笔，再点一次保存剩下的）`
+            : ''),
+        busy: false,
+        saveText: '',
+      });
     }
   },
   openVip() {

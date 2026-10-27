@@ -593,3 +593,364 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
     message: /连不上识别服务/,
   });
 });
+
+// ── 账单文件导入（微信「用于个人对账」Excel）。下面的账目都是编造的。 ──
+
+const {
+  sharedStrings,
+  sheetRows,
+  wechatRows,
+} = require('../miniprogram/utils/bill-file.ts');
+const {
+  fileTime,
+  fileAmount,
+  cleanName,
+  parseWechatRows,
+} = require('../cloudfunctions/api/bill-file');
+
+const HEADER = [
+  '交易时间',
+  '交易类型',
+  '交易对方',
+  '商品',
+  '收/支',
+  '金额(元)',
+  '支付方式',
+  '当前状态',
+  '交易单号',
+  '商户单号',
+  '备注',
+];
+
+/** 照微信账单的样子拼一份 xlsx 里的两个 XML：前面几行说明，再是表头和交易。时间写成 Excel 日期数字。 */
+function wechatXlsx(trades) {
+  const strings = [];
+  const ref = (text) => {
+    if (!strings.includes(text)) strings.push(text);
+    return strings.indexOf(text);
+  };
+  const letters = 'ABCDEFGHIJK';
+  const row = (index, cells) =>
+    `<row r="${index}">` +
+    cells
+      .map((value, col) =>
+        typeof value === 'number'
+          ? `<c r="${letters[col]}${index}" s="1"><v>${value}</v></c>`
+          : `<c r="${letters[col]}${index}" t="s"><v>${ref(value)}</v></c>`,
+      )
+      .join('') +
+    '</row>';
+  const serial = (text) =>
+    (Date.parse(text.replace(' ', 'T') + 'Z') - Date.UTC(1899, 11, 30)) /
+    86400000;
+  const rows = [
+    row(1, ['微信支付账单明细']),
+    row(2, ['微信昵称：[小明]']),
+    `<row r="3"/>`,
+    row(4, ['----------------------微信支付账单明细列表--------------------']),
+    row(5, HEADER),
+    ...trades.map((t, i) =>
+      row(6 + i, [serial(t[0]), ...t.slice(1, 5), Number(t[5]), ...t.slice(6)]),
+    ),
+  ];
+  return {
+    sheet: `<?xml version="1.0"?><worksheet><sheetData>${rows.join('')}</sheetData></worksheet>`,
+    shared: `<?xml version="1.0"?><sst>${strings
+      .map(
+        (s) =>
+          `<si><t>${s.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</t></si>`,
+      )
+      .join('')}</sst>`,
+  };
+}
+
+// 时间、类型、对方、商品、收/支、金额、支付方式、状态、单号、商户单号、备注
+const TRADES = [
+  [
+    '2026-10-21 22:07:01',
+    '商户消费',
+    '滴滴出行',
+    '先乘车后付款',
+    '支出',
+    '15.4',
+    '零钱',
+    '支付成功',
+    '4200001',
+    'm1',
+    '/',
+  ],
+  [
+    '2026-10-20 12:30:00',
+    '扫二维码付款',
+    '张记牛肉面',
+    '收款方备注:二维码收款',
+    '支出',
+    '28',
+    '招商银行(9876)',
+    '已转账',
+    '1000002',
+    'm2',
+    '/',
+  ],
+  [
+    '2026-10-19 09:00:00',
+    '零钱提现',
+    '/',
+    '/',
+    '/',
+    '100',
+    '/',
+    '提现已到账',
+    '1000003',
+    '/',
+    '/',
+  ],
+  [
+    '2026-10-17 13:31:00',
+    '商户消费',
+    '星星充电',
+    '充电',
+    '支出',
+    '30',
+    '零钱',
+    '已退款(¥26.67)',
+    '4200004',
+    'm4',
+    '/',
+  ],
+  [
+    '2026-10-17 13:36:00',
+    '星星充电-退款',
+    '星星充电',
+    '/',
+    '收入',
+    '26.67',
+    '零钱',
+    '已退款¥26.67',
+    '5000005',
+    'm4',
+    '/',
+  ],
+  [
+    '2026-10-16 18:00:00',
+    '商户消费',
+    '京东',
+    '京东-订单编号123',
+    '支出',
+    '218',
+    '零钱',
+    '已全额退款',
+    '4200006',
+    'm6',
+    '/',
+  ],
+  [
+    '2026-10-18 10:00:00',
+    '京东商城平台商户-退款',
+    '京东商城平台商户',
+    '/',
+    '收入',
+    '218',
+    '零钱',
+    '已全额退款',
+    '5000007',
+    'm6',
+    '/',
+  ],
+  [
+    '2026-10-15 10:00:00',
+    '美团-退款',
+    '美团',
+    '/',
+    '收入',
+    '5.9',
+    '零钱',
+    '已全额退款',
+    '5000008',
+    'm8',
+    '/',
+  ],
+  [
+    '2026-10-14 20:00:00',
+    '亲属卡交易',
+    '哄哄',
+    '/',
+    '支出',
+    '66',
+    '零钱',
+    '支付成功',
+    '4200009',
+    'm9',
+    '/',
+  ],
+  [
+    '2026-10-13 21:00:00',
+    '转账',
+    '佳益',
+    '转账备注:微信转账',
+    '支出',
+    '500',
+    '零钱',
+    '对方已收钱',
+    '1000010',
+    '/',
+    '/',
+  ],
+  [
+    '2026-10-12 08:00:00',
+    '商户消费',
+    '广州市白云区云城倍希贸易商行（个体工商户）',
+    '/',
+    '支出',
+    '36',
+    '零钱',
+    '支付成功',
+    '4200011',
+    'm11',
+    '/',
+  ],
+  [
+    '2026-10-11 08:00:00',
+    '商户消费',
+    '某某超市',
+    '/',
+    '支出',
+    '9.9',
+    '零钱',
+    '支付失败',
+    '4200012',
+    'm12',
+    '/',
+  ],
+];
+
+function wechatFileRows(trades = TRADES) {
+  const { sheet, shared } = wechatXlsx(trades);
+  return wechatRows(sheetRows(sheet, sharedStrings(shared)));
+}
+
+test('账单文件：手机上读出 Excel，只留七列，表头前的说明和昵称丢掉', () => {
+  const rows = wechatFileRows();
+  assert.equal(rows.length, TRADES.length);
+  assert.deepEqual(Object.keys(rows[0]), [
+    'time',
+    'type',
+    'peer',
+    'io',
+    'amount',
+    'status',
+    'tx',
+  ]);
+  assert.equal(rows[0].peer, '滴滴出行');
+  assert.equal(rows[0].amount, '15.4');
+  assert.equal(JSON.stringify(rows).includes('小明'), false);
+  assert.equal(JSON.stringify(rows).includes('9876'), false);
+  // 时间是 Excel 日期数字，云端换回北京时间
+  assert.deepEqual(fileTime(rows[0].time), {
+    date: '2026-10-21',
+    time: '22:07',
+    at: Date.UTC(2026, 9, 21, 22, 7, 1),
+  });
+  assert.equal(fileTime('2026-10-20 12:30:00').time, '12:30');
+  assert.equal(fileAmount('15.400000000000002'), 1540);
+  assert.equal(fileAmount('¥26.67'), 2667);
+  assert.equal(
+    cleanName('广州市白云区云城倍希贸易商行（个体工商户）'),
+    '广州市白云区云城倍希贸易商行',
+  );
+  assert.equal(cleanName('融创物业服务集团有限公司'), '融创物业服务集团');
+  // 不是微信账单
+  assert.equal(wechatRows([['日期', '金额']]), null);
+});
+
+test('账单文件：跳过中性和没付成的，部分退款记净额，全额退款不记，亲属卡记自己的', () => {
+  const { items, skipped } = parseWechatRows(wechatFileRows());
+  assert.deepEqual(skipped, { neutral: 1, closed: 1, refunded: 3, broken: 0 });
+  const byNote = Object.fromEntries(items.map((item) => [item.note, item]));
+  assert.deepEqual(Object.keys(byNote), [
+    '滴滴出行',
+    '张记牛肉面',
+    '星星充电 已退¥26.67',
+    '退款·美团',
+    '亲属卡·哄哄',
+    '转账·佳益',
+    '广州市白云区云城倍希贸易',
+  ]);
+  assert.equal(byNote['星星充电 已退¥26.67'].amount, 333);
+  // 原支出不在文件里（更早导入过）的退款，记一笔收入
+  assert.equal(byNote['退款·美团'].flow, 'in');
+  assert.equal(byNote['退款·美团'].amount, 590);
+  assert.equal(byNote['亲属卡·哄哄'].flow, 'out');
+  assert.equal(byNote['滴滴出行'].cat, '交通');
+  assert.equal(byNote['张记牛肉面'].cat, '吃饭');
+  assert.equal(byNote['转账·佳益'].cat, '其他');
+  // 交易单号只留指纹
+  assert.match(byNote['滴滴出行'].key, /^[0-9a-f]{24}$/);
+  assert.equal(byNote['滴滴出行'].src.ref, byNote['滴滴出行'].key);
+  assert.equal(JSON.stringify(items).includes('4200001'), false);
+});
+
+test('账单文件：查重、两人互转不记、保存后再导是已导入过，先截图后导文件不重复', async () => {
+  const { call, expenses } = await setup();
+  // 10-21 先用截图导入过同一笔滴滴（同一分钟、同金额）
+  const shot = (
+    await call('A', 'bill.match', {
+      items: [
+        {
+          kind: '消费',
+          cat: '交通',
+          src: {
+            app: 'wechat',
+            merchant: '滴滴',
+            time: '22:07',
+            date: '2026-10-21',
+            amount: 1540,
+            flow: 'out',
+          },
+        },
+      ],
+    })
+  ).data.items;
+  await call('A', 'expense.addMany', { items: shot });
+
+  const rows = wechatFileRows();
+  const result = await call('A', 'bill.file', { app: 'wechat', rows });
+  assert.equal(result.ok, true, result.message);
+  const status = Object.fromEntries(
+    result.data.items.map((item) => [item.note, item.status]),
+  );
+  assert.equal(status['滴滴出行'], 'imported');
+  assert.equal(status['转账·佳益'], 'partner');
+  assert.equal(status['张记牛肉面'], 'new');
+  assert.equal(result.data.skipped.refunded, 3);
+
+  const chosen = result.data.items.filter((item) => item.status === 'new');
+  const saved = await call('B', 'expense.addMany', { items: chosen });
+  assert.deepEqual(saved.data, { added: chosen.length, skipped: 0 });
+  const stored = [...expenses.docs.values()].find(
+    (d) => d.note === '亲属卡·哄哄',
+  );
+  assert.equal(stored.payer, 'b');
+  assert.equal(stored.split, 'self');
+  assert.equal(JSON.stringify(stored).includes('4200009'), false);
+
+  const again = await call('A', 'bill.file', { app: 'wechat', rows });
+  assert.deepEqual(
+    [...new Set(again.data.items.map((item) => item.status))].sort(),
+    ['imported', 'partner'],
+  );
+  // 前端改不了指纹的格式
+  const forged = { ...chosen[0], src: { ...chosen[0].src, ref: 'x' } };
+  assert.equal(
+    (await call('A', 'expense.addMany', { items: [forged] })).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('A', 'bill.file', { app: 'alipay', rows })).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('A', 'bill.file', { app: 'wechat', rows: [] })).code,
+    'VALIDATION',
+  );
+});

@@ -1,6 +1,7 @@
 /**
- * 截图记账的查重：金额相同才算重复；src.key 一致 → 已导入过；日期相差不超过 1 天 → 可能已记过，
- * 优先对上同一天且商户与备注相似的那条。一条已有账目只能对上一笔。
+ * 截图记账、账单文件导入的查重：金额相同才算重复；src.key 一致 → 已导入过；
+ * 另一种方式导入过的同一笔（同日、同一分钟、同金额、同收支）→ 也算已导入过；
+ * 日期相差不超过 1 天 → 可能已记过，优先对上同一天且商户与备注相似的那条。一条已有账目只能对上一笔。
  */
 const { SETTLEMENT } = require('./ledger');
 const { DAY_MS, keyToMs, str } = require('./bill-parse');
@@ -85,13 +86,25 @@ function matchItems(items, records, household) {
         (record.flow || 'out') === item.flow &&
         daysApart(record.date, item.date) <= 1,
     );
-  // 整批分三轮认领：先「已导入过」，再同一天且商户相似的，最后才是日期相近的，
+  // 截图和账单文件的 key 算法不同：同一笔账先截图、后导文件（或反过来）时，靠时刻对上。
+  const sameMoment = (item) => (record) =>
+    free(record) &&
+    record.src?.time &&
+    record.src.time === item.time &&
+    record.date === item.date &&
+    record.amount === item.amount &&
+    (record.flow || 'out') === item.flow;
+  // 整批分四轮认领：先 key 一致的「已导入过」，再时刻一致的，再同一天且商户相似的，最后才是日期相近的，
   // 避免一条已有账目被前面某一笔按松的规则先占掉。
-  const first = unique.map((item) => {
-    const exact = candidates.find(
-      (record) => free(record) && record.src?.key === item.key,
-    );
-    if (exact) return { ...item, status: 'imported', match: take(exact) };
+  const exact = unique.map((item) =>
+    candidates.find((record) => free(record) && record.src?.key === item.key),
+  );
+  exact.forEach((record) => record && used.add(record._id));
+  const first = unique.map((item, index) => {
+    if (exact[index])
+      return { ...item, status: 'imported', match: describe(exact[index]) };
+    const moment = item.time && candidates.find(sameMoment(item));
+    if (moment) return { ...item, status: 'imported', match: take(moment) };
     if (isPartnerTransfer(item, household))
       return { ...item, status: 'partner', match: null };
     if (!item.amount || !item.date)

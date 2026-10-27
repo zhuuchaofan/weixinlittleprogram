@@ -16,7 +16,7 @@
   "splits": ["half", "other", "self", "ratio"],
   "flows": ["out", "in"],
   "billApps": ["wechat", "alipay"],
-  "billImport": { "maxImages": 9, "maxItems": 100 },
+  "billImport": { "maxImages": 9, "maxItems": 100, "maxFileRows": 3000 },
   "ai": {
     "billImage": {
       "name": "截图记账",

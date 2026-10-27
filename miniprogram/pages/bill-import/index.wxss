@@ -1,5 +1,9 @@
 .hint { margin: 24rpx 4rpx; }
 .back-button { margin-top: 24rpx; }
+.months { white-space: nowrap; margin: 8rpx 0 4rpx; }
+.months .chip { display: inline-flex; margin-right: 12rpx; }
+.month-actions { display: flex; gap: 32rpx; justify-content: flex-end; margin: 8rpx 4rpx 16rpx; }
+.month-link { color: var(--accent); }
 .save-bar { position: sticky; bottom: 0; padding: 20rpx 0 calc(20rpx + env(safe-area-inset-bottom)); background: var(--paper); }
 
 /* 等待动画：线条小猫，轮廓见 assets/theme-src/cat.svg 等（按主题换色后在 images/themes/） */

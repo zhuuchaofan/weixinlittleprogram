@@ -1,9 +1,10 @@
 /**
  * 截图记账：微信 / 支付宝账单列表截图 → 视觉模型读出每一笔 → 查重 → 用户确认后批量保存。
+ * 账单文件导入：手机上读出微信账单 Excel 的几列 → bill.file 整理并查重 → 同样确认后批量保存。
  * - 导入的账一律记为上传者付款、split === 'self'（不参与分摊）。
- * - 每笔导入的账有 src.key（App + 原始日期、时刻、金额、商户、收支）；
+ * - 每笔导入的账有 src.key：截图是 App + 原始日期、时刻、金额、商户、收支，文件是交易单号的指纹；
  *   _id 由小家和 key 算出，同一笔账两人同时导入也只落一次。
- * - 读图结果的解析在 bill-parse.js，查重在 bill-match.js。
+ * - 读图结果的解析在 bill-parse.js，账单文件在 bill-file.js，查重在 bill-match.js。
  */
 const crypto = require('node:crypto');
 const { ApiError } = require('./errors');
@@ -27,10 +28,14 @@ const {
   parseReply,
 } = require('./bill-parse');
 const { matchItems } = require('./bill-match');
+const { parseWechatRows } = require('./bill-file');
 
 const BAD_SOURCE = '截图信息无效，请重新识别。';
 
-/** 前端送回来的截图原始字段（bill.parse 给出的 src）：逐项校验后重新算 key，不相信前端的 key。 */
+/**
+ * 前端送回来的原始字段（bill.parse / bill.file 给出的 src）：逐项校验后重新算 key，不相信前端的 key。
+ * 账单文件的 src.ref 是交易单号的指纹，直接作为 key。
+ */
 function sourceOf(raw) {
   const src = raw?.src;
   if (
@@ -49,7 +54,9 @@ function sourceOf(raw) {
     amount: src.amount,
     flow: validate.oneOf(src.flow, CONTRACT.flows, BAD_SOURCE),
   };
-  return { ...result, key: billKey(result) };
+  if (src.ref !== undefined && !/^[0-9a-f]{24}$/.test(src.ref))
+    throw new ApiError('VALIDATION', BAD_SOURCE);
+  return { ...result, key: src.ref || billKey(result) };
 }
 
 /** bill.parse 的一笔原样送回来查重：按原始字段重建，status 由服务端判断。 */
@@ -106,6 +113,18 @@ function createBillHandler({
   now,
   ai,
 }) {
+  /** 这些账目日期前后各一个月里已记的账，查重用。 */
+  async function nearby(household, items) {
+    const dates = items.map((item) => item.date).filter(Boolean);
+    return (
+      await Promise.all(
+        monthsAround(dates).map((month) =>
+          repository.listMonth(household._id, month),
+        ),
+      )
+    ).flat();
+  }
+
   return {
     async 'bill.parse'(openid, payload) {
       const household = await requireMembership(openid);
@@ -126,15 +145,20 @@ function createBillHandler({
     async 'bill.match'(openid, payload) {
       const household = await requireMembership(openid);
       const items = itemList(payload).map(checkedItem);
-      const dates = items.map((item) => item.date).filter(Boolean);
-      const records = (
-        await Promise.all(
-          monthsAround(dates).map((month) =>
-            repository.listMonth(household._id, month),
-          ),
-        )
-      ).flat();
-      return { items: matchItems(items, records, household) };
+      return {
+        items: matchItems(items, await nearby(household, items), household),
+      };
+    },
+    /** 账单文件：手机上读出的行 → 整理、查重后的每一笔，加上跳过了多少。不花 AI 次数。 */
+    async 'bill.file'(openid, payload) {
+      const household = await requireMembership(openid);
+      if (payload?.app !== 'wechat')
+        throw new ApiError('VALIDATION', '目前只支持微信账单文件。');
+      const { items, skipped } = parseWechatRows(payload.rows);
+      return {
+        items: matchItems(items, await nearby(household, items), household),
+        skipped,
+      };
     },
     async 'expense.addMany'(openid, payload) {
       const household = await requireMembership(openid);

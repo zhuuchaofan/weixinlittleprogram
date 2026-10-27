@@ -117,11 +117,21 @@ export interface BillSource {
   date: string;
   amount: number;
   flow: Flow;
+  /** 账单文件导入才有：交易单号的指纹。 */
+  ref?: string;
+}
+
+/** 账单文件里没进确认列表的笔数：中性交易、没付成、退款抵掉的、读不全的。 */
+export interface FileSkipped {
+  neutral: number;
+  closed: number;
+  refunded: number;
+  broken: number;
 }
 
 export type BillStatus = 'imported' | 'possible' | 'partner' | 'new';
 
-/** 截图识别出的一笔，确认页可以改 amount、note、cat、date、flow。 */
+/** 截图识别或账单文件读出的一笔，确认页可以改 amount、note、cat、date、flow。 */
 export interface BillItem {
   amount: number;
   flow: Flow;
