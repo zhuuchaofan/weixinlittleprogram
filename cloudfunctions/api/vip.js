@@ -21,6 +21,11 @@ function vipView(household, at) {
   return { active: until > at, until };
 }
 
+/** 非会员用完当天次数时附上的开通提示；会员返回空串。 */
+function upgradeHint(household, at, text) {
+  return isVip(household, at) ? '' : text;
+}
+
 /** 截图识别、AI 小结的每日次数：会员更多。 */
 function dailyLimits(household, at, base) {
   const vip = isVip(household, at);
@@ -165,4 +170,10 @@ function createVipHandler({
   };
 }
 
-module.exports = { createVipHandler, isVip, vipView, dailyLimits };
+module.exports = {
+  createVipHandler,
+  isVip,
+  vipView,
+  dailyLimits,
+  upgradeHint,
+};

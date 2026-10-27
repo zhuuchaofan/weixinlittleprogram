@@ -3,7 +3,11 @@ const assert = require('node:assert/strict');
 const { createHmac } = require('node:crypto');
 const { createRouter } = require('../cloudfunctions/api/router');
 const { createXpay } = require('../cloudfunctions/api/xpay');
-const { isVip, dailyLimits } = require('../cloudfunctions/api/vip');
+const {
+  isVip,
+  dailyLimits,
+  upgradeHint,
+} = require('../cloudfunctions/api/vip');
 const { vip: VIP } = require('../cloudfunctions/api/contract.json');
 
 const NOW = Date.parse('2026-10-25T04:00:00Z');
@@ -418,4 +422,11 @@ test('会员的每日次数更多，过期后恢复', () => {
   assert.equal(isVip(household, NOW + 2 * DAY), false);
   assert.deepEqual(dailyLimits(household, NOW + 2 * DAY, base), base);
   assert.deepEqual(dailyLimits({}, NOW, base), base);
+});
+
+test('次数用完时只给非会员附开通提示', () => {
+  const hint = '开通会员每天可以识别 100 张。';
+  assert.equal(upgradeHint({}, NOW, hint), hint);
+  assert.equal(upgradeHint({ vip: { until: NOW + DAY } }, NOW, hint), '');
+  assert.equal(upgradeHint({ vip: { until: NOW - DAY } }, NOW, hint), hint);
 });

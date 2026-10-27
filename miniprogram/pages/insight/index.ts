@@ -148,6 +148,8 @@ Page({
     }),
     writing: false,
     summaryError: '',
+    // 今天的小结次数用完了：提示下面给一个去会员页的入口。
+    summaryLimit: false,
   },
   onLoad(query: Record<string, string | undefined>) {
     const month = /^\d{4}-\d{2}$/.test(query.month || '')
@@ -182,7 +184,7 @@ Page({
           ready: true,
           // 取到了新的小结，之前那次的报错就不用再显示了。
           ...(insight.summary && insight.summary.ts !== this.data.summaryTs
-            ? { summaryError: '' }
+            ? { summaryError: '', summaryLimit: false }
             : {}),
         }),
     });
@@ -191,14 +193,22 @@ Page({
     const delta = Number(event.currentTarget.dataset.delta);
     if (delta > 0 && this.data.isCurrentMonth) return;
     this.setMonth(shiftMonth(this.data.month, delta));
-    this.setData({ ready: false, summaryText: '', summaryError: '' });
+    this.setData({
+      ready: false,
+      summaryText: '',
+      summaryError: '',
+      summaryLimit: false,
+    });
     void this.load();
+  },
+  openVip() {
+    wx.navigateTo({ url: '/pages/vip/index' });
   },
   async writeSummary() {
     if (this.data.writing) return;
     const month = this.data.month;
     const before = this.data.summaryTs;
-    this.setData({ writing: true, summaryError: '' });
+    this.setData({ writing: true, summaryError: '', summaryLimit: false });
     try {
       const summary = await writeSummary(month);
       this.setData(summaryView(summary));
@@ -209,7 +219,12 @@ Page({
           : null;
       if (this.data.month !== month) return;
       this.setData(
-        summary ? summaryView(summary) : { summaryError: errorMessage(error) },
+        summary
+          ? summaryView(summary)
+          : {
+              summaryError: errorMessage(error),
+              summaryLimit: error instanceof ApiError && error.code === 'LIMIT',
+            },
       );
     } finally {
       this.setData({ writing: false });

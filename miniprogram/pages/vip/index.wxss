@@ -1,3 +1,9 @@
-.status-card { margin-bottom: 8rpx; }
-.buy { width: 200rpx; flex-shrink: 0; }
-.fine-print { margin: 16rpx 4rpx 0; line-height: 1.7; }
+.hero { padding: 36rpx 36rpx 32rpx; }
+.hero-label { font-size: 24rpx; opacity: 0.92; }
+.hero-value { font-size: 72rpx; font-weight: 800; line-height: 1.2; margin: 8rpx 0 12rpx; letter-spacing: -1rpx; }
+.hero-sub { font-size: 24rpx; opacity: 0.92; }
+.plan { padding-left: 0; }
+.plan-price { font-size: 34rpx; font-weight: 700; color: var(--accent); }
+.buy, button.buy:not([size='mini']) { margin-top: var(--gap); }
+.terms { font-size: 26rpx; line-height: 1.7; color: var(--muted); }
+.terms view + view { margin-top: 8rpx; }

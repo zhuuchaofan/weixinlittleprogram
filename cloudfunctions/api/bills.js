@@ -11,7 +11,7 @@ const validate = require('./validate');
 const CONTRACT = require('./contract.json');
 const { SETTLEMENT } = require('./ledger');
 const { todayKey } = require('./dates');
-const { dailyLimits } = require('./vip');
+const { dailyLimits, upgradeHint } = require('./vip');
 const {
   KINDS,
   MAX_ITEMS,
@@ -126,16 +126,16 @@ function createBillHandler({
       }).images;
       // 先占额度再调模型：识别失败也算一次，避免反复重试刷用量。
       if (
-        !(await households.takeQuota(
-          household._id,
-          'billQuota',
-          today,
-          limit,
-        ))
+        !(await households.takeQuota(household._id, 'billQuota', today, limit))
       )
         throw new ApiError(
           'LIMIT',
-          `今天已经识别了 ${limit} 张截图，明天再来吧。`,
+          `今天已经识别了 ${limit} 张截图，明天再来吧。` +
+            upgradeHint(
+              household,
+              now(),
+              `开通会员每天可以识别 ${CONTRACT.vip.dailyImages} 张。`,
+            ),
         );
       return parseReply(await vision.read(url, PROMPT), today);
     },

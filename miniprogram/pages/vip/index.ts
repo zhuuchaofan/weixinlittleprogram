@@ -9,7 +9,7 @@ Page({
   data: {
     ...themeData(),
     loading: true,
-    busy: '',
+    busy: false,
     error: '',
     message: '',
     info: null as VipInfo | null,
@@ -18,6 +18,11 @@ Page({
     baseSummaries: CONTRACT.aiSummary.daily,
     untilText: '',
     plans: [] as { id: string; name: string; days: number; price: string }[],
+    // 购买须知里的「月度会员 31 天，年度会员 366 天」。
+    plansText: '',
+    // 选中的套餐：一页只有一个「开通 / 续费」按钮。
+    selected: '',
+    selectedPrice: '',
   },
   onShow() {
     applyTheme(this);
@@ -36,22 +41,35 @@ Page({
     }
   },
   show(info: VipInfo) {
+    const plans = info.plans.map((plan) => ({
+      ...plan,
+      price: formatYuan(plan.price),
+    }));
+    // 默认选第一个套餐；刷新后保留之前的选择。
+    const selected =
+      plans.find((plan) => plan.id === this.data.selected) || plans[0];
     this.setData({
       info,
       untilText: info.until ? todayKey(info.until) : '',
-      plans: info.plans.map((plan) => ({
-        ...plan,
-        price: formatYuan(plan.price),
-      })),
+      plans,
+      plansText: plans.map((plan) => `${plan.name} ${plan.days} 天`).join('，'),
+      selected: selected?.id || '',
+      selectedPrice: selected?.price || '',
     });
   },
-  async buy(event: WechatMiniprogram.TouchEvent) {
+  pick(event: WechatMiniprogram.TouchEvent) {
     if (this.data.busy) return;
-    const id = String(event.currentTarget.dataset.id);
-    this.setData({ busy: id, error: '', message: '' });
+    const plan = this.data.plans.find(
+      (item) => item.id === event.currentTarget.dataset.id,
+    );
+    if (plan) this.setData({ selected: plan.id, selectedPrice: plan.price });
+  },
+  async buy() {
+    if (this.data.busy || !this.data.selected) return;
+    this.setData({ busy: true, error: '', message: '' });
     try {
       const before = this.data.info?.until || 0;
-      const info = await buyVip(id);
+      const info = await buyVip(this.data.selected);
       this.show(info);
       this.setData({
         message:
@@ -62,7 +80,7 @@ Page({
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
-      this.setData({ busy: '' });
+      this.setData({ busy: false });
     }
   },
   async onPullDownRefresh() {

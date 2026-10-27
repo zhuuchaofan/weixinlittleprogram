@@ -21,6 +21,7 @@
   <block wx:elif="{{phase === 'empty'}}">
     <view class="empty">{{error || '截图里没有读到账目。'}}</view>
     <view wx:for="{{failures}}" wx:key="*this" class="notice error">{{item}}</view>
+    <button wx:if="{{limitHit}}" class="text-button" bindtap="openVip">看看会员</button>
     <view class="small muted hint">请选微信「账单」或支付宝「账单」的列表页截图，文字清楚、不要裁掉日期。</view>
     <button class="secondary back-button" bindtap="back">返回记账</button>
   </block>
@@ -28,6 +29,7 @@
   <block wx:else>
     <view class="notice">{{summaryText}}。导入的账都记在你名下。</view>
     <view wx:for="{{failures}}" wx:key="*this" class="notice error">{{item}}</view>
+    <button wx:if="{{limitHit}}" class="text-button" bindtap="openVip">看看会员</button>
 
     <block wx:for="{{rows}}" wx:key="key" wx:for-index="index">
       <view wx:if="{{item.showDate}}" class="list-label">{{item.dateText}}</view>

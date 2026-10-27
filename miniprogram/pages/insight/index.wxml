@@ -28,6 +28,7 @@
     </block>
     <view wx:else class="ai-text muted">让喵喵用几句话说说这个月钱花在哪、比上月有什么变化。由阿里云通义千问生成，只发汇总数字和大额单笔的备注，不发截图。</view>
     <view wx:if="{{summaryError}}" class="ai-error small">{{summaryError}}</view>
+    <button wx:if="{{summaryLimit}}" class="text-button" bindtap="openVip">看看会员</button>
     <view class="ai-foot">
       <text class="small muted">{{summaryNote}}</text>
       <button class="btn-small" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新生成' : '写小结'}}</button>
