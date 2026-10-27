@@ -20,7 +20,8 @@
 .ai-text { font-size: 28rpx; line-height: 1.8; white-space: pre-line; }
 .ai-error { margin-top: 12rpx; color: #a1302a; }
 .ai-foot { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 16rpx; }
-button.ai-button[size='mini'] { margin: 0; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+/* 同攒钱页的小按钮：不用 size="mini"，固定高度让字上下居中 */
+.ai-button, button.ai-button:not([size='mini']) { width: auto; min-height: 0; height: 64rpx; padding: 0 28rpx; line-height: 1; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); font-size: 26rpx; font-weight: 600; }
 
 /* 按分类对比：每类一行文字 + 一条按本月最大一类缩放的进度条 */
 .compare { padding: 20rpx 32rpx; }
