@@ -9,6 +9,7 @@ const { createInsightHandler } = require('./insight');
 const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
+const { createActivityLog } = require('./activity');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
 function createRouter({
@@ -21,13 +22,18 @@ function createRouter({
   dates,
   insights = null,
   goals = null,
-  vision = null,
+  activity = null,
+  ai = null,
   orders = null,
   xpay = null,
   now = () => Date.now(),
+  log = (line) => console.error(line),
 }) {
   const household = createHouseholdHandler({ repository: households, now });
   const requireMembership = household.requireMembership;
+  const activityLog = activity
+    ? createActivityLog({ repository: activity, now })
+    : null;
   const vip = createVipHandler({
     households,
     orders,
@@ -45,7 +51,7 @@ function createRouter({
       households,
       requireMembership,
       now,
-      vision,
+      ai,
     }),
     ...createInsightHandler({
       repository: expenses,
@@ -53,7 +59,7 @@ function createRouter({
       households,
       requireMembership,
       now,
-      writer: vision,
+      ai,
     }),
     ...createGoalHandler({
       repository: goals,
@@ -61,11 +67,17 @@ function createRouter({
       requireMembership,
       now,
     }),
-    ...createTodoHandler({ repository: todos, requireMembership, now }),
+    ...createTodoHandler({
+      repository: todos,
+      activity: activityLog,
+      requireMembership,
+      now,
+    }),
     ...createCollectionHandlers({
       dishes,
       wishes,
       dates,
+      activity: activityLog,
       requireMembership,
       now,
     }),
@@ -76,13 +88,13 @@ function createRouter({
     }),
   };
   async function route(event, openid) {
+    const action = event?.action;
     try {
       if (typeof openid !== 'string' || !openid)
         throw new ApiError(
           'UNAUTHENTICATED',
           '无法确认微信身份，请重新进入小程序。',
         );
-      const action = event?.action;
       const handler =
         typeof action === 'string' && Object.hasOwn(actions, action)
           ? actions[action]
@@ -90,6 +102,15 @@ function createRouter({
       if (!handler) throw new ApiError('NOT_FOUND', '不支持的操作。');
       return { ok: true, data: await handler(openid, event?.payload || {}) };
     } catch (error) {
+      // 意料之外的错误打一行日志（云开发控制台能看到）：只有 action 和错误说明，不含请求内容和 openid。
+      if (!(error instanceof ApiError))
+        log(
+          JSON.stringify({
+            event: 'api',
+            action: typeof action === 'string' ? action.slice(0, 40) : '',
+            error: String(error?.message || error).slice(0, 120),
+          }),
+        );
       return failure(error);
     }
   }

@@ -1,1 +1,4 @@
-{ "navigationBarTitleText": "截图记账" }
+{
+  "navigationBarTitleText": "截图记账",
+  "usingComponents": { "draft-list": "/components/draft-list/index" }
+}

@@ -9,19 +9,13 @@
  * - big：大额单笔，本月支出按金额从大到小，前 3 笔一定列出，之后只列 ≥ BIG_AMOUNT 的，最多 MAX_BIG 笔。
  * - trend：截至本月的近 TREND_MONTHS 个月，每月支出合计。
  * AI 月度小结：只把上面这份汇总写成文字发给千问（大额单笔带备注或商户名，截到 NOTE_MAX 字），
- * 不发截图、明细和名字。结果存在 insights（每小家每月一份），每小家每天最多生成 DAILY_SUMMARIES 次。
+ * 不发截图、明细和名字。结果存在 insights（每小家每月一份），每小家每天的次数见 contract.json 的 ai.summary。
  */
 const { ApiError } = require('./errors');
 const validate = require('./validate');
-const {
-  categories,
-  settlement: SETTLEMENT,
-  aiSummary,
-  vip: VIP,
-} = require('./contract.json');
+const { categories, settlement: SETTLEMENT } = require('./contract.json');
 const { normalizeCategory } = require('./ledger');
-const { todayKey } = require('./dates');
-const { dailyLimits, upgradeHint } = require('./vip');
+const { takeQuota } = require('./quota');
 
 const TREND_MONTHS = 6;
 const BIG_AMOUNT = 50000;
@@ -29,7 +23,6 @@ const MIN_BIG = 3;
 const MAX_BIG = 5;
 const NOTE_MAX = 12;
 const SUMMARY_MAX = 300;
-const DAILY_SUMMARIES = aiSummary.daily;
 
 function shiftMonth(month, delta) {
   const [year, value] = month.split('-').map(Number);
@@ -255,7 +248,7 @@ function publicSummary(doc, insight) {
 /**
  * repository：expenses 的 listRange(householdId, fromMonth, toMonth)，两头的月份都包含。
  * insights：get(householdId, id)、insertWithId、update；households：takeQuota(id, field, day, limit)。
- * writer：{ write(prompt) -> 模型回复文本 }；没有配置模型时为 null。
+ * ai：createAi() 的返回值（ai.js）；没有配置模型时为 null。
  */
 function createInsightHandler({
   repository,
@@ -263,7 +256,7 @@ function createInsightHandler({
   households,
   requireMembership,
   now,
-  writer,
+  ai,
 }) {
   async function load(household, month) {
     const records = await repository.listRange(
@@ -288,7 +281,7 @@ function createInsightHandler({
     async 'insight.write'(openid, payload) {
       const household = await requireMembership(openid);
       const month = validate.month(payload.month);
-      if (!writer)
+      if (!ai)
         throw new ApiError(
           'UNAVAILABLE',
           'AI 小结还没开通：需要在云函数 api 里配置 DASHSCOPE_API_KEY。',
@@ -296,28 +289,12 @@ function createInsightHandler({
       const insight = await load(household, month);
       if (!insight.count)
         throw new ApiError('VALIDATION', '这个月还没有支出，记几笔再来吧。');
-      // 先占额度再调模型：失败也算一次，避免反复重试刷用量。会员的每日次数更多。
-      const limit = dailyLimits(household, now(), {
-        summaries: DAILY_SUMMARIES,
-      }).summaries;
-      if (
-        !(await households.takeQuota(
-          household._id,
-          'summaryQuota',
-          todayKey(now()),
-          limit,
-        ))
-      )
-        throw new ApiError(
-          'LIMIT',
-          `今天已经生成了 ${limit} 次小结，明天再来吧。` +
-            upgradeHint(
-              household,
-              now(),
-              `开通会员每天可以生成 ${VIP.dailySummaries} 次。`,
-            ),
-        );
-      const text = cleanSummary(await writer.write(summaryPrompt(insight)));
+      await ai.ensure('summary');
+      // 会员的每日次数更多。
+      await takeQuota(households, household, 'summary', now());
+      const text = cleanSummary(
+        await ai.write('summary', summaryPrompt(insight)),
+      );
       if (!text)
         throw new ApiError('UNAVAILABLE', '小结没写出来，请稍后重试。');
       const id = summaryId(household, month);

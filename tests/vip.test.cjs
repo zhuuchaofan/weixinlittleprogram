@@ -3,12 +3,9 @@ const assert = require('node:assert/strict');
 const { createHmac } = require('node:crypto');
 const { createRouter } = require('../cloudfunctions/api/router');
 const { createXpay } = require('../cloudfunctions/api/xpay');
-const {
-  isVip,
-  dailyLimits,
-  upgradeHint,
-} = require('../cloudfunctions/api/vip');
-const { vip: VIP } = require('../cloudfunctions/api/contract.json');
+const { isVip } = require('../cloudfunctions/api/vip');
+const { limitOf, limitMessage } = require('../cloudfunctions/api/quota');
+const { vip: VIP, ai: QUOTAS } = require('../cloudfunctions/api/contract.json');
 
 const NOW = Date.parse('2026-10-25T04:00:00Z');
 const DAY = 24 * 60 * 60 * 1000;
@@ -217,6 +214,13 @@ test('vip.get：套餐来自契约，未开通时 active 为 false', async () =>
   assert.equal(result.data.active, false);
   assert.equal(result.data.available, true);
   assert.deepEqual(result.data.plans, VIP.plans);
+  // 会员页照着列每项 AI 功能的次数；1.6.0 读的两个字段留着
+  assert.deepEqual(
+    result.data.quotas.map((row) => [row.id, row.free, row.vip]),
+    Object.entries(QUOTAS).map(([id, row]) => [id, row.free, row.vip]),
+  );
+  assert.equal(result.data.dailyImages, QUOTAS.billImage.vip);
+  assert.equal(result.data.dailySummaries, QUOTAS.summary.vip);
 });
 
 test('vip.order：价格和商品以云端为准，双签名按文档计算', async () => {
@@ -435,23 +439,32 @@ test('发货推送：没配置虚拟支付时一律拒绝', async () => {
 });
 
 test('会员的每日次数更多，过期后恢复', () => {
-  const base = { images: 20, summaries: 5 };
   const household = { vip: { until: NOW + DAY } };
   assert.equal(isVip(household, NOW), true);
-  assert.deepEqual(dailyLimits(household, NOW, base), {
-    images: VIP.dailyImages,
-    summaries: VIP.dailySummaries,
-  });
+  assert.equal(limitOf(household, 'billImage', NOW), QUOTAS.billImage.vip);
+  assert.equal(limitOf(household, 'summary', NOW), QUOTAS.summary.vip);
   assert.equal(isVip(household, NOW + 2 * DAY), false);
-  assert.deepEqual(dailyLimits(household, NOW + 2 * DAY, base), base);
-  assert.deepEqual(dailyLimits({}, NOW, base), base);
+  assert.equal(
+    limitOf(household, 'billImage', NOW + 2 * DAY),
+    QUOTAS.billImage.free,
+  );
+  assert.equal(limitOf({}, 'summary', NOW), QUOTAS.summary.free);
 });
 
 test('次数用完时只给非会员附开通提示', () => {
-  const hint = '开通会员每天可以识别 100 张。';
-  assert.equal(upgradeHint({}, NOW, hint), hint);
-  assert.equal(upgradeHint({ vip: { until: NOW + DAY } }, NOW, hint), '');
-  assert.equal(upgradeHint({ vip: { until: NOW - DAY } }, NOW, hint), hint);
+  const free = limitMessage({}, 'billImage', NOW);
+  assert.equal(
+    free,
+    `今天已经识别了 ${QUOTAS.billImage.free} 张截图，明天再来吧。开通会员每天可以识别 ${QUOTAS.billImage.vip} 张。`,
+  );
+  assert.equal(
+    limitMessage({ vip: { until: NOW + DAY } }, 'summary', NOW),
+    `今天已经生成了 ${QUOTAS.summary.vip} 次小结，明天再来吧。`,
+  );
+  assert.match(
+    limitMessage({ vip: { until: NOW - DAY } }, 'summary', NOW),
+    /开通会员每天可以生成/,
+  );
 });
 
 test('vip.confirm：付款后主动查单开通，不用等推送', async () => {

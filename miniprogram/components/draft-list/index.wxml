@@ -1,0 +1,40 @@
+<!-- 先确认再保存的列表，用法见 index.ts。 -->
+<block wx:for="{{rows}}" wx:key="key" wx:for-index="index">
+  <view wx:if="{{item.showDate}}" class="list-label">{{item.dateText}}</view>
+  <view class="bill {{item.selected ? '' : 'bill-off'}}">
+    <view class="bill-head" data-index="{{index}}" bindtap="expand" hover-class="list-row-active">
+      <view class="check {{item.selected ? 'check-on' : ''}}" data-index="{{index}}" catchtap="toggle" aria-role="checkbox" aria-checked="{{item.selected}}" aria-label="导入这笔">{{item.selected ? '✓' : ''}}</view>
+      <view class="row-main">
+        <view class="row-title">{{item.note || item.kind}}</view>
+        <view class="row-sub">{{item.cat}}<text wx:if="{{item.time}}"> · {{item.time}}</text><text wx:if="{{item.dateGuessed}}" class="warn"> · 日期按今天推算，请核对</text></view>
+      </view>
+      <view class="row-trail amount serif {{item.flow === 'in' ? 'income' : ''}}">{{item.amountText}}</view>
+    </view>
+    <view wx:if="{{item.problem}}" class="flag flag-bad">{{item.problem}}，点开补上</view>
+    <view wx:elif="{{item.statusText}}" class="flag">{{item.statusText}}<text wx:if="{{item.matchText}}">：{{item.matchText}}</text></view>
+
+    <view wx:if="{{item.expanded}}" class="editor">
+      <view class="segmented">
+        <view wx:for="{{flows}}" wx:for-item="flow" wx:key="value" class="segment {{item.flow === flow.value ? 'segment-on' : ''}}" data-index="{{index}}" data-value="{{flow.value}}" bindtap="chooseFlow">{{flow.label}}</view>
+      </view>
+      <view class="field">
+        <text class="field-label">金额（元）</text>
+        <input type="digit" value="{{item.amountInput}}" placeholder="0.00" data-index="{{index}}" bindinput="inputAmount" />
+      </view>
+      <view class="field">
+        <text class="field-label">备注</text>
+        <input value="{{item.note}}" maxlength="{{limits.expenseNote}}" data-index="{{index}}" bindinput="inputNote" />
+      </view>
+      <view class="field">
+        <text class="field-label">日期</text>
+        <picker mode="date" value="{{item.date || today}}" end="{{today}}" data-index="{{index}}" bindchange="pickDate"><view class="picker-value">{{item.date || '请选择'}}</view></picker>
+      </view>
+      <view class="field">
+        <text class="field-label">分类</text>
+        <view class="chips">
+          <view wx:for="{{categories}}" wx:for-item="cat" wx:key="*this" class="chip {{item.cat === cat ? 'chip-on' : ''}}" data-index="{{index}}" data-value="{{cat}}" bindtap="chooseCat">{{cat}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</block>

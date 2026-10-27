@@ -6,23 +6,30 @@ const DEFAULT_BASE_URL =
 const DEFAULT_MODEL = 'qwen3.8-omni-flash';
 // 要比云函数超时（60 秒）短，留出查重和返回的时间。
 const TIMEOUT_MS = 50 * 1000;
-// 小结 150 字以内，中文大约 1 字 1 token；封顶防止模型写长了拖时间。
-const SUMMARY_MAX_TOKENS = 300;
 
-/** 流式回复（SSE）拼回完整文本：每行 `data: {...}`，以 `data: [DONE]` 结束。 */
+/**
+ * 流式回复（SSE）拼回完整文本：每行 `data: {...}`，以 `data: [DONE]` 结束。
+ * 最后一块带 usage（请求里开了 include_usage），用来记用量；没有时 token 数记 0。
+ */
 function joinStream(body) {
   let text = '';
+  const usage = { input: 0, output: 0 };
   for (const line of body.split('\n')) {
     const data = line.startsWith('data:') ? line.slice(5).trim() : '';
     if (!data || data === '[DONE]') continue;
     try {
-      const delta = JSON.parse(data).choices?.[0]?.delta?.content;
+      const chunk = JSON.parse(data);
+      const delta = chunk.choices?.[0]?.delta?.content;
       if (typeof delta === 'string') text += delta;
+      if (chunk.usage) {
+        usage.input = Number(chunk.usage.prompt_tokens) || 0;
+        usage.output = Number(chunk.usage.completion_tokens) || 0;
+      }
     } catch {
       // 跳过不完整的行
     }
   }
-  return text;
+  return { text, usage };
 }
 
 /** 接口返回的错误说明（error.code / error.message），只取前 80 字，不含账单内容。 */
@@ -78,19 +85,17 @@ function httpsPost(url, { headers, body, timeout }) {
 }
 
 /**
- * 千问模型：read(imageUrl, prompt) 读截图，write(prompt) 只发文字，都返回模型回复的文本。
+ * 千问模型的底层调用：chat(content, { model, temperature, maxTokens }) → { text, usage }。
+ * 用哪个模型、记用量、费用上限都在 ai.js；这里只管发请求和把错误翻译成人话。
  * Omni 系列只支持流式输出，所以一律用 stream 调用，读完整个回复再拼接。
- * 没有配置 DASHSCOPE_API_KEY 时返回 null，截图记账和 AI 小结提示未开通。密钥只从环境变量读取。
+ * 没有配置 DASHSCOPE_API_KEY 时返回 null，AI 功能提示未开通。密钥只从环境变量读取。
  * post 可替换（测试用）：post(url, { headers, body, timeout }) → { status, text }。
  */
 function createVision(env = process.env, post = httpsPost) {
   const apiKey = env.DASHSCOPE_API_KEY;
   if (!apiKey) return null;
   const baseUrl = (env.BILL_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, '');
-  const model = env.BILL_MODEL || DEFAULT_MODEL;
-  // 小结只有文字，可以单独换一个更快的纯文本模型（例如 qwen-flash），不填就和截图识别用同一个。
-  const summaryModel = env.SUMMARY_MODEL || model;
-  async function chat(content, options = {}) {
+  async function chat(content, options) {
     let response;
     try {
       response = await post(`${baseUrl}/chat/completions`, {
@@ -99,12 +104,13 @@ function createVision(env = process.env, post = httpsPost) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: options.model || model,
+          model: options.model,
           temperature: options.temperature || 0,
           ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
           // 不要思考过程：只拼正文，思考只会让人多等。
           enable_thinking: false,
           stream: true,
+          stream_options: { include_usage: true },
           modalities: ['text'],
           messages: [{ role: 'user', content }],
         }),
@@ -120,27 +126,10 @@ function createVision(env = process.env, post = httpsPost) {
     if (response.status !== 200)
       throw failureFor(response.status, response.text);
     const reply = joinStream(response.text);
-    if (!reply) throw failureFor(response.status, response.text);
+    if (!reply.text) throw failureFor(response.status, response.text);
     return reply;
   }
-
-  return {
-    /** 读截图：图片加提示词。 */
-    read(imageUrl, prompt) {
-      return chat([
-        { type: 'image_url', image_url: { url: imageUrl } },
-        { type: 'text', text: prompt },
-      ]);
-    },
-    /** 只有文字（AI 月度小结）：发的是汇总，不含截图和明细。 */
-    write(prompt) {
-      return chat([{ type: 'text', text: prompt }], {
-        model: summaryModel,
-        temperature: 0.3,
-        maxTokens: SUMMARY_MAX_TOKENS,
-      });
-    },
-  };
+  return { chat };
 }
 
 module.exports = { createVision, DEFAULT_MODEL };

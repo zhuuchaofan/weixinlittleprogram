@@ -6,6 +6,7 @@ const {
 } = require('./invocation');
 const { listAll, readComplete } = require('./paging');
 const { createVision } = require('./vision');
+const { createAi } = require('./ai');
 const { createXpay, DELIVER_EVENT, REFUND_EVENT } = require('./xpay');
 
 function createHouseholdRepository(db) {
@@ -112,6 +113,46 @@ function createOrderRepository(db) {
   };
 }
 
+/**
+ * AI 用量（ai_usage）：每天一条，_id 是日期，累加调用次数、失败次数、token 数和估算费用（元），
+ * features 下按功能各记一份。只有数字，没有内容和 openid。
+ */
+function createAiUsageRepository(db) {
+  const collection = db.collection('ai_usage');
+  const _ = db.command;
+  const KEYS = ['calls', 'failed', 'input', 'output', 'cost'];
+  return {
+    async get(day) {
+      const result = await collection.where({ _id: day }).limit(1).get();
+      return result.data[0] || null;
+    },
+    async add(day, feature, entry) {
+      const inc = {};
+      for (const key of KEYS) {
+        inc[key] = _.inc(entry[key]);
+        inc[`features.${feature}.${key}`] = _.inc(entry[key]);
+      }
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = await collection.where({ _id: day }).update(inc);
+        if (result.updated === 1) return;
+        try {
+          const first = Object.fromEntries(
+            KEYS.map((key) => [key, entry[key]]),
+          );
+          await collection.add({
+            _id: day,
+            ...first,
+            features: { [feature]: first },
+          });
+          return;
+        } catch {
+          // 同一天的第一条被另一次调用抢先建好了：再更新一次。
+        }
+      }
+    },
+  };
+}
+
 /** 攒钱目标：通用记录操作，加上原子的「存了一笔」。 */
 function createGoalRepository(db) {
   const _ = db.command;
@@ -204,7 +245,11 @@ exports.main = async (event, context) => {
     dates: createRecordRepository(db, 'dates'),
     insights: createRecordRepository(db, 'insights'),
     goals: createGoalRepository(db),
-    vision: createVision(),
+    activity: createRecordRepository(db, 'activity'),
+    ai: createAi({
+      client: createVision(),
+      usage: createAiUsageRepository(db),
+    }),
     orders: createOrderRepository(db),
     xpay: createXpay(),
   });

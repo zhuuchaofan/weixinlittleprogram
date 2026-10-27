@@ -1,4 +1,4 @@
-import type { BillItem, BillStatus, Flow, Household } from '../../models';
+import type { BillItem, Household } from '../../models';
 import { getHousehold, memberNames } from '../../services/household';
 import {
   importBills,
@@ -7,9 +7,9 @@ import {
   takePendingImages,
 } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
-import { CATEGORIES, FLOWS, LENGTHS } from '../../config/options';
 import { shortDate, todayKey } from '../../utils/date';
-import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
+import { formatYuan } from '../../utils/money';
+import { arrange, toRow, type DraftRow } from '../../utils/drafts';
 import { applyTheme, themeData } from '../../services/theme';
 
 // 一次同时识别几张：太多容易超时，太少等得久。
@@ -30,37 +30,7 @@ function stopTips(): void {
   tipTimer = undefined;
 }
 
-const STATUS_TEXT: Record<BillStatus, string> = {
-  imported: '已导入过',
-  possible: '可能已记过',
-  partner: '你们俩之间的转账，默认不记',
-  new: '',
-};
-
-/** 云函数还是旧版时可能回来不认识的 status（如 likely）：没勾的都要说明原因。 */
-function statusText(status: BillStatus | undefined): string {
-  if (!status) return '';
-  return STATUS_TEXT[status] ?? STATUS_TEXT.possible;
-}
-
-type Row = BillItem & {
-  selected: boolean;
-  expanded: boolean;
-  amountInput: string;
-  amountText: string;
-  dateText: string;
-  statusText: string;
-  matchText: string;
-  showDate: boolean;
-};
-
 let household: Household | null = null;
-
-/** 只有新的默认勾选；已导入过、可能已记过、两人互转、读不全的默认不勾。 */
-function defaultSelected(item: BillItem): boolean {
-  if (item.problem) return false;
-  return item.status === 'new';
-}
 
 function matchText(item: BillItem): string {
   const match = item.match;
@@ -72,34 +42,7 @@ function matchText(item: BillItem): string {
   return `${who}记过：${shortDate(match.date)} ${match.note || '（无备注）'} ${formatYuan(match.amount)}`;
 }
 
-function present(item: BillItem, previous?: Row): Row {
-  return {
-    ...item,
-    selected: previous ? previous.selected : defaultSelected(item),
-    expanded: previous ? previous.expanded : false,
-    amountInput: previous ? previous.amountInput : fenToInput(item.amount),
-    amountText:
-      (item.flow === 'in' ? '+' : '') +
-      (item.amount ? formatYuan(item.amount) : '¥?'),
-    dateText: item.date ? shortDate(item.date) : '日期待补',
-    statusText: statusText(item.status),
-    matchText: matchText(item),
-    showDate: false,
-  };
-}
-
-/** 按日期从新到旧；同一天只在第一笔上方显示日期。 */
-function arrange(rows: Row[]): Row[] {
-  const sorted = [...rows].sort(
-    (a, b) =>
-      (b.date || '9').localeCompare(a.date || '9') ||
-      b.time.localeCompare(a.time),
-  );
-  return sorted.map((row, index) => ({
-    ...row,
-    showDate: index === 0 || sorted[index - 1].date !== row.date,
-  }));
-}
+const present = (item: BillItem): DraftRow => toRow(item, matchText(item));
 
 Page({
   data: {
@@ -110,12 +53,9 @@ Page({
     failures: [] as string[],
     // 今天的识别次数用完了：失败提示下面给一个去会员页的入口。
     limitHit: false,
-    rows: [] as Row[],
+    rows: [] as DraftRow[],
     selectedCount: 0,
     summaryText: '',
-    categories: CATEGORIES,
-    flows: FLOWS,
-    limits: LENGTHS,
     today: todayKey(),
     busy: false,
     error: '',
@@ -192,9 +132,9 @@ Page({
       return;
     }
     this.setData({ phase: 'review', failures });
-    this.show(arrange(matched.map((item) => present(item))));
+    this.show(arrange(matched.map(present)));
   },
-  show(rows: Row[]) {
+  show(rows: DraftRow[]) {
     const selected = rows.filter((row) => row.selected).length;
     const flagged = rows.filter(
       (row) => row.status && row.status !== 'new' && !row.selected,
@@ -207,59 +147,9 @@ Page({
         (flagged ? `，${flagged} 笔可能已记过或不用记，已取消勾选` : ''),
     });
   },
-  /** 改了某一行之后重新算显示字段。 */
-  update(index: number, fields: Partial<Row>) {
-    const rows = [...this.data.rows];
-    const row = { ...rows[index], ...fields };
-    const problems = [
-      !row.amount && '金额没读出来',
-      !row.date && '日期没读出来',
-    ].filter(Boolean);
-    rows[index] = present({ ...row, problem: problems.join('，') }, row);
-    rows[index].showDate = this.data.rows[index].showDate;
-    this.show(rows);
-  },
-  indexOf(event: WechatMiniprogram.BaseEvent): number {
-    return Number(event.currentTarget.dataset.index);
-  },
-  toggle(event: WechatMiniprogram.TouchEvent) {
-    const index = this.indexOf(event);
-    const row = this.data.rows[index];
-    if (!row.selected && row.problem) {
-      this.update(index, { expanded: true });
-      wx.showToast({ title: row.problem, icon: 'none' });
-      return;
-    }
-    this.update(index, { selected: !row.selected });
-  },
-  expand(event: WechatMiniprogram.TouchEvent) {
-    const index = this.indexOf(event);
-    this.update(index, { expanded: !this.data.rows[index].expanded });
-  },
-  inputAmount(event: WechatMiniprogram.Input) {
-    this.update(this.indexOf(event), {
-      amountInput: event.detail.value,
-      amount: parseYuan(event.detail.value),
-    });
-  },
-  inputNote(event: WechatMiniprogram.Input) {
-    this.update(this.indexOf(event), { note: event.detail.value });
-  },
-  pickDate(event: WechatMiniprogram.PickerChange) {
-    this.update(this.indexOf(event), {
-      date: String(event.detail.value),
-      dateGuessed: false,
-    });
-  },
-  chooseCat(event: WechatMiniprogram.TouchEvent) {
-    this.update(this.indexOf(event), {
-      cat: String(event.currentTarget.dataset.value),
-    });
-  },
-  chooseFlow(event: WechatMiniprogram.TouchEvent) {
-    this.update(this.indexOf(event), {
-      flow: event.currentTarget.dataset.value as Flow,
-    });
+  /** 确认列表里勾选或改了一笔。 */
+  changeRows(event: WechatMiniprogram.CustomEvent<{ rows: DraftRow[] }>) {
+    this.show(event.detail.rows);
   },
   async save() {
     if (this.data.busy) return;

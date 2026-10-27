@@ -14,8 +14,7 @@
     <view class="section">
       <view class="section-head"><view class="section-title">会员权益</view></view>
       <view class="list">
-        <view class="list-row"><view class="row-main"><view>截图记账每天识别 {{info.dailyImages}} 张</view><view class="row-sub">不开通时每天 {{baseImages}} 张</view></view></view>
-        <view class="list-row"><view class="row-main"><view>喵喵小结每天生成 {{info.dailySummaries}} 次</view><view class="row-sub">不开通时每天 {{baseSummaries}} 次</view></view></view>
+        <view wx:for="{{perks}}" wx:key="title" class="list-row"><view class="row-main"><view>{{item.title}}</view><view class="row-sub">{{item.sub}}</view></view></view>
       </view>
     </view>
 
