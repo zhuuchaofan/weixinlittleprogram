@@ -1034,12 +1034,18 @@ test('花销分析：和上月按分类比、大额单笔、近 6 个月，不�
   assert.equal(data.prevTotal, 305500);
   assert.equal(data.income, 500000);
   assert.deepEqual(data.byCategory, [
-    { cat: '房租', amount: 300000, count: 1, prev: 300000 },
-    { cat: '旅行', amount: 98000, count: 1, prev: 0 },
-    { cat: '吃饭', amount: 6000, count: 2, prev: 4000 },
-    { cat: '日用', amount: 2000, count: 2, prev: 0 },
-    { cat: '交通', amount: 0, count: 0, prev: 1500 },
+    { cat: '房租', amount: 300000, count: 1, prev: 300000, ref: 300000 },
+    { cat: '旅行', amount: 98000, count: 1, prev: 0, ref: 0 },
+    { cat: '吃饭', amount: 6000, count: 2, prev: 4000, ref: 4000 },
+    { cat: '日用', amount: 2000, count: 2, prev: 0, ref: 0 },
+    { cat: '交通', amount: 0, count: 0, prev: 1500, ref: 1500 },
   ]);
+  assert.deepEqual(data.compare, {
+    month: '2026-09',
+    total: 305500,
+    days: 30,
+    fullDays: 30,
+  });
   // 前 3 笔一定列出，之后只列 ¥500 及以上的。
   assert.deepEqual(
     data.big.map((row) => [row.cat, row.note, row.amount]),
@@ -1170,19 +1176,62 @@ test('AI 小结：备注截到 12 字', () => {
   assert.match(prompt, /「一二三四五六七八九十甲乙」/);
 });
 
-test('AI 小结：上个月没记账时不让模型和上个月比', () => {
+test('AI 小结：拿哪个月比分三种情况', () => {
   const { summaryPrompt, analyze } = require('../cloudfunctions/api/insight');
-  const prompt = summaryPrompt(
-    analyze('2026-10', [
-      { _id: 'e1', amount: 2000, cat: '吃饭', date: '2026-10-01' },
-      { _id: 'e2', amount: 369651, cat: '娱乐', date: '2026-10-23' },
-    ]),
-  );
-  assert.match(prompt, /上个月（9月）没有记账（刚开始用或者没记），没法对比/);
-  assert.match(prompt, /不要和上个月比/);
+  const row = (date, amount, cat = '吃饭') => ({
+    _id: date + amount,
+    amount,
+    cat,
+    date,
+  });
+  const october = [row('2026-10-01', 2000), row('2026-10-23', 369651, '娱乐')];
+
+  // 刚开始用：不比
+  const first = analyze('2026-10', october);
+  assert.equal(first.compare, null);
+  let prompt = summaryPrompt(first);
+  assert.match(prompt, /这是开始记账的第一个月，没有更早的账可比/);
+  assert.match(prompt, /不要说哪类变多、变少或新增/);
   assert.match(prompt, /- 娱乐：3696\.51 \/ 1 笔/);
-  assert.equal(prompt.includes('上个月比哪几类'), false);
   assert.equal(prompt.includes('每月支出'), false, '只有一个月时不列走势');
+
+  // 上个月空着、更早有账：比最近有账的月份，并说上个月没记
+  const skipped = analyze('2026-10', [
+    ...october,
+    row('2026-07-15', 1000),
+    row('2026-08-01', 5000),
+  ]);
+  assert.deepEqual(skipped.compare, {
+    month: '2026-08',
+    total: 5000,
+    days: 31,
+    fullDays: 31,
+  });
+  assert.equal(skipped.prevTotal, 0);
+  assert.equal(skipped.byCategory.find((r) => r.cat === '吃饭').ref, 5000);
+  prompt = summaryPrompt(skipped);
+  assert.match(
+    prompt,
+    /上个月（9月）没有记账（多半是忘了记，不是没花钱），拿最近有账的 8月 比：8月 50 元。/,
+  );
+  assert.match(prompt, /和8月比哪几类明显变多或变少/);
+  assert.match(prompt, /要提一句9月没记账/);
+  assert.match(prompt, /- 吃饭：20 \/ 50 \/ 1 笔/);
+
+  // 上个月中途开始记：照比，写明只记了几天
+  const partial = analyze('2026-10', [...october, row('2026-09-21', 5000)]);
+  assert.deepEqual(partial.compare, {
+    month: '2026-09',
+    total: 5000,
+    days: 10,
+    fullDays: 30,
+  });
+  prompt = summaryPrompt(partial);
+  assert.match(
+    prompt,
+    /上个月（9月）50 元，但9月是从 21 日才开始记的，只记了 10 天。/,
+  );
+  assert.match(prompt, /不要说「多了几倍」「新增」这类结论/);
 });
 
 test('攒钱目标：每月要存、存了一笔、本月还差、改正已存、别人家看不到', async () => {

@@ -1,4 +1,8 @@
-import type { InsightSummary, MonthInsight } from '../../models';
+import type {
+  InsightCompare,
+  InsightSummary,
+  MonthInsight,
+} from '../../models';
 import { getInsight, writeSummary } from '../../services/insight';
 import { ApiError, errorMessage } from '../../services/cloud';
 import { createLoader } from '../../services/page-load';
@@ -8,31 +12,55 @@ import { formatYuan } from '../../utils/money';
 import { formatTimestamp } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
 
+/** 对比月叫什么：上个月，或者「8月」。 */
+function compareLabel(insight: MonthInsight): string {
+  const { compare } = insight;
+  if (!compare) return '';
+  return compare.month === insight.prevMonth
+    ? '上个月'
+    : `${Number(compare.month.slice(5))}月`;
+}
+
+const isPartial = (compare: InsightCompare | null) =>
+  !!compare && compare.days < compare.fullDays;
+
 /**
- * 和上月比：多了、少了、持平；上月这类没有时写「新增」。
- * 上月整月都没记账（刚开始用或没记）时不比，什么都不写。
+ * 和对比月比：多了、少了、持平；对比月这类没有时写「新增」。
+ * 没有可比的月份时什么都不写；对比月只记了几天时不写「新增」。
  */
 function change(
   amount: number,
-  prev: number,
-  compare: boolean,
+  ref: number,
+  compare: InsightCompare | null,
 ): { text: string; tone: string } {
   if (!compare) return { text: '', tone: '' };
-  const diff = amount - prev;
-  if (!prev && amount) return { text: '新增', tone: 'up' };
+  const diff = amount - ref;
+  if (!ref && amount)
+    return isPartial(compare)
+      ? { text: '', tone: '' }
+      : { text: '新增', tone: 'up' };
   if (!diff) return { text: '持平', tone: '' };
   return diff > 0
     ? { text: `▲ ${formatYuan(diff)}`, tone: 'up' }
     : { text: `▼ ${formatYuan(-diff)}`, tone: 'down' };
 }
 
-/** 总额一行：比上月多/少多少、百分之几。上月没有记账时不比。 */
-function totalChange(total: number, prev: number): string {
-  if (!prev) return '上个月没有记账，下个月起可以对比';
-  const diff = total - prev;
-  if (!diff) return '和上个月一样';
-  const percent = Math.round((Math.abs(diff) * 100) / prev);
-  return `比上个月${diff > 0 ? '多' : '少'} ${formatYuan(Math.abs(diff))}（${percent}%）`;
+/**
+ * 总额一行：比对比月多/少多少、百分之几。
+ * 上个月空着时先说没记账；对比月只记了几天时写明天数、不算百分比。
+ */
+function totalChange(insight: MonthInsight): string {
+  const { compare, total } = insight;
+  if (!compare) return '这是记账的第一个月，下个月起可以对比';
+  const label = compareLabel(insight);
+  const lead = compare.month === insight.prevMonth ? '' : '上个月没记账，';
+  const diff = total - compare.total;
+  if (!diff) return `${lead}和${label}一样`;
+  const text = `${lead}比${label}${diff > 0 ? '多' : '少'} ${formatYuan(Math.abs(diff))}`;
+  if (isPartial(compare)) return `${text}（${label}只记了 ${compare.days} 天）`;
+  if (!compare.total) return text;
+  const percent = Math.round((Math.abs(diff) * 100) / compare.total);
+  return `${text}（${percent}%）`;
 }
 
 function summaryView(summary: InsightSummary | null) {
@@ -53,16 +81,20 @@ function view(insight: MonthInsight) {
   return {
     ...summaryView(insight.summary),
     totalText: formatYuan(insight.total),
-    changeText: totalChange(insight.total, insight.prevTotal),
+    changeText: totalChange(insight),
+    compareTitle: insight.compare
+      ? `按分类，和${compareLabel(insight)}比`
+      : '按分类',
+    compareLabel: compareLabel(insight),
     incomeText: insight.income ? formatYuan(insight.income) : '',
     categories: insight.byCategory.map((row) => ({
       cat: row.cat,
       color: categoryLook(row.cat).color,
       amountText: formatYuan(row.amount),
-      prevText: formatYuan(row.prev),
+      refText: formatYuan(row.ref),
       countText: row.count ? `${row.count} 笔` : '',
       width: row.amount ? Math.max(2, Math.round((row.amount * 100) / top)) : 0,
-      ...change(row.amount, row.prev, insight.prevTotal > 0),
+      ...change(row.amount, row.ref, insight.compare),
     })),
     big: insight.big.map((row) => ({
       ...row,
@@ -106,6 +138,7 @@ Page({
       prevMonth: '',
       total: 0,
       prevTotal: 0,
+      compare: null,
       count: 0,
       income: 0,
       byCategory: [],
