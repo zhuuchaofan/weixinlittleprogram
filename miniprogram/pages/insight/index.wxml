@@ -34,9 +34,9 @@
   <view wx:elif="{{ready && !categories.length}}" class="empty">这个月和上个月都还没有支出。</view>
 
   <block wx:if="{{categories.length}}">
-    <view class="section-head"><view class="section-title">按分类，和上个月比</view></view>
+    <view class="section-head"><view class="section-title">{{compareTitle}}</view></view>
     <view class="card compare">
-      <view wx:for="{{categories}}" wx:key="cat" class="compare-row" aria-label="{{item.cat}} {{item.amountText}}，上个月 {{item.prevText}}，{{item.text}}">
+      <view wx:for="{{categories}}" wx:key="cat" class="compare-row" aria-label="{{item.cat}} {{item.amountText}}{{compareLabel ? '，' + compareLabel + ' ' + item.refText : ''}}{{item.text ? '，' + item.text : ''}}">
         <view class="compare-line">
           <view class="cat-dot" style="background: {{item.color}}"></view>
           <view class="cat-name">{{item.cat}}<text class="small muted"> {{item.countText}}</text></view>

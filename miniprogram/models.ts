@@ -223,8 +223,16 @@ export interface MonthInsight {
     cat: string;
     amount: number;
     count: number;
+    /** 上个月这一类（预算页用）。 */
     prev: number;
+    /** 对比月这一类，见 compare。 */
+    ref: number;
   }>;
+  /**
+   * 拿哪个月比：上个月有账就是上个月，上个月空着就是最近有账的月份；从没记过为 null。
+   * days < fullDays：那个月是中途开始记的，只记了 days 天。
+   */
+  compare: InsightCompare | null;
   /** 大额单笔：本月前 3 笔，再加上 ¥500 及以上的，最多 5 笔。 */
   big: Array<{
     id: string;
@@ -237,6 +245,13 @@ export interface MonthInsight {
   trend: Array<{ month: string; total: number }>;
   /** AI 月度小结，还没生成时为 null。 */
   summary: InsightSummary | null;
+}
+
+export interface InsightCompare {
+  month: string;
+  total: number;
+  days: number;
+  fullDays: number;
 }
 
 /** stale：生成之后这个月的账有变动，可以重新生成。 */

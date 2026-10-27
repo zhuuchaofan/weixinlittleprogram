@@ -2,6 +2,10 @@
  * 花销分析（docs/PLAN.md 记账规则最后一条）。金额单位为「分」：
  * - 支出口径同 ledger.summarize 的 spending：所有支出，不含结算和收入，不管怎么分。
  * - byCategory：本月和上月按分类对比，本月金额从大到小；上月有、本月没有的排在后面。
+ *   prev 固定是上个月（预算页用），ref 是对比月（见 compare）。
+ * - compare：拿哪个月比。上个月有账（哪怕只是收入）就比上个月；上个月一笔都没有但更早有账
+ *   （像是忘了记），比最近一个有账的月份；近 TREND_MONTHS 个月里从没记过（刚开始用）为 null。
+ *   对比月正好是开始记账的那个月、且不是从 1 号记起时，那个月只记了一部分：days < fullDays。
  * - big：大额单笔，本月支出按金额从大到小，前 3 笔一定列出，之后只列 ≥ BIG_AMOUNT 的，最多 MAX_BIG 笔。
  * - trend：截至本月的近 TREND_MONTHS 个月，每月支出合计。
  * AI 月度小结：只把上面这份汇总写成文字发给千问（大额单笔带备注或商户名，截到 NOTE_MAX 字），
@@ -53,6 +57,32 @@ const sum = (records) => records.reduce((total, r) => total + r.amount, 0);
 /** 备注优先，没有备注时用截图里的商户名。 */
 const labelOf = (record) => record.note || record.src?.merchant || '';
 
+const daysIn = (month) =>
+  new Date(
+    Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5)), 0),
+  ).getUTCDate();
+
+function compareMonth(month, records, ofMonth) {
+  let key = '';
+  for (let delta = -1; delta > -TREND_MONTHS && !key; delta--)
+    if (ofMonth(shiftMonth(month, delta)).length)
+      key = shiftMonth(month, delta);
+  if (!key) return null;
+  const first = records
+    .map((record) => String(record.date))
+    .reduce((x, y) => (x < y ? x : y));
+  const fullDays = daysIn(key);
+  return {
+    month: key,
+    total: sum(ofMonth(key).filter(isSpending)),
+    days:
+      first.slice(0, 7) === key
+        ? fullDays - Number(first.slice(8, 10)) + 1
+        : fullDays,
+    fullDays,
+  };
+}
+
 function analyze(month, records) {
   const ofMonth = (key) =>
     records.filter((record) => String(record.date).slice(0, 7) === key);
@@ -60,20 +90,27 @@ function analyze(month, records) {
   const current = ofMonth(month);
   const spent = current.filter(isSpending);
   const prevSpent = ofMonth(prev).filter(isSpending);
+  const compare = compareMonth(month, records, ofMonth);
 
   const now = byCat(spent);
   const before = byCat(prevSpent);
+  const refs = compare
+    ? byCat(ofMonth(compare.month).filter(isSpending))
+    : new Map();
   const rank = (cat) => categories.indexOf(cat);
-  const byCategory = [...new Set([...now.keys(), ...before.keys()])]
+  const byCategory = [
+    ...new Set([...now.keys(), ...before.keys(), ...refs.keys()]),
+  ]
     .map((cat) => ({
       cat,
       amount: now.get(cat)?.amount || 0,
       count: now.get(cat)?.count || 0,
       prev: before.get(cat)?.amount || 0,
+      ref: refs.get(cat)?.amount || 0,
     }))
     .sort(
       (x, y) =>
-        y.amount - x.amount || y.prev - x.prev || rank(x.cat) - rank(y.cat),
+        y.amount - x.amount || y.ref - x.ref || rank(x.cat) - rank(y.cat),
     );
 
   const big = [...spent]
@@ -99,6 +136,7 @@ function analyze(month, records) {
     prevMonth: prev,
     total: sum(spent),
     prevTotal: sum(prevSpent),
+    compare,
     count: spent.length,
     income: sum(current.filter((record) => record.flow === 'in')),
     byCategory,
@@ -114,23 +152,63 @@ function yuan(fen) {
 
 const monthText = (month) => `${Number(month.slice(5))}月`;
 
-/** 发给模型的全部内容：只有汇总数字和大额单笔的备注。 */
+/** 提示词里「拿哪个月比」的说明和要求，三种情况见 analyze 的 compare。 */
+function compareLines(insight) {
+  const { compare } = insight;
+  const prevText = `上个月（${monthText(insight.prevMonth)}）`;
+  if (!compare)
+    return {
+      rule: '- 说清钱主要花在哪、有没有一次性的大额支出（去掉它之后大概多少）；这是他们开始记账的第一个月，没有可比的月份，不要说哪类变多、变少或新增；',
+      fact: '这是开始记账的第一个月，没有更早的账可比。',
+    };
+  const base = monthText(compare.month);
+  const partial = compare.days < compare.fullDays;
+  const fact =
+    (compare.month === insight.prevMonth
+      ? `${prevText}${yuan(compare.total)} 元`
+      : `${prevText}没有记账（多半是忘了记，不是没花钱），拿最近有账的 ${base} 比：${base} ${yuan(compare.total)} 元`) +
+    (partial
+      ? `，但${base}是从 ${compare.fullDays - compare.days + 1} 日才开始记的，只记了 ${compare.days} 天。`
+      : '。');
+  const missing =
+    compare.month === insight.prevMonth
+      ? ''
+      : `要提一句${monthText(insight.prevMonth)}没记账；`;
+  const rule = partial
+    ? `- 说清钱主要花在哪、有没有一次性的大额支出（去掉它之后大概多少）；${missing}可以和${base}比哪几类花得多，但${base}只记了 ${compare.days} 天，要说明这一点，不要说「多了几倍」「新增」这类结论；`
+    : `- 说清钱主要花在哪、和${base}比哪几类明显变多或变少、有没有一次性的大额支出（去掉它和平时比怎么样）；${missing}`;
+  return { rule, fact };
+}
+
+/**
+ * 发给模型的全部内容：只有汇总数字和大额单笔的备注。
+ * 和哪个月比、能不能下结论见 compareLines；走势只列记过账的月份。
+ */
 function summaryPrompt(insight) {
+  const { compare } = insight;
+  const { rule, fact } = compareLines(insight);
   const lines = [
     '你是一对小夫妻记账本里的小猫助手「喵喵」。下面是他们这个月的支出汇总（金额单位：元），请只根据这些数据写一段月度小结：',
     '- 3 到 5 句，总共不超过 150 字，口吻亲切，称呼「你们」；',
-    '- 说清钱主要花在哪、和上个月比哪几类明显变多或变少、有没有一次性的大额支出（去掉它和平时比怎么样）；',
+    rule,
     '- 最后给一条具体、做得到的省钱建议；',
     '- 不要编造数据里没有的数字，不要标题、列表或 Markdown 符号。',
     '',
-    `${monthText(insight.month)}支出合计 ${yuan(insight.total)} 元，共 ${insight.count} 笔；上个月（${monthText(insight.prevMonth)}）${yuan(insight.prevTotal)} 元。`,
+    `${monthText(insight.month)}支出合计 ${yuan(insight.total)} 元，共 ${insight.count} 笔；${fact}`,
   ];
   if (insight.income)
     lines.push(`本月收入 ${yuan(insight.income)} 元（不算在支出里）。`);
-  lines.push('按分类（本月 / 上个月 / 本月笔数）：');
+  const base = compare ? monthText(compare.month) : '';
+  lines.push(
+    compare
+      ? `按分类（本月 / ${base} / 本月笔数）：`
+      : '按分类（本月 / 笔数）：',
+  );
   for (const row of insight.byCategory)
     lines.push(
-      `- ${row.cat}：${yuan(row.amount)} / ${yuan(row.prev)} / ${row.count} 笔`,
+      compare
+        ? `- ${row.cat}：${yuan(row.amount)} / ${yuan(row.ref)} / ${row.count} 笔`
+        : `- ${row.cat}：${yuan(row.amount)} / ${row.count} 笔`,
     );
   if (insight.big.length) {
     lines.push('本月大额单笔：');
@@ -139,12 +217,14 @@ function summaryPrompt(insight) {
         `- ${Number(row.date.slice(5, 7))}月${Number(row.date.slice(8))}日 ${row.cat} ${yuan(row.amount)} 元${row.note ? `「${row.note.slice(0, NOTE_MAX)}」` : ''}`,
       );
   }
-  lines.push(
-    '近 6 个月每月支出：' +
-      insight.trend
-        .map((row) => `${monthText(row.month)} ${yuan(row.total)}`)
-        .join('，'),
-  );
+  const months = insight.trend.filter((row) => row.total > 0);
+  if (months.length > 1)
+    lines.push(
+      '记过账的月份每月支出：' +
+        months
+          .map((row) => `${monthText(row.month)} ${yuan(row.total)}`)
+          .join('，'),
+    );
   return lines.join('\n');
 }
 

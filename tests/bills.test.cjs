@@ -524,6 +524,24 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
     type: 'image_url',
     image_url: { url: 'https://img/1' },
   });
+  assert.equal(body.enable_thinking, false);
+  assert.equal(body.max_tokens, undefined);
+
+  const summary = createVision(
+    { DASHSCOPE_API_KEY: 'sk-test', SUMMARY_MODEL: 'qwen-flash' },
+    async (url, options) => {
+      requests.push({ url, options });
+      return { status: 200, text: chunk('喵') + 'data: [DONE]\n\n' };
+    },
+  );
+  assert.equal(await summary.write('写小结'), '喵');
+  const written = JSON.parse(requests[1].options.body);
+  assert.equal(written.model, 'qwen-flash', '小结可以单独换模型');
+  assert.equal(written.max_tokens, 300);
+  assert.equal(written.enable_thinking, false);
+  assert.deepEqual(written.messages[0].content, [
+    { type: 'text', text: '写小结' },
+  ]);
   const failing = (status, text) =>
     createVision({ DASHSCOPE_API_KEY: 'sk-test' }, async () => ({
       status,
