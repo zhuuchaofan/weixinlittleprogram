@@ -19,10 +19,14 @@
     <view class="ai-head">
       <image class="ai-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" />
       <view class="ai-title">喵喵小结</view>
+      <text class="tag">AI 生成</text>
     </view>
     <view wx:if="{{writing}}" class="ai-text muted">喵喵正在看账本…（十几秒）</view>
-    <view wx:elif="{{summaryText}}" class="ai-text">{{summaryText}}</view>
-    <view wx:else class="ai-text muted">让喵喵用几句话说说这个月钱花在哪、比上月有什么变化。只发汇总数字和大额单笔的备注，不发截图。</view>
+    <block wx:elif="{{summaryText}}">
+      <view class="ai-text">{{summaryText}}</view>
+      <view class="small muted ai-disclaimer">以上内容由 AI 根据账目汇总生成，仅供参考。</view>
+    </block>
+    <view wx:else class="ai-text muted">让喵喵用几句话说说这个月钱花在哪、比上月有什么变化。由阿里云通义千问生成，只发汇总数字和大额单笔的备注，不发截图。</view>
     <view wx:if="{{summaryError}}" class="ai-error small">{{summaryError}}</view>
     <view class="ai-foot">
       <text class="small muted">{{summaryNote}}</text>

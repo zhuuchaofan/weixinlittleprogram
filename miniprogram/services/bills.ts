@@ -5,8 +5,34 @@ import { ApiError, callApi, initializeCloud } from './cloud';
 // 主页或记账页选好的截图，导入页取走后清空。
 let pending: string[] = [];
 
+// 第一次用截图记账时说明截图交给谁识别；同意过就记在这台手机上。
+const NOTICE_KEY = 'billImportNoticed';
+
+async function agreedToNotice(): Promise<boolean> {
+  try {
+    if (wx.getStorageSync(NOTICE_KEY)) return true;
+  } catch {
+    /* 读不到就再问一次 */
+  }
+  const result = await wx.showModal({
+    title: '截图记账说明',
+    content:
+      '选中的账单截图会临时上传到云存储，交给第三方服务阿里云通义千问识别日期、金额和商户。识别完立即删除截图，识别结果由你逐笔确认后才保存。',
+    confirmText: '知道了',
+    cancelText: '不用了',
+  });
+  if (!result.confirm) return false;
+  try {
+    wx.setStorageSync(NOTICE_KEY, 1);
+  } catch {
+    /* 存不下次再问 */
+  }
+  return true;
+}
+
 /** 截图记账：从相册选微信 / 支付宝账单列表截图，到导入页识别和确认。 */
 export async function pickBillScreenshots(): Promise<void> {
+  if (!(await agreedToNotice())) return;
   let paths: string[];
   try {
     const result = await wx.chooseMedia({
