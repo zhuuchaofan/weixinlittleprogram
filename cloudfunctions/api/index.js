@@ -99,8 +99,9 @@ function createOrderRepository(db) {
       return result.data[0] || null;
     },
     async markDelivered(outTradeNo) {
+      // 只改还没发货的那条，重复推送不会改掉第一次的发货时间。
       await collection
-        .where({ outTradeNo })
+        .where({ outTradeNo, status: 'pending' })
         .update({ status: 'delivered', deliveredAt: Date.now() });
     },
   };
@@ -174,7 +175,7 @@ function createRecordRepository(db, collectionName) {
 }
 
 exports.main = async (event, context) => {
-  // 微信的发货推送：身份靠 PayEventSig 验签，不靠 openid，所以放在身份检查之前。
+  // 微信的发货推送：不靠 openid，真假靠向微信查单（见 vip.js 的 deliver）。
   const isDeliver = event?.Event === DELIVER_EVENT;
   const { openid, envId } = invocationFromContext(
     context,

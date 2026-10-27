@@ -93,7 +93,7 @@ function createRouter({
       return failure(error);
     }
   }
-  /** 微信虚拟支付的发货推送：自带签名，不用 openid。 */
+  /** 微信虚拟支付的发货推送：不用 openid，发货前向微信查单。 */
   route.deliver = vip.deliver;
   return route;
 }

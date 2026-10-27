@@ -40,8 +40,8 @@ function requestPayment(order: VipOrder): Promise<void> {
   return new Promise((resolve, reject) => {
     wx.requestVirtualPayment({
       mode: order.mode,
-      // 云端签名的是这段 JSON 字符串；解析成对象再交给微信，微信序列化出来和签名时的字符串一致。
-      signData: JSON.parse(order.signData) as WechatMiniprogram.SignData,
+      // 文档要求以字符串传，且必须是云端签名时的那一段原文；类型定义写成了对象，只能强转。
+      signData: order.signData as unknown as WechatMiniprogram.SignData,
       paySig: order.paySig,
       signature: order.signature,
       success: () => resolve(),

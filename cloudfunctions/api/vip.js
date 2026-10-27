@@ -7,6 +7,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const GRANT_ATTEMPTS = 5;
 // 小家文档里只留最近几个已到账的订单号，用来让重复推送不会重复加天数。
 const KEEP_ORDERS = 10;
+// 微信查单的订单状态：2 已支付待发货、3 发货中、4 已发货，才算付过钱。
+const PAID_STATUSES = [2, 3, 4];
 
 /** 会员属于整个小家：一人开通，两人都享受。 */
 function isVip(household, at) {
@@ -121,31 +123,44 @@ function createVipHandler({
       },
     },
     /**
-     * 微信的发货推送入口（不经过 openid 身份）。验签通过、订单对得上才加会员；
+     * 微信的发货推送入口（不经过 openid 身份）。推送本身不带签名，任何人都能伪造，
+     * 所以订单对上之后还要向微信查单，确认已支付、金额对得上才加会员；
      * 重复推送是正常的，所以整个过程要幂等。返回 ErrCode 0 微信才不再重试。
      */
     async deliver(event) {
       const fail = (message) => ({ ErrCode: 1, ErrMsg: message });
+      const done = { ErrCode: 0, ErrMsg: 'Success' };
       if (event?.Event !== DELIVER_EVENT) return fail('unsupported event');
       if (!xpay) return fail('xpay not configured');
-      if (!xpay.verifyDeliver(event)) return fail('bad signature');
       const push = parseDeliver(event);
+      if (!push) return fail('bad payload');
       const order = await orders.get(push.outTradeNo);
       if (
         !order ||
         order.openid !== push.openid ||
-        order.productId !== push.productId ||
-        order.price !== push.paid ||
-        order.env !== push.env
+        order.productId !== push.productId
       )
         return fail('order mismatch');
+      if (order.status === 'delivered') return done;
+      let paid;
+      try {
+        paid = await xpay.queryOrder(order);
+      } catch {
+        return fail('query order failed');
+      }
+      if (
+        !paid ||
+        !PAID_STATUSES.includes(paid.status) ||
+        paid.order_fee !== order.price
+      )
+        return fail('not paid');
       try {
         await grant(order.householdId, order);
         await orders.markDelivered(order.outTradeNo);
       } catch {
         return fail('deliver failed');
       }
-      return { ErrCode: 0, ErrMsg: 'Success' };
+      return done;
     },
   };
 }

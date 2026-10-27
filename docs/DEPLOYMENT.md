@@ -236,9 +236,18 @@
 
 会员属于整个小家，一人开通两人共用；权益是截图识别、AI 小结每日次数更多（数值和套餐见 `shared/contract.json` 的 `vip`，改完跑 `npm run contract`）。
 
-1. 云开发控制台 → 数据库 → 新建 `orders`，权限选「自定义安全规则」`{ "read": false, "write": false }`。
-2. 公众平台 → 支付与交易 → 虚拟支付：开通后在「基本配置」取 OfferID、现网 AppKey、沙箱 AppKey；在「道具管理」建两个道具，**道具 ID 和价格必须和 `contract.json` 里的套餐一致**（`vip_month` 9 元、`vip_year` 68 元，价格单位是分）。
-3. 云函数 `api` 环境变量：`XPAY_OFFER_ID`、`XPAY_APP_KEY`、`XPAY_SANDBOX_APP_KEY`、`WX_APPID`、`WX_APPSECRET`；联调时加 `XPAY_ENV=1` 走沙箱，上线前删掉。
-4. 「消息推送」把发货推送（`xpay_goods_deliver_notify`）配置成云函数 `api`，用控制台的「模拟推送」测一次：返回 `ErrCode: 0` 才算通。
-5. 验签按 `PayEventSig = HMAC-SHA256(AppKey, Event + "&" + Payload)` 实现（见 `cloudfunctions/api/xpay.js` 的 `verifyDeliver`）。**这一条要用模拟推送确认**：推送的包体结构和文档不一致时，会员不会到账，改这个函数即可。
-6. 到账只以发货推送为准；同一订单重复推送不会重复加天数。
+1. 云开发控制台 → 数据库 → 新建 `orders`，权限选「自定义安全规则」`{ "read": false, "write": false }`；加索引 `outTradeNo`（唯一）。
+2. 公众平台 → 虚拟支付：开通后在「基本配置」取 OfferID、现网 AppKey、沙箱 AppKey；在「道具管理」建两个道具，**道具 ID 和价格必须和 `contract.json` 里的套餐一致**（`vip_month` 9 元、`vip_year` 68 元，`contract.json` 里价格单位是分）。
+3. 云函数 `api` 环境变量：`XPAY_OFFER_ID`、`XPAY_APP_KEY`、`XPAY_SANDBOX_APP_KEY`、`WX_APPID`、`WX_APPSECRET`（AppID 和 AppSecret 在公众平台「开发管理 → 开发设置」）；联调时加 `XPAY_ENV=1` 走沙箱，上线前删掉。缺任何一项，会员页显示「还没开通」。
+4. 云开发控制台 → 设置 → 其他设置 → 消息推送：消息类型 `event`，事件 `xpay_goods_deliver_notify`，云函数 `api`。
+5. 重新部署云函数 `api`。发货时云函数会调微信的 `stable_token` 和 `xpay/query_order`；如果「开发设置」里开了 API IP 白名单，要关掉（云函数的出口 IP 不固定），否则查单失败、会员不到账。
+6. 到账只以发货推送为准：推送本身不带签名，云函数会先向微信查单，订单状态是已支付、金额等于套餐价才加天数。同一订单重复推送不会重复加天数。
+
+### 会员验收（`XPAY_ENV=1` 沙箱）
+
+1. A 在设置 → 会员买月度会员，付款后几秒内显示「开通成功」，到期日是今天往后 31 天；B 打开设置也显示「会员有效中」。
+2. 再买一次月度：到期日在原来的基础上再加 31 天。
+3. 云开发控制台 → 数据库 → `orders`：两条都是 `delivered`。
+4. 在收银台点取消：提示「已取消支付」，`orders` 里那条停在 `pending`，会员不变。
+5. 会员当天截图记账能识别超过 20 张；喵喵小结能生成超过 5 次。
+6. 联调通过后删掉 `XPAY_ENV`，重新部署 `api`，用现网小额买一次确认。
