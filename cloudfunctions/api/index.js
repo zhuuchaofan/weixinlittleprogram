@@ -6,6 +6,7 @@ const {
 } = require('./invocation');
 const { listAll, readComplete } = require('./paging');
 const { createVision } = require('./vision');
+const { createXpay, DELIVER_EVENT } = require('./xpay');
 
 function createHouseholdRepository(db) {
   const collection = db.collection('households');
@@ -28,6 +29,21 @@ function createHouseholdRepository(db) {
     async insert(doc) {
       const result = await collection.add(doc);
       return result.id;
+    },
+    async findById(id) {
+      const result = await collection.where({ _id: id }).limit(1).get();
+      return result.data[0] || null;
+    },
+    async setVip(id, expectedUntil, vip) {
+      // 条件更新：到期日和读到时一样才写入，两笔订单同时到账也不会互相覆盖。
+      const result = await collection
+        .where({
+          _id: id,
+          'vip.until':
+            expectedUntil === undefined ? _.exists(false) : expectedUntil,
+        })
+        .update({ vip: _.set(vip) });
+      return result.updated === 1;
     },
     async addMember(id, code, member) {
       // 条件更新保证并发加入时只有一人成功；满员后邀请码清空即失效。
@@ -67,6 +83,26 @@ function createHouseholdRepository(db) {
         if (fresh.updated === 1) return true;
       }
       return false;
+    },
+  };
+}
+
+/** 会员订单：下单时记一条 pending，收到微信发货推送并到账后标记 delivered。 */
+function createOrderRepository(db) {
+  const collection = db.collection('orders');
+  return {
+    async insert(doc) {
+      await collection.add(doc);
+    },
+    async get(outTradeNo) {
+      const result = await collection.where({ outTradeNo }).limit(1).get();
+      return result.data[0] || null;
+    },
+    async markDelivered(outTradeNo) {
+      // 只改还没发货的那条，重复推送不会改掉第一次的发货时间。
+      await collection
+        .where({ outTradeNo, status: 'pending' })
+        .update({ status: 'delivered', deliveredAt: Date.now() });
     },
   };
 }
@@ -139,6 +175,8 @@ function createRecordRepository(db, collectionName) {
 }
 
 exports.main = async (event, context) => {
+  // 微信的发货推送：不靠 openid，真假靠向微信查单（见 vip.js 的 deliver）。
+  const isDeliver = event?.Event === DELIVER_EVENT;
   const { openid, envId } = invocationFromContext(
     context,
     cloudbase.parseContext,
@@ -161,6 +199,9 @@ exports.main = async (event, context) => {
     insights: createRecordRepository(db, 'insights'),
     goals: createGoalRepository(db),
     vision: createVision(),
+    orders: createOrderRepository(db),
+    xpay: createXpay(),
   });
+  if (isDeliver) return route.deliver(event);
   return route(event, openid);
 };

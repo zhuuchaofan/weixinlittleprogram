@@ -18,6 +18,8 @@ export interface Household {
   splitting: boolean;
   /** 分类预算：{ 分类: 每月上限（分） }，没设的分类不在里面。 */
   budgets: Record<string, number>;
+  /** 会员属于整个小家，两人共用；until 是到期时间戳（没开通过为 0）。 */
+  vip: { active: boolean; until: number };
   members: HouseholdMember[];
 }
 

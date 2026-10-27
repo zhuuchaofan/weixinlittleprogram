@@ -4,6 +4,13 @@ import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
 import { applyTheme, setTheme, themeData } from '../../services/theme';
 import { THEMES } from '../../config/themes';
+import { todayKey } from '../../utils/date';
+
+function vipText(household: Household): string {
+  return household.vip?.active
+    ? `会员有效中 · ${todayKey(household.vip.until)} 到期`
+    : '开通会员';
+}
 
 Page({
   data: {
@@ -15,10 +22,18 @@ Page({
     message: '',
     household: null as Household | null,
     myName: '',
+    vipText: '开通会员',
     themes: THEMES.map(({ id, name, swatch }) => ({ id, name, swatch })),
   },
   onShow() {
     applyTheme(this);
+    // 从会员页回来时刷新会员状态（只改这一行，不动正在编辑的名字）。
+    if (this.data.household)
+      void getHousehold()
+        .then((household) => {
+          if (household) this.setData({ vipText: vipText(household) });
+        })
+        .catch(() => {});
   },
   /** 换主题只影响这台手机；返回其他页面时各自在 onShow 里套用。 */
   chooseTheme(event: WechatMiniprogram.TouchEvent) {
@@ -43,6 +58,7 @@ Page({
     this.setData({
       household,
       myName: household.members.find((member) => member.isMe)?.name || '',
+      vipText: vipText(household),
     });
   },
   inputName(event: WechatMiniprogram.Input) {
@@ -95,6 +111,9 @@ Page({
   copyCode() {
     const code = this.data.household?.inviteCode;
     if (code) wx.setClipboardData({ data: code });
+  },
+  openVip() {
+    wx.navigateTo({ url: '/pages/vip/index' });
   },
   openBudgets() {
     wx.navigateTo({ url: '/pages/budgets/index' });

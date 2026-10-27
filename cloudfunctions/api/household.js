@@ -1,5 +1,6 @@
 const { randomInt } = require('node:crypto');
 const { ApiError } = require('./errors');
+const { vipView } = require('./vip');
 
 // 去掉 0/O、1/I 等容易看错的字符。
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -46,7 +47,7 @@ function requireName(value) {
 }
 
 /** 返回给小程序的视图：不包含任何 openid。 */
-function publicHousehold(household, openid) {
+function publicHousehold(household, openid, at = Date.now()) {
   if (!household) return null;
   const me = household.members.find((member) => member.openid === openid);
   return {
@@ -60,6 +61,8 @@ function publicHousehold(household, openid) {
     // 两人分摊与结算：默认关闭，只记账。
     splitting: household.splitting === true,
     budgets: household.budgets || {},
+    // 会员属于整个小家：{ active, until（到期时间戳，没开通过为 0） }。
+    vip: vipView(household, at),
     members: household.members.map((member) => ({
       role: member.role,
       name: member.name,
@@ -96,7 +99,11 @@ function createHouseholdHandler({
 
   const actions = {
     async 'household.get'(openid) {
-      return publicHousehold(await repository.findByMember(openid), openid);
+      return publicHousehold(
+        await repository.findByMember(openid),
+        openid,
+        now(),
+      );
     },
     async 'household.create'(openid, payload) {
       const name = requireName(payload?.name);
@@ -153,7 +160,7 @@ function createHouseholdHandler({
       if (!Object.keys(fields).length)
         throw new ApiError('VALIDATION', '没有需要保存的内容。');
       await repository.update(household._id, fields);
-      return publicHousehold({ ...household, ...fields }, openid);
+      return publicHousehold({ ...household, ...fields }, openid, now());
     },
   };
 

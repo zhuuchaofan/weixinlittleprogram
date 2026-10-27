@@ -18,7 +18,8 @@
     "pages/dish-edit/index",
     "pages/wish-edit/index",
     "pages/date-edit/index",
-    "pages/settings/index"
+    "pages/settings/index",
+    "pages/vip/index"
   ],
   "window": {
     "navigationBarTitleText": "喵喵记一笔",

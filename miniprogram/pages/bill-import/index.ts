@@ -6,7 +6,7 @@ import {
   parseScreenshot,
   takePendingImages,
 } from '../../services/bills';
-import { errorMessage } from '../../services/cloud';
+import { ApiError, errorMessage } from '../../services/cloud';
 import { CATEGORIES, FLOWS, LENGTHS } from '../../config/options';
 import { shortDate, todayKey } from '../../utils/date';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
@@ -108,6 +108,8 @@ Page({
     progressText: '',
     tip: TIPS[0],
     failures: [] as string[],
+    // 今天的识别次数用完了：失败提示下面给一个去会员页的入口。
+    limitHit: false,
     rows: [] as Row[],
     selectedCount: 0,
     summaryText: '',
@@ -160,6 +162,8 @@ Page({
           found[index] = await parseScreenshot(paths[index], index);
         } catch (error) {
           failures.push(`第 ${index + 1} 张：${errorMessage(error)}`);
+          if (error instanceof ApiError && error.code === 'LIMIT')
+            this.setData({ limitHit: true });
         }
         done++;
         progress();
@@ -288,6 +292,9 @@ Page({
     } catch (error) {
       this.setData({ error: errorMessage(error), busy: false });
     }
+  },
+  openVip() {
+    wx.navigateTo({ url: '/pages/vip/index' });
   },
   back() {
     wx.navigateBack();
