@@ -45,15 +45,22 @@ function requestPayment(order: VipOrder): Promise<void> {
       paySig: order.paySig,
       signature: order.signature,
       success: () => resolve(),
-      fail: (error) =>
+      fail: (error) => {
+        // 原样打出微信的说明，方便对照错误码表排查（-15001 参数错误、-15006 paySig 错等）。
+        console.warn('requestVirtualPayment fail', error, order.signData);
+        const detail = (error.errMsg || '').replace(
+          /^requestVirtualPayment:fail\s*/,
+          '',
+        );
         reject(
           new ApiError(
             /cancel/i.test(error.errMsg || '')
               ? '已取消支付。'
-              : `支付没有完成（${error.errCode}），请重试。`,
+              : `支付没有完成（${error.errCode}${detail ? `：${detail}` : ''}），请重试。`,
             'PAY_FAILED',
           ),
-        ),
+        );
+      },
     });
   });
 }
