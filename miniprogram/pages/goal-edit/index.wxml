@@ -1,17 +1,20 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
-  <view class="field"><text class="field-label">目标</text><input value="{{title}}" maxlength="{{limits.goalTitle}}" bindinput="inputTitle" placeholder="例如：日本旅行" /></view>
-  <view class="field"><text class="field-label">目标金额（元）</text><input type="digit" value="{{targetText}}" bindinput="inputTarget" placeholder="例如：20000" /></view>
+  <!-- 用表单提交时直接读各输入框：不靠 bindinput，点保存时最后一次输入（如中文输入法还没提交）也不会丢。 -->
+  <form bindsubmit="save">
+  <view class="field"><text class="field-label">目标</text><input name="title" value="{{title}}" maxlength="{{limits.goalTitle}}" bindinput="inputTitle" placeholder="例如：日本旅行" /></view>
+  <view class="field"><text class="field-label">目标金额（元）</text><input name="target" type="digit" value="{{targetText}}" bindinput="inputTarget" placeholder="例如：20000" /></view>
   <view class="field">
     <text class="field-label">最晚哪个月攒够</text>
     <picker mode="date" fields="month" value="{{deadline}}" start="{{minMonth}}" bindchange="pickDeadline"><view class="picker-value">{{deadline}}</view></picker>
   </view>
   <view class="field">
     <text class="field-label">{{id ? '已存（记错了可以改）' : '已经攒下的（没有就空着）'}}</text>
-    <input type="digit" value="{{savedText}}" bindinput="inputSaved" placeholder="0" />
+    <input name="saved" type="digit" value="{{savedText}}" bindinput="inputSaved" placeholder="0" />
   </view>
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
-  <button class="primary save" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
+  <button class="primary save" form-type="submit" loading="{{busy}}" disabled="{{busy}}">保存</button>
+  </form>
 
   <block wx:if="{{log.length}}">
     <view class="list-label">最近存入</view>

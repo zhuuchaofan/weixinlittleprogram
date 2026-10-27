@@ -64,11 +64,13 @@ Page({
     const index = Number(event.currentTarget.dataset.index);
     this.setData({ [`rows[${index}].value`]: event.detail.value });
   },
-  async save() {
+  async save(event: WechatMiniprogram.FormSubmit) {
     if (this.data.busy) return;
+    // 以提交时输入框里的内容为准，不靠 bindinput（同攒钱目标编辑页）。
+    const form = (event.detail.value || {}) as Record<string, string>;
     const budgets: Record<string, number> = {};
     for (const row of this.data.rows) {
-      const text = row.value.trim();
+      const text = String(form[row.cat] ?? row.value).trim();
       if (!text) continue;
       const amount = parseYuan(text);
       if (!amount && Number(text) !== 0) {

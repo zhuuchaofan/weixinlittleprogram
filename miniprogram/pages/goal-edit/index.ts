@@ -68,11 +68,17 @@ Page({
   pickDeadline(event: WechatMiniprogram.PickerChange) {
     this.setData({ deadline: String(event.detail.value).slice(0, 7) });
   },
-  async save() {
+  async save(event: WechatMiniprogram.FormSubmit) {
     if (this.data.busy) return;
-    const title = this.data.title.trim();
-    const target = parseYuan(this.data.targetText);
-    const savedText = this.data.savedText.trim();
+    // 以提交时输入框里的内容为准（见 wxml 里的说明），没有时再用 data。
+    const form = (event.detail.value || {}) as Record<string, string>;
+    const read = (name: string, fallback: string) =>
+      String(form[name] ?? fallback).trim();
+    const title = read('title', this.data.title);
+    const targetText = read('target', this.data.targetText);
+    const savedText = read('saved', this.data.savedText);
+    this.setData({ title, targetText, savedText });
+    const target = parseYuan(targetText);
     const saved = savedText ? parseYuan(savedText) : 0;
     if (!title) return this.setData({ error: '请填写目标名称。' });
     if (!target) return this.setData({ error: '请填写目标金额。' });
