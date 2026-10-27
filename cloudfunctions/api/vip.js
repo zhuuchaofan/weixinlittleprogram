@@ -1,7 +1,12 @@
 const { randomBytes } = require('node:crypto');
 const { ApiError } = require('./errors');
 const { vip: VIP } = require('./contract.json');
-const { DELIVER_EVENT, parseDeliver } = require('./xpay');
+const {
+  DELIVER_EVENT,
+  REFUND_EVENT,
+  parseDeliver,
+  parseRefund,
+} = require('./xpay');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const GRANT_ATTEMPTS = 5;
@@ -9,6 +14,8 @@ const GRANT_ATTEMPTS = 5;
 const KEEP_ORDERS = 10;
 // 微信查单的订单状态：2 已支付待发货、3 发货中、4 已发货，才算付过钱。
 const PAID_STATUSES = [2, 3, 4];
+// 5 已退款、8 用户退款完成：查单没给剩余金额时，按全额退款算。
+const REFUNDED_STATUSES = [5, 8];
 
 /** 会员属于整个小家：一人开通，两人都享受。 */
 function isVip(household, at) {
@@ -35,6 +42,17 @@ function dailyLimits(household, at, base) {
   };
 }
 
+/** 微信查单结果里这笔一共退了多少钱（分），不超过订单价。 */
+function refundedFee(remote, price) {
+  const left = Number(remote.left_fee);
+  const fee = Number.isFinite(left)
+    ? price - left
+    : REFUNDED_STATUSES.includes(remote.status)
+      ? price
+      : 0;
+  return Math.min(Math.max(fee, 0), price);
+}
+
 function newOutTradeNo(at) {
   // 微信要求 8–32 位，这里 1 + 9 + 12 = 22 位。
   return `V${at.toString(36)}${randomBytes(6).toString('hex')}`;
@@ -42,7 +60,7 @@ function newOutTradeNo(at) {
 
 /**
  * households：findById(id)、setVip(id, expectedUntil, vip) -> boolean（条件更新，until 没变才写入）。
- * orders：insert(doc)、get(outTradeNo)、markDelivered(outTradeNo)。
+ * orders：insert(doc)、get(outTradeNo)、markDelivered(outTradeNo)、markRefunded(outTradeNo, fee)。
  * xpay：createXpay() 的返回值；没有配置时为 null。
  */
 function createVipHandler({
@@ -63,6 +81,7 @@ function createVipHandler({
       const at = now();
       const until = Math.max(current, at) + order.days * DAY_MS;
       const vip = {
+        ...household.vip,
         until,
         last: [...last, order.outTradeNo].slice(-KEEP_ORDERS),
       };
@@ -70,6 +89,50 @@ function createVipHandler({
         return;
     }
     throw new ApiError('UNAVAILABLE', '会员开通冲突，请稍后重试。');
+  }
+
+  /**
+   * 按退款比例从到期日里扣掉天数（全额退款扣满这一单的天数）。
+   * 小家文档里记着每笔订单已经扣到的退款金额，重复推送、部分退款都只扣差额。
+   */
+  async function revoke(householdId, order, refunded) {
+    for (let attempt = 0; attempt < GRANT_ATTEMPTS; attempt++) {
+      const household = await households.findById(householdId);
+      if (!household) throw new ApiError('NOT_FOUND', '小家不存在。');
+      const done = household.vip?.refunded || {};
+      const before = Number(done[order.outTradeNo]) || 0;
+      if (refunded <= before) return;
+      const take = Math.round(
+        (order.days * DAY_MS * (refunded - before)) / order.price,
+      );
+      const current = Number(household.vip?.until) || 0;
+      const vip = {
+        ...household.vip,
+        until: current - take,
+        refunded: Object.fromEntries(
+          Object.entries({ ...done, [order.outTradeNo]: refunded }).slice(
+            -KEEP_ORDERS,
+          ),
+        ),
+      };
+      if (await households.setVip(householdId, household.vip?.until, vip))
+        return;
+    }
+    throw new ApiError('UNAVAILABLE', '会员扣减冲突，请稍后重试。');
+  }
+
+  /**
+   * 退款后收回会员：向微信查单算出一共退了多少，只有已经开通过的订单才扣天数。
+   * 推送本身不可信，退款金额一律以查单为准。
+   */
+  async function reclaim(order) {
+    const remote = await xpay.queryOrder(order);
+    if (!remote) return;
+    const refunded = refundedFee(remote, order.price);
+    if (refunded <= (Number(order.refunded) || 0)) return;
+    if (order.status === 'delivered')
+      await revoke(order.householdId, order, refunded);
+    await orders.markRefunded(order.outTradeNo, refunded);
   }
 
   /**
@@ -185,6 +248,28 @@ function createVipHandler({
         if (!(await settle(order))) return fail('not paid');
       } catch {
         return fail('deliver failed');
+      }
+      return done;
+    },
+    /**
+     * 微信的退款推送入口：在后台或接口退款成功后推过来，收回对应的会员天数。
+     * 同样不信推送内容，查单确认退了多少钱；重复推送只扣一次。
+     */
+    async refund(event) {
+      const fail = (message) => ({ ErrCode: 1, ErrMsg: message });
+      const done = { ErrCode: 0, ErrMsg: 'Success' };
+      if (event?.Event !== REFUND_EVENT) return fail('unsupported event');
+      if (!xpay) return fail('xpay not configured');
+      const push = parseRefund(event);
+      if (!push) return fail('bad payload');
+      // 退款失败时钱还在，会员照旧。
+      if (!push.success) return done;
+      const order = await orders.get(push.outTradeNo);
+      if (!order || order.openid !== push.openid) return fail('order mismatch');
+      try {
+        await reclaim(order);
+      } catch {
+        return fail('refund failed');
       }
       return done;
     },

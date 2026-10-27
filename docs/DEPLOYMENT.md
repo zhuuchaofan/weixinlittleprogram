@@ -239,7 +239,7 @@
 1. 云开发控制台 → 数据库 → 新建 `orders`，权限选「自定义安全规则」`{ "read": false, "write": false }`；加索引 `outTradeNo`（唯一）。
 2. 公众平台 → 虚拟支付：开通后在「基本配置」取 OfferID、现网 AppKey、沙箱 AppKey；在「道具管理」建两个道具，**道具 ID 和价格必须和 `contract.json` 里的套餐一致**（`vip_month` 9 元、`vip_year` 68 元，`contract.json` 里价格单位是分）。
 3. 云函数 `api` 环境变量：`XPAY_OFFER_ID`、`XPAY_APP_KEY`、`XPAY_SANDBOX_APP_KEY`、`WX_APPID`、`WX_APPSECRET`（AppID 和 AppSecret 在公众平台「开发管理 → 开发设置」）；联调时加 `XPAY_ENV=1` 走沙箱，上线前删掉。缺任何一项，会员页显示「还没开通」。
-4. 云开发控制台 → 设置 → 其他设置 → 消息推送：消息类型 `event`，事件 `xpay_goods_deliver_notify`，云函数 `api`。
+4. 云开发控制台 → 设置 → 其他设置 → 消息推送：加两条，消息类型都是 `event`、云函数都是 `api`，事件分别是 `xpay_goods_deliver_notify`（发货）和 `xpay_refund_notify`（退款）。
 5. 重新部署云函数 `api`。发货时云函数会调微信的 `stable_token` 和 `xpay/query_order`；如果「开发设置」里开了 API IP 白名单，要关掉（云函数的出口 IP 不固定），否则查单失败、会员不到账。
 6. 到账只以发货推送为准：推送本身不带签名，云函数会先向微信查单，订单状态是已支付、金额等于套餐价才加天数。同一订单重复推送不会重复加天数。
 7. 小程序付款成功后还会调 `vip.confirm` 主动查单开通：沙箱不发发货推送，现网推送也可能丢，两条路都以微信查单为准、只加一次。
@@ -258,7 +258,14 @@
 
 ### 退款
 
-代码不处理退款推送（虚拟商品一般不退，购买须知里写了）。真的退了款（后台处理投诉或主动退款）后手动扣回天数：
+在虚拟支付后台「交易订单」点退款（或处理投诉退款）成功后，微信推 `xpay_refund_notify` 到 `api`，云函数自动扣回会员：
+
+1. 推送不可信，同样先向微信查单，按「订单价 − 剩余金额」算一共退了多少。
+2. 全额退款扣回这一单的天数；部分退款按比例扣。只扣这一单，别的订单加的天数不动；扣完早于现在就等于会员已结束。
+3. 扣到多少记在 `households.vip.refunded`（按订单号），`orders` 那条记上 `refunded`（分），重复推送只扣一次。
+4. 还没开通的订单被退款：只在 `orders` 记上 `refunded`，之后也不会再开通（微信查单状态已不是「已支付」）。
+
+验收：沙箱买一次月度、到账后在后台退款，几秒后会员页到期日往回减 31 天，`orders` 那条有 `refunded: 900`。如果没变，看 `api` 的调用日志里有没有收到 `xpay_refund_notify`；没收到就是后台退款不发推送，这时按下面手动扣：
 
 1. 数据库 `orders` 按 `outTradeNo` 找到那笔，记下 `householdId` 和 `days`。
 2. `households` 找到这个小家，把 `vip.until` 减去 `days × 86400000`。减完小于现在的时间就等于会员已结束。
