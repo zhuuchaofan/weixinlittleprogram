@@ -7,7 +7,7 @@ import {
 import { listMonth, peekMonth, settleMonth } from '../../services/ledger';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
-import { pickBillScreenshots } from '../../services/bills';
+import { chooseBillImport } from '../../services/bills';
 import { ApiError, errorMessage } from '../../services/cloud';
 import {
   SETTLEMENT,
@@ -224,8 +224,8 @@ Page({
   openInsight() {
     wx.navigateTo({ url: `/pages/insight/index?month=${this.data.month}` });
   },
-  importScreenshots() {
-    void pickBillScreenshots();
+  importBill() {
+    void chooseBillImport();
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({

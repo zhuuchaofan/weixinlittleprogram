@@ -63,7 +63,7 @@
 
     <view class="actions">
       <button class="primary" bindtap="addExpense"><text class="plus">+</text>记一笔</button>
-      <button class="secondary" bindtap="importScreenshots">截图记账</button>
+      <button class="secondary" bindtap="importBill">导入账单</button>
     </view>
 
     <view class="grid">

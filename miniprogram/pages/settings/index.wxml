@@ -25,6 +25,11 @@
           <text class="field-label">我的称呼</text>
           <input value="{{myName}}" maxlength="12" bindinput="inputName" />
         </view>
+        <view class="field">
+          <text class="field-label">我的微信名字</text>
+          <input value="{{myPayName}}" maxlength="20" placeholder="可不填" bindinput="inputPayName" />
+        </view>
+        <view class="small muted">填你在微信、支付宝里显示的名字，导入账单时对方转给你、你转给对方的钱就不会重复记。</view>
         <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
       </view>
     </view>

@@ -22,6 +22,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public code = '',
+    /** 微信返回的原始错误（只有网络类错误才有），排查用，不当提示直接给用户看。 */
+    public detail = '',
   ) {
     super(message);
   }
@@ -50,11 +52,12 @@ export async function callApi<T>(
       data: { action, payload },
     });
     raw = response.result;
-  } catch {
+  } catch (error) {
     reportWarn('api', { action, code: 'NETWORK' });
     throw new ApiError(
       '网络或云端暂时不可用，操作没有完成，请重试。',
       'NETWORK',
+      String((error as { errMsg?: string })?.errMsg || error || ''),
     );
   }
   const result = raw as {

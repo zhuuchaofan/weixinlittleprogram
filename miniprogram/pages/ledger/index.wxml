@@ -60,7 +60,7 @@
   <view class="page-end"></view>
 
   <view class="fab-row">
-    <view class="fab fab-light" bindtap="importScreenshots" hover-class="fab-active" aria-role="button">截图记账</view>
+    <view class="fab fab-light" bindtap="importBill" hover-class="fab-active" aria-role="button">导入账单</view>
     <view class="fab" bindtap="add" hover-class="fab-active" aria-role="button"><text class="fab-plus">+</text>记一笔</view>
   </view>
 </view>

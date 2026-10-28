@@ -22,20 +22,31 @@
     <view class="empty">{{error || '截图里没有读到账目。'}}</view>
     <view wx:for="{{failures}}" wx:key="*this" class="notice error">{{item}}</view>
     <button wx:if="{{limitHit}}" class="text-button" bindtap="openVip">看看会员</button>
-    <view class="small muted hint">请选微信「账单」或支付宝「账单」的列表页截图，文字清楚、不要裁掉日期。</view>
+    <view wx:if="{{mode === 'file'}}" class="small muted hint">微信：我 → 服务 → 钱包 → 账单 → 右上角「…」→ 下载账单 → 用于个人对账，微信支付会发来「账单流水文件」通知，点「查看详情」打开文件，发送给「文件传输助手」，再从文件传输助手里选这个文件。</view>
+    <view wx:else class="small muted hint">请选微信「账单」或支付宝「账单」的列表页截图，文字清楚、不要裁掉日期。</view>
     <button class="secondary back-button" bindtap="back">返回记账</button>
   </block>
 
   <block wx:else>
-    <view class="notice">{{summaryText}}。导入的账都记在你名下。</view>
+    <view class="notice">{{summaryText}}。导入的账都记在你名下。<text wx:if="{{skippedText}}">{{skippedText}}</text></view>
     <view wx:for="{{failures}}" wx:key="*this" class="notice error">{{item}}</view>
     <button wx:if="{{limitHit}}" class="text-button" bindtap="openVip">看看会员</button>
+
+    <block wx:if="{{months.length}}">
+      <scroll-view class="months" scroll-x enhanced show-scrollbar="{{false}}">
+        <view wx:for="{{months}}" wx:key="month" class="chip {{item.month === month ? 'chip-on' : ''}}" data-month="{{item.month}}" bindtap="chooseMonth">{{item.label}} {{item.count}}</view>
+      </scroll-view>
+      <view class="month-actions small">
+        <text class="month-link" data-on="{{true}}" bindtap="selectMonth">本月全选</text>
+        <text class="month-link" data-on="{{false}}" bindtap="selectMonth">本月全不选</text>
+      </view>
+    </block>
 
     <draft-list rows="{{rows}}" today="{{today}}" bind:change="changeRows" />
 
     <view wx:if="{{error}}" class="notice error">{{error}}</view>
     <view class="save-bar">
-      <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy || !selectedCount}}">保存选中的 {{selectedCount}} 笔</button>
+      <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy || !selectedCount}}">{{saveText || '保存选中的 ' + selectedCount + ' 笔'}}</button>
     </view>
   </block>
   <view class="page-end"></view>

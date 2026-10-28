@@ -49,6 +49,7 @@ export async function joinHousehold(
 
 export async function updateHousehold(fields: {
   name?: string;
+  payName?: string;
   splitting?: boolean;
   budgets?: Record<string, number>;
 }): Promise<Household> {

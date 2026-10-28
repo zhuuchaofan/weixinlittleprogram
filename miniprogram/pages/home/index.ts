@@ -13,7 +13,7 @@ import {
   todoService,
 } from '../../services/collections';
 import { goalView, type GoalRow } from '../../utils/goal';
-import { pickBillScreenshots } from '../../services/bills';
+import { chooseBillImport } from '../../services/bills';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
 import { todayKey } from '../../utils/date';
@@ -114,8 +114,8 @@ Page({
   addExpense() {
     wx.navigateTo({ url: '/pages/expense-edit/index' });
   },
-  importScreenshots() {
-    void pickBillScreenshots();
+  importBill() {
+    void chooseBillImport();
   },
   copyCode() {
     const code = this.data.household?.inviteCode;
