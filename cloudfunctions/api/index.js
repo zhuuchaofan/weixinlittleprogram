@@ -46,6 +46,49 @@ function createHouseholdRepository(db) {
         .update({ vip: _.set(vip) });
       return result.updated === 1;
     },
+    async insertWithId(id, doc) {
+      try {
+        await collection.add({ ...doc, _id: id });
+        return true;
+      } catch (error) {
+        const existing = await collection.where({ _id: id }).limit(1).get();
+        if (existing.data.length > 0) return false;
+        throw error;
+      }
+    },
+    async findDeparted(openid) {
+      // 退出过的小家（一般只有一两个），用来补建退出到一半的新小家。
+      const result = await collection
+        .where({ 'departed.openid': openid })
+        .limit(20)
+        .get();
+      return result.data;
+    },
+    async leave(id, openid, { members, memberCount, inviteCode, entry }) {
+      // 条件更新：还是两个人、我还在里面才退得成；两人同时退出时后到的更新不到。
+      const result = await collection
+        .where({ _id: id, memberCount: 2, 'members.openid': openid })
+        .update({
+          members: _.set(members),
+          memberCount,
+          inviteCode,
+          departed: _.push([entry]),
+        });
+      return result.updated === 1;
+    },
+    async vacate(id, openid) {
+      // 只剩自己时退出：小家留着（会员订单还挂在上面），成员清空；purge 表示记录还没删完。
+      const result = await collection
+        .where({ _id: id, memberCount: 1, 'members.openid': openid })
+        .update({
+          members: _.set([]),
+          memberCount: 0,
+          inviteCode: '',
+          copy: null,
+          purge: true,
+        });
+      return result.updated === 1;
+    },
     async addMember(id, code, member) {
       // 条件更新保证并发加入时只有一人成功；满员后邀请码清空即失效。
       const result = await collection
@@ -212,6 +255,29 @@ function createRecordRepository(db, collectionName) {
     },
     async remove(householdId, id) {
       await collection.where({ _id: id, householdId }).remove();
+    },
+    /** 退出时复制用：按 _id 顺序，取 cursor 之后的一批。 */
+    async listAfter(householdId, cursor, limit) {
+      const where = cursor
+        ? { householdId, _id: _.gt(cursor) }
+        : { householdId };
+      const result = await collection
+        .where(where)
+        .orderBy('_id', 'asc')
+        .limit(limit)
+        .get();
+      return result.data;
+    },
+    /** notBy：只算不是这个人记的。 */
+    async count(householdId, notBy) {
+      const where = notBy ? { householdId, by: _.neq(notBy) } : { householdId };
+      const result = await collection.where(where).count();
+      return result.total;
+    },
+    async removeAll(householdId, notBy) {
+      const where = notBy ? { householdId, by: _.neq(notBy) } : { householdId };
+      const result = await collection.where(where).remove();
+      return result.deleted || 0;
     },
     async removeWhere(householdId, where) {
       const result = await collection.where({ ...where, householdId }).remove();

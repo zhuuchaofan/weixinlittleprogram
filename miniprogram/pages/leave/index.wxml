@@ -1,0 +1,40 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view wx:if="{{loading}}" class="status">正在读取…</view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button wx:if="{{mode === 'copying'}}" class="text-button" bindtap="copy">重试</button></view>
+  <view wx:if="{{message}}" class="notice">{{message}}</view>
+
+  <block wx:if="{{mode === 'pair'}}">
+    <view class="card">
+      <view class="section-title">退出后会怎样</view>
+      <view class="rule">· 你会有一个自己的新小家，你是创建者。不需要{{partner}}同意。</view>
+      <view class="rule">· 默认带走一份完整副本：记账、清单、吃啥、想去、纪念日、攒钱和预算。账里的付款人、负责人会跟着换，不会错位。</view>
+      <view class="rule">· {{partner}}的小家原样不动，你带走的副本以后各管各的，谁也删不到谁的。</view>
+      <view class="rule">· {{vipDays ? '会员还剩 ' + vipDays + ' 天，全部留给' + partner + '。' : ''}}新小家没有会员。</view>
+    </view>
+    <view class="list option">
+      <view class="list-row" bindtap="toggleNoCopy" hover-class="list-row-active" aria-role="checkbox" aria-checked="{{noCopy}}">
+        <view class="tick-box {{noCopy ? 'tick-on' : ''}}">{{noCopy ? '✓' : ''}}</view>
+        <view class="row-main"><view>不带副本，从空开始</view><view class="row-sub">只影响你自己，{{partner}}那边的账不动。</view></view>
+      </view>
+    </view>
+    <button class="primary leave-button" bindtap="confirm" loading="{{busy}}" disabled="{{busy}}">退出小家</button>
+  </block>
+
+  <block wx:if="{{mode === 'alone'}}">
+    <view class="card">
+      <view class="section-title">小家现在只有你一个人</view>
+      <view class="rule">· 退出等于清空这个小家的全部记录，然后回到「创建 / 加入」，可以加入别人的小家或重新创建。</view>
+      <view wx:if="{{vipDays}}" class="rule warn-text">· 会员还剩 {{vipDays}} 天，退出后会一起作废。</view>
+      <view class="rule">· 删了找不回来，建议先把全部数据复制下来保存。</view>
+      <button class="secondary backup-button" bindtap="exportData" loading="{{exporting}}" disabled="{{exporting}}">先复制全部数据</button>
+    </view>
+    <button class="primary leave-button" bindtap="confirm" loading="{{busy}}" disabled="{{busy}}">清空并退出</button>
+  </block>
+
+  <view wx:if="{{mode === 'copying'}}" class="card copying">
+    <view class="section-title">正在复制旧账</view>
+    <view class="rule">已复制 {{copied}} 条。中途断了点「重试」，已经复制的不会重复。</view>
+  </view>
+  <view class="page-end"></view>
+</view>

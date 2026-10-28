@@ -69,6 +69,8 @@ function publicHousehold(household, openid, at = Date.now()) {
     // 两人分摊与结算：默认关闭，只记账。
     splitting: household.splitting === true,
     budgets: household.budgets || {},
+    // 退出时带走的旧账还没复制完：小程序接着调用 household.copy。
+    copying: Boolean(household.copy && !household.copy.done),
     // 会员属于整个小家：{ active, until（到期时间戳，没开通过为 0） }。
     vip: vipView(household, at),
     members: household.members.map((member) => ({
@@ -145,7 +147,9 @@ function createHouseholdHandler({
       const household = await repository.findByCode(code);
       if (!household || household.members.length >= MAX_MEMBERS)
         throw new ApiError('INVALID_CODE', '邀请码无效或已被使用。');
-      const member = { openid, role: 'b', name };
+      // 原来的创建者退出过时，留下的人是 b，新加入的就是 a。
+      const role = household.members[0]?.role === 'b' ? 'a' : 'b';
+      const member = { openid, role, name };
       const joined = await repository.addMember(household._id, code, member);
       if (!joined) throw new ApiError('INVALID_CODE', '邀请码无效或已被使用。');
       return publicHousehold(
@@ -183,7 +187,7 @@ function createHouseholdHandler({
     },
   };
 
-  return { actions, requireMembership };
+  return { actions, requireMembership, uniqueCode };
 }
 
 module.exports = {

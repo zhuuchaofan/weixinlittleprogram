@@ -1,6 +1,6 @@
 import type { Household } from '../models';
 import { callApi } from './cloud';
-import { readSnapshot, saveSnapshot } from './snapshot';
+import { clearSnapshots, readSnapshot, saveSnapshot } from './snapshot';
 
 // undefined = 还没读取过；null = 已确认未加入小家。
 let cached: Household | null | undefined;
@@ -56,6 +56,62 @@ export async function updateHousehold(fields: {
   return remember(
     await callApi<Household>('household.update', fields),
   ) as Household;
+}
+
+/** 换了小家：丢掉手头的小家信息和各页快照。 */
+function forget(): void {
+  cached = undefined;
+  clearSnapshots();
+}
+
+/**
+ * 退出小家。copy=false 时新小家从空开始。
+ * 只剩自己时云端可能先替先走的人复制副本（waiting），这里一直调到真正退出为止，onWait 报告进度。
+ */
+export async function leaveHousehold(
+  copy: boolean,
+  onWait: () => void = () => {},
+): Promise<void> {
+  for (;;) {
+    const result = await callApi<{ waiting?: boolean }>('household.leave', {
+      copy,
+    });
+    if (!result.waiting) break;
+    onWait();
+  }
+  forget();
+}
+
+/** 复制一批旧账，返回 { done, copied }；没完时接着调用。 */
+export async function copyStep(): Promise<{ done: boolean; copied: number }> {
+  const result = await callApi<{ done: boolean; copied: number }>(
+    'household.copy',
+  );
+  if (result.done) forget();
+  return result;
+}
+
+/** 清空前的条数：all 全部，others 不是我记的。 */
+export function clearCount(): Promise<{ all: number; others: number }> {
+  return callApi('household.clearCount');
+}
+
+/** 清空：others 只清对方记的，all 全部清空。返回删了多少条。 */
+export async function clearRecords(
+  scope: 'others' | 'all',
+  onWait: () => void = () => {},
+): Promise<number> {
+  for (;;) {
+    const result = await callApi<{ removed: number; waiting?: boolean }>(
+      'household.clear',
+      { scope },
+    );
+    if (!result.waiting) {
+      forget();
+      return result.removed;
+    }
+    onWait();
+  }
 }
 
 /** 主页和各功能页进入时调用：未加入小家则跳到创建 / 加入页。 */

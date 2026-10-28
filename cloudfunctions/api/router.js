@@ -10,6 +10,7 @@ const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
 const { createActivityLog } = require('./activity');
+const { createLeaveHandler } = require('./leave');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
 function createRouter({
@@ -41,8 +42,30 @@ function createRouter({
     requireMembership,
     now,
   });
+  const leave = createLeaveHandler({
+    households,
+    records: {
+      expenses,
+      todos,
+      dishes,
+      wishes,
+      dates,
+      goals,
+      insights,
+      activity,
+    },
+    requireMembership,
+    uniqueCode: household.uniqueCode,
+    now,
+  });
   const actions = {
     ...household.actions,
+    // 退出到一半时（新小家没建成）先补建，再读。
+    async 'household.get'(openid, payload) {
+      await leave.resume(openid);
+      return household.actions['household.get'](openid, payload);
+    },
+    ...leave.actions,
     ...vip.actions,
     ...createArchiveHandler({ repository: archive, requireMembership }),
     ...createExpenseHandler({ repository: expenses, requireMembership, now }),

@@ -125,6 +125,9 @@ Page({
   openVip() {
     wx.navigateTo({ url: '/pages/vip/index' });
   },
+  open(event: WechatMiniprogram.TouchEvent) {
+    wx.navigateTo({ url: `/pages/${event.currentTarget.dataset.page}/index` });
+  },
   openBudgets() {
     wx.navigateTo({ url: '/pages/budgets/index' });
   },

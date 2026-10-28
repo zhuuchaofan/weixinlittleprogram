@@ -5,7 +5,7 @@ import { reportWarn } from './log';
 let initialized = false;
 
 // 只读不写的 action；其余都算写，成功后回到各页时重新读取。
-const READ_ONLY = /\.(get|list|parse|match|export|tips)$/;
+const READ_ONLY = /\.(get|list|parse|match|export|tips|clearCount)$/;
 // 这些是用户自己能处理的提示（填错、次数用完、还没加入小家），不算出错，不上报。
 const EXPECTED = [
   'VALIDATION',
@@ -16,6 +16,8 @@ const EXPECTED = [
   'ALREADY_SETTLED',
   'INVALID_CODE',
   'TOO_MANY',
+  'PARTNER_LEFT',
+  'BUSY',
 ];
 
 export class ApiError extends Error {
