@@ -8,6 +8,8 @@ page {
   --line: #e9e2f2;
   --accent: #8a5fd6;
   --accent-soft: #efe7fb;
+  /* 卡片右上角的两只白猫耳朵（内耳是 --accent-soft），由 config/themes.ts 按主题生成 */
+  --card-ears: url(data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%2034%22%3E%3Cpath%20d%3D%22M2%2034%20L16%207%20Q20%200%2025%206%20L44%2034%20Z%22%20fill%3D%22%23ffffff%22%2F%3E%3Cpath%20d%3D%22M13%2034%20L20%2016%20L32%2034%20Z%22%20fill%3D%22%23efe7fb%22%2F%3E%3Cpath%20d%3D%22M56%2034%20L75%206%20Q80%200%2084%207%20L98%2034%20Z%22%20fill%3D%22%23ffffff%22%2F%3E%3Cpath%20d%3D%22M68%2034%20L80%2016%20L87%2034%20Z%22%20fill%3D%22%23efe7fb%22%2F%3E%3C%2Fsvg%3E);
   --accent-grad: linear-gradient(135deg, #c8a2f7 0%, #9a72ea 55%, #e785c0 100%);
   --dark: #26211f;
   --ok: #24a466;
@@ -55,9 +57,14 @@ view, button, input, textarea { box-sizing: border-box; }
 .section-head .section-title { margin: 0; }
 
 /* 卡片与列表 */
-.card { background: var(--surface); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
+.card { position: relative; background: var(--surface); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
 .card + .card { margin-top: var(--gap); }
-.list { background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.list { position: relative; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
+/* 白卡片、列表顶上冒出两只猫耳朵，整张卡片像个猫头。列表不能 overflow: hidden（会把耳朵剪掉），首尾行自己圆角 */
+.card::before, .list::before { content: ''; position: absolute; right: 48rpx; top: -20rpx; width: 94rpx; height: 32rpx; background: var(--card-ears) no-repeat center / contain; pointer-events: none; }
+.list-row:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+.list-row:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+.list-row:only-child { border-radius: var(--radius); }
 .list-row { position: relative; display: flex; align-items: center; gap: 20rpx; min-height: 112rpx; padding: 20rpx 28rpx; }
 .list-row + .list-row::before { content: ''; position: absolute; top: 0; left: 28rpx; right: 28rpx; border-top: 1rpx solid var(--line); }
 .list-row-active { background: var(--sunken); }

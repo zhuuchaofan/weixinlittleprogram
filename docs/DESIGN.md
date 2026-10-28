@@ -69,7 +69,7 @@
   - 文字按钮 `.text-button`、删除 `.danger-button`。
 - **分段切换** `.segmented`、**胶囊** `.chips`、**勾选圈** `.tick`、**月份切换** `.month-bar`、**分类色点** `.cat-dot`、**折叠标题** `.fold-head`：都在 `app.wxss`，直接用。
 - **空状态** `.empty`：虚线框 + 睡觉的小猫（`<image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" />`）+ 一句话，告诉人下一步点哪儿。加载中用 `.status`，文字前放走路的猫爪印（`.status-paws`，照现有页面抄），出错用 `.notice.error` + 「重试」按钮。
-- **猫咪元素**：名字叫喵喵记一笔，新页面别忘了小猫。勾选圈勾上后是白色猫爪（`.tick-paw`，`images/ui/paw.svg`），不是「✓」；渐变大卡片右上角是淡白猫头剪影（`.grad-card::after`，不用自己加）；主页宫格图标都带猫耳朵。文案偶尔带一个「喵」就够，别每句都加。
+- **猫咪元素**：名字叫喵喵记一笔，新页面别忘了小猫。勾选圈勾上后是白色猫爪（`.tick-paw`，`images/ui/paw.svg`），不是「✓」；渐变大卡片右上角是淡白猫头剪影（`.grad-card::after`，不用自己加）；白卡片 `.card`、列表 `.list` 顶上右边自动冒出两只猫耳朵（`::before`，颜色来自主题变量 `--card-ears`），所以 `.card`、`.list` 别再写 `overflow: hidden` 或自己的 `::before`；主页宫格图标都带猫耳朵。文案偶尔带一个「喵」就够，别每句都加。
 - **图标**：线条小猫和线条图标在 `images/cat-icons`、`images/ui`，按主题换色的在 `images/themes`（源文件在 `assets/theme-src`，主色写 `#f2614f`，`scripts/theme-icons.py` 生成；`npm test` 会检查每套主题都有）。列表前面的图标放在 `.tile` 色块里。
 - **等待动画**：截图识别时的小猫喝茶（`pages/bill-import`），以后要等超过 3 秒的地方复用它。
 

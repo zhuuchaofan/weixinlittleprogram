@@ -32,6 +32,8 @@ function theme(
   },
 ): Theme {
   const grad = `linear-gradient(135deg, ${c.grad[0]} 0%, ${c.grad[1]} 55%, ${c.grad[2]} 100%)`;
+  // 卡片右上角的猫耳朵（app.wxss 的 .card::before）：白耳朵、浅主色内耳。不加引号，page-style 里放得下
+  const ears = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 34"><path d="M2 34 L16 7 Q20 0 25 6 L44 34 Z" fill="#ffffff"/><path d="M13 34 L20 16 L32 34 Z" fill="${c.soft}"/><path d="M56 34 L75 6 Q80 0 84 7 L98 34 Z" fill="#ffffff"/><path d="M68 34 L80 16 L87 34 Z" fill="${c.soft}"/></svg>`;
   return {
     id,
     name,
@@ -46,6 +48,7 @@ function theme(
       '--line': c.line,
       '--accent': c.accent,
       '--accent-soft': c.soft,
+      '--card-ears': `url(data:image/svg+xml,${encodeURIComponent(ears)})`,
       '--accent-grad': grad,
       '--ring': c.ring,
       '--glow': `rgba(${c.glow}, 0.28)`,
