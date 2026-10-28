@@ -40,6 +40,14 @@ function cleanBudgets(value) {
   return budgets;
 }
 
+/** 我在微信 / 支付宝里显示的名字，用来在导入账单时认出两人之间的转账；可以不填，最长 20 字。 */
+function cleanPayName(value) {
+  const name = typeof value === 'string' ? value.trim() : '';
+  if (name.length > 20)
+    throw new ApiError('VALIDATION', '微信名字最多 20 字。');
+  return name;
+}
+
 function requireName(value) {
   const name = cleanName(value);
   if (!name) throw new ApiError('VALIDATION', '请填写 1–12 字的称呼。');
@@ -67,6 +75,10 @@ function publicHousehold(household, openid, at = Date.now()) {
       role: member.role,
       name: member.name,
       isMe: member.openid === openid,
+      // 只给自己看自己的；对方的只在云端用来认转账。
+      ...(member.openid === openid && member.payName
+        ? { payName: member.payName }
+        : {}),
     })),
   };
 }
@@ -148,6 +160,13 @@ function createHouseholdHandler({
         const name = requireName(payload.name);
         fields.members = household.members.map((member) =>
           member.openid === openid ? { ...member, name } : member,
+        );
+      }
+      if (payload?.payName !== undefined) {
+        const payName = cleanPayName(payload.payName);
+        const base = fields.members || household.members;
+        fields.members = base.map((member) =>
+          member.openid === openid ? { ...member, payName } : member,
         );
       }
       if (payload?.splitting !== undefined) {

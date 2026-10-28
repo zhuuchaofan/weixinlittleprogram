@@ -22,6 +22,7 @@ Page({
     message: '',
     household: null as Household | null,
     myName: '',
+    myPayName: '',
     vipText: '开通会员',
     themes: THEMES.map(({ id, name, swatch }) => ({ id, name, swatch })),
   },
@@ -58,17 +59,26 @@ Page({
     this.setData({
       household,
       myName: household.members.find((member) => member.isMe)?.name || '',
+      myPayName: household.members.find((member) => member.isMe)?.payName || '',
       vipText: vipText(household),
     });
   },
   inputName(event: WechatMiniprogram.Input) {
     this.setData({ myName: event.detail.value });
   },
+  inputPayName(event: WechatMiniprogram.Input) {
+    this.setData({ myPayName: event.detail.value });
+  },
   async save() {
     if (this.data.busy) return;
     this.setData({ busy: true, error: '', message: '' });
     try {
-      this.show(await updateHousehold({ name: this.data.myName.trim() }));
+      this.show(
+        await updateHousehold({
+          name: this.data.myName.trim(),
+          payName: this.data.myPayName.trim(),
+        }),
+      );
       this.setData({ message: '已保存。' });
     } catch (error) {
       this.setData({ error: errorMessage(error) });

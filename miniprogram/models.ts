@@ -4,6 +4,8 @@ export interface HouseholdMember {
   role: MemberRole;
   name: string;
   isMe: boolean;
+  /** 我在微信 / 支付宝里显示的名字；只有自己的会带回来。 */
+  payName?: string;
 }
 
 export interface Household {

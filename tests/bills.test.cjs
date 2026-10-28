@@ -64,6 +64,9 @@ function memoryExpenses() {
     [...docs.values()].filter((d) => d.householdId === householdId);
   return {
     docs,
+    async listAll(householdId) {
+      return own(householdId).map((d) => ({ ...d }));
+    },
     async listMonth(householdId, month) {
       return own(householdId)
         .filter((d) => d.date.slice(0, 7) === month)
@@ -952,5 +955,79 @@ test('账单文件：查重、两人互转不记、保存后再导是已导入�
   assert.equal(
     (await call('A', 'bill.file', { app: 'wechat', rows: [] })).code,
     'VALIDATION',
+  );
+});
+
+test('商户记忆：同一商户以前记在哪一类，这次套用；次数相同取最近的；没记过的不动', async () => {
+  const { call } = await setup();
+  const row = (merchant, date, cat) => ({
+    kind: '消费',
+    cat,
+    src: {
+      app: 'wechat',
+      merchant,
+      time: '',
+      date,
+      amount: 1000,
+      flow: 'out',
+    },
+  });
+  // 星星充电上个月归「交通」，自己把鸟贵族改成「娱乐」
+  const first = (
+    await call('A', 'bill.match', {
+      items: [
+        row('星星充电', '2026-09-01', '交通'),
+        row('鸟贵族', '2026-09-02', '娱乐'),
+      ],
+    })
+  ).data.items;
+  await call('A', 'expense.addMany', { items: first });
+  const next = (
+    await call('A', 'bill.match', {
+      items: [
+        row('星星充电', '2026-10-05', '其他'),
+        row('鸟贵族', '2026-10-06', '吃饭'),
+        row('没去过的店', '2026-10-07', '吃饭'),
+      ],
+    })
+  ).data.items;
+  assert.deepEqual(
+    next.map((item) => item.cat),
+    ['交通', '娱乐', '吃饭'],
+  );
+});
+
+test('转账：填了微信名字的对方也认得出，别人不会被当成对方', async () => {
+  const { call } = await setup();
+  const saved = await call('B', 'household.update', { payName: '小佳' });
+  assert.equal(saved.ok, true, saved.message);
+  // 只给自己看自己的
+  assert.equal(saved.data.members.find((m) => m.isMe).payName, '小佳');
+  const seenByA = (await call('A', 'household.get', {})).data;
+  assert.equal(seenByA.members.find((m) => !m.isMe).payName, undefined);
+  assert.equal(
+    (await call('B', 'household.update', { payName: 'x'.repeat(21) })).code,
+    'VALIDATION',
+  );
+  const transfer = (merchant) => ({
+    kind: '转账',
+    cat: '其他',
+    src: {
+      app: 'wechat',
+      merchant,
+      time: '',
+      date: '2026-10-20',
+      amount: 5000,
+      flow: 'out',
+    },
+  });
+  const matched = (
+    await call('A', 'bill.match', {
+      items: [transfer('小佳 (宝)'), transfer('隔壁老王')],
+    })
+  ).data.items;
+  assert.deepEqual(
+    matched.map((item) => item.status),
+    ['partner', 'new'],
   );
 });

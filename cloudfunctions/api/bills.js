@@ -27,7 +27,7 @@ const {
   noteFor,
   parseReply,
 } = require('./bill-parse');
-const { matchItems } = require('./bill-match');
+const { matchItems, rememberCategories } = require('./bill-match');
 const { parseWechatRows } = require('./bill-file');
 
 const BAD_SOURCE = '截图信息无效，请重新识别。';
@@ -125,6 +125,11 @@ function createBillHandler({
     ).flat();
   }
 
+  /** 同一个商户以前记在哪一类，这次也记在那一类。 */
+  async function remembered(household, items) {
+    return rememberCategories(items, await repository.listAll(household._id));
+  }
+
   return {
     async 'bill.parse'(openid, payload) {
       const household = await requireMembership(openid);
@@ -146,7 +151,11 @@ function createBillHandler({
       const household = await requireMembership(openid);
       const items = itemList(payload).map(checkedItem);
       return {
-        items: matchItems(items, await nearby(household, items), household),
+        items: matchItems(
+          await remembered(household, items),
+          await nearby(household, items),
+          household,
+        ),
       };
     },
     /** 账单文件：手机上读出的行 → 整理、查重后的每一笔，加上跳过了多少。不花 AI 次数。 */
@@ -156,7 +165,11 @@ function createBillHandler({
         throw new ApiError('VALIDATION', '目前只支持微信账单文件。');
       const { items, skipped } = parseWechatRows(payload.rows);
       return {
-        items: matchItems(items, await nearby(household, items), household),
+        items: matchItems(
+          await remembered(household, items),
+          await nearby(household, items),
+          household,
+        ),
         skipped,
       };
     },

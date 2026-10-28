@@ -46,8 +46,10 @@ function daysApart(a, b) {
 /** 转给对方、对方转来的钱：两人之间的转账不记。 */
 function isPartnerTransfer(item, household) {
   if (item.kind !== '转账' && item.kind !== '红包') return false;
-  return household.members.some(
-    (member) => member.name && item.merchant.includes(member.name),
+  return household.members.some((member) =>
+    [member.name, member.payName].some(
+      (name) => name && item.merchant.includes(name),
+    ),
   );
 }
 
@@ -146,4 +148,32 @@ function matchItems(items, records, household) {
   });
 }
 
-module.exports = { similar, matchItems };
+/**
+ * 商户 → 分类记忆：同一个商户以前导入后记在哪一类，这次就套用哪一类。
+ * 不单独存，直接从已导入的账目（src.merchant + cat）里数；次数相同取最近的。
+ * 只改收支为支出、商户名不空的；没记过的商户保持原来的分类。
+ */
+function rememberCategories(items, records) {
+  const counts = new Map();
+  for (const record of records) {
+    const merchant = plain(record.src?.merchant);
+    if (!merchant || record.cat === SETTLEMENT || !record.cat) continue;
+    const cats = counts.get(merchant) || new Map();
+    const seen = cats.get(record.cat) || { count: 0, last: '' };
+    cats.set(record.cat, {
+      count: seen.count + 1,
+      last: record.date > seen.last ? record.date : seen.last,
+    });
+    counts.set(merchant, cats);
+  }
+  return items.map((item) => {
+    const cats = item.flow === 'out' && counts.get(plain(item.merchant));
+    if (!cats) return item;
+    const [cat] = [...cats.entries()].sort(
+      (a, b) => b[1].count - a[1].count || b[1].last.localeCompare(a[1].last),
+    )[0];
+    return { ...item, cat };
+  });
+}
+
+module.exports = { similar, matchItems, rememberCategories };
