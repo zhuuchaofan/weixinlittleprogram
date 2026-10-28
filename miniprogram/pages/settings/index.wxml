@@ -14,6 +14,7 @@
       </view>
       <view wx:if="{{household.inviteCode}}" class="list-row">
         <view class="row-main"><view class="row-title">邀请码 {{household.inviteCode}}</view><view class="row-sub">对方加入后自动失效</view></view>
+        <button class="text-button" open-type="share">发给 TA</button>
         <button class="text-button" bindtap="copyCode">复制</button>
       </view>
     </view>
