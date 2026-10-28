@@ -163,7 +163,10 @@ function createBillHandler({
       const household = await requireMembership(openid);
       if (payload?.app !== 'wechat')
         throw new ApiError('VALIDATION', '目前只支持微信账单文件。');
-      const { items, skipped } = parseWechatRows(payload.rows);
+      const { items, skipped } = parseWechatRows(
+        payload.rows,
+        payload.context ?? [],
+      );
       return {
         items: matchItems(
           await remembered(household, items),

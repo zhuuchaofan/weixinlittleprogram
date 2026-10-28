@@ -603,6 +603,7 @@ const {
   sharedStrings,
   sheetRows,
   wechatRows,
+  fileChunks,
 } = require('../miniprogram/utils/bill-file.ts');
 const {
   fileTime,
@@ -864,6 +865,37 @@ test('账单文件：手机上读出 Excel，只留七列，表头前的说明�
   assert.equal(cleanName('融创物业服务集团有限公司'), '融创物业服务集团');
   // 不是微信账单
   assert.equal(wechatRows([['日期', '金额']]), null);
+});
+
+test('账单文件：分批发送，退款和原支出在不同批里也能配上，结果和一次发完一样', () => {
+  const rows = wechatFileRows();
+  // 复制成很长的账单，每批里的单号都不同
+  const long = [];
+  for (let copy = 0; copy < 60; copy++)
+    for (const row of rows)
+      long.push({
+        ...row,
+        tx: `${row.tx}-${copy}`,
+        time: String(Number(row.time) + copy * 2),
+      });
+  const chunks = fileChunks(long);
+  assert.ok(chunks.length > 1);
+  assert.equal(chunks.flatMap((chunk) => chunk.rows).length, long.length);
+  assert.ok(
+    chunks.every((chunk) => chunk.rows.length + chunk.context.length <= 400),
+  );
+  const whole = parseWechatRows(long.slice(0, 400));
+  const pieces = fileChunks(long.slice(0, 400)).map((chunk) =>
+    parseWechatRows(chunk.rows, chunk.context),
+  );
+  assert.equal(
+    pieces.flatMap((piece) => piece.items).length,
+    whole.items.length,
+  );
+  assert.equal(
+    pieces.reduce((sum, piece) => sum + piece.skipped.refunded, 0),
+    whole.skipped.refunded,
+  );
 });
 
 test('账单文件：跳过中性和没付成的，部分退款记净额，全额退款不记，亲属卡记自己的', () => {

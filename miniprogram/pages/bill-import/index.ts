@@ -207,7 +207,9 @@ Page({
   async readFile(path: string) {
     try {
       household = await getHousehold();
-      const { items, skipped } = await parseBillFile(path);
+      const { items, skipped } = await parseBillFile(path, (done, total) =>
+        this.setData({ progressText: `正在整理账单 ${done}/${total} 笔…` }),
+      );
       if (!items.length) {
         this.setData({
           phase: 'empty',

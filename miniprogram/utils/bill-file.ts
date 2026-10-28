@@ -122,3 +122,47 @@ export function wechatRows(rows: string[][]): FileRow[] | null {
       return result;
     });
 }
+
+// 一次请求带多少行：一年的账单有一千多行，一次发过去会超出云函数的请求大小，所以分批。
+export const CHUNK_ROWS = 150;
+// 退款和原支出相隔多少天以内算同一批（超出的退款会被当成单独一笔收入）。
+const PAIR_DAYS = 45;
+
+export interface FileChunk {
+  /** 本批要整理的行。 */
+  rows: FileRow[];
+  /** 前后日期里的退款和被退款的行，只给本批配对退款用。 */
+  context: FileRow[];
+}
+
+/** 交易时间是 Excel 的天数；读不出来返回 NaN（配对时一律带上）。 */
+function dayOf(row: FileRow): number {
+  return Number(row.time);
+}
+
+/**
+ * 把整份账单切成每批 CHUNK_ROWS 行。退款行和它的原支出可能被切到两批里，
+ * 所以每批再带上前后 PAIR_DAYS 天里「退款」相关的行（几十行）当配对用的上下文。
+ */
+export function fileChunks(rows: FileRow[]): FileChunk[] {
+  const related = rows.filter((row) => /退款|退还/.test(row.status + row.type));
+  const chunks: FileChunk[] = [];
+  for (let i = 0; i < rows.length; i += CHUNK_ROWS) {
+    const own = rows.slice(i, i + CHUNK_ROWS);
+    const days = own.map(dayOf).filter((day) => !Number.isNaN(day));
+    const from = Math.min(...days) - PAIR_DAYS;
+    const to = Math.max(...days) + PAIR_DAYS;
+    const inside = new Set(own);
+    chunks.push({
+      rows: own,
+      context: related.filter((row) => {
+        if (inside.has(row)) return false;
+        const day = dayOf(row);
+        return (
+          Number.isNaN(day) || days.length === 0 || (day >= from && day <= to)
+        );
+      }),
+    });
+  }
+  return chunks;
+}

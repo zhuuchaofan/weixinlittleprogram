@@ -10,7 +10,8 @@ const validate = require('./validate');
 const CONTRACT = require('./contract.json');
 const { MERCHANT_MAX, DAY_MS, str } = require('./bill-parse');
 
-const { maxFileRows: MAX_ROWS } = CONTRACT.billImport;
+// 一次请求最多带多少行（本批 + 用来配对退款的前后行）；整份文件可以更长，由小程序分批发来。
+const { maxFileChunk: MAX_ROWS } = CONTRACT.billImport;
 // 生成的备注里商户名最多几个字；完整名字留在 src.merchant 里查重用。
 const NOTE_NAME_MAX = 12;
 const BAD_FILE =
@@ -135,26 +136,29 @@ function rowOf(raw) {
   };
 }
 
-/** 先过一遍：读不全的、中性交易、没付成的跳过，同一单号只留一行。 */
-function readLines(rows, skipped) {
+/**
+ * 先过一遍：读不全的、中性交易、没付成的跳过，同一单号只留一行。
+ * skipped 为 null 时不计数（配对用的前后行不算本批的）。
+ */
+function readLines(rows, skipped, seen) {
+  const count = skipped || { neutral: 0, closed: 0, refunded: 0, broken: 0 };
   const lines = [];
-  const seen = new Set();
   for (const raw of rows) {
     const row = rowOf(raw);
     const when = fileTime(row.time);
     const amount = fileAmount(row.amount);
     if (!when || !amount || !row.tx) {
-      skipped.broken++;
+      count.broken++;
       continue;
     }
     if (seen.has(row.tx)) continue;
     seen.add(row.tx);
     if (row.io !== '支出' && row.io !== '收入') {
-      skipped.neutral++;
+      count.neutral++;
       continue;
     }
     if (/失败|关闭|撤销/.test(row.status)) {
-      skipped.closed++;
+      count.closed++;
       continue;
     }
     const flow = row.io === '收入' ? 'in' : 'out';
@@ -191,26 +195,30 @@ function absorbRefunds(lines) {
 }
 
 /**
- * 一份微信账单的行 → { items, skipped }。
+ * 一份微信账单的行 → { items, skipped }。文件很长时小程序分批发来：rows 是本批，
+ * context 是前后日期里的退款和被退款的行，只用来给本批配对，不出结果、不计数。
  * - 收/支为「/」的中性交易（提现、零钱通、信用卡还款）跳过；支付失败、已关闭的跳过。
- * - 退款：原支出按净额记（全额退了就不记）；对应的「××-退款」收入行不再单独记。
+ * - 退款：原支出按净额记（全额退了就不记）；对应的「××-退款」行不再单独记。
  *   原支出不在这份文件里（更早导入过）的退款行，记一笔收入「退款·商户」。
  * - 收到后又退还给对方的转账不记。
  * - 亲属卡交易：钱从导入的人这里扣，记在导入的人名下，备注「亲属卡·昵称」。
  */
-function parseWechatRows(rows) {
-  if (!Array.isArray(rows) || !rows.length)
+function parseWechatRows(rows, context = []) {
+  if (!Array.isArray(rows) || !rows.length || !Array.isArray(context))
     throw new ApiError('VALIDATION', BAD_FILE);
-  if (rows.length > MAX_ROWS)
-    throw new ApiError(
-      'VALIDATION',
-      `一次最多导入 ${MAX_ROWS} 笔，请在微信里把时间范围选短一些。`,
-    );
+  if (rows.length + context.length > MAX_ROWS)
+    throw new ApiError('VALIDATION', '一次发来的账目太多了，请重试。');
   const skipped = { neutral: 0, closed: 0, refunded: 0, broken: 0 };
-  const lines = readLines(rows, skipped);
+  const seen = new Set();
+  const own = readLines(rows, skipped, seen);
+  const around = readLines(context, null, seen).map((line) => ({
+    ...line,
+    context: true,
+  }));
+  const lines = [...own, ...around];
   const absorbed = absorbRefunds(lines);
   const items = [];
-  for (const line of lines) {
+  for (const line of own) {
     const refunded =
       line.flow === 'out'
         ? refundedOf(line.status, line.amount)

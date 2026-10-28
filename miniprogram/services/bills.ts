@@ -1,6 +1,11 @@
 import type { BillItem, FileSkipped } from '../models';
 import { BILL_IMPORT } from '../config/options';
-import { sharedStrings, sheetRows, wechatRows } from '../utils/bill-file';
+import {
+  fileChunks,
+  sharedStrings,
+  sheetRows,
+  wechatRows,
+} from '../utils/bill-file';
 import { ApiError, callApi, initializeCloud } from './cloud';
 
 // 主页或记账页选好的截图或账单文件，导入页取走后清空。
@@ -170,9 +175,13 @@ function readWechatFile(path: string): Promise<ReturnType<typeof wechatRows>> {
     );
 }
 
-/** 读账单文件 → 云端整理、查重。只把每笔要用的几列发给云端。 */
+/**
+ * 读账单文件 → 云端整理、查重。只把每笔要用的几列发给云端；整份文件分批发（一次发太多会超出
+ * 云函数的请求大小），onProgress 报告已经处理了多少行。
+ */
 export async function parseBillFile(
   path: string,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<{ items: BillItem[]; skipped: FileSkipped }> {
   let rows: ReturnType<typeof wechatRows>;
   try {
@@ -182,7 +191,31 @@ export async function parseBillFile(
   }
   if (!rows) throw new ApiError(NOT_WECHAT, 'VALIDATION');
   if (!rows.length) throw new ApiError('这份账单里没有交易。', 'VALIDATION');
-  return callApi('bill.file', { app: 'wechat', rows });
+  if (rows.length > BILL_IMPORT.maxFileRows)
+    throw new ApiError(
+      `一次最多导入 ${BILL_IMPORT.maxFileRows} 笔，请在微信里把时间范围选短一些。`,
+      'VALIDATION',
+    );
+  const items: BillItem[] = [];
+  const skipped: FileSkipped = {
+    neutral: 0,
+    closed: 0,
+    refunded: 0,
+    broken: 0,
+  };
+  let done = 0;
+  for (const chunk of fileChunks(rows)) {
+    onProgress?.(done, rows.length);
+    const result = await callApi<{ items: BillItem[]; skipped: FileSkipped }>(
+      'bill.file',
+      { app: 'wechat', rows: chunk.rows, context: chunk.context },
+    );
+    items.push(...result.items);
+    for (const key of Object.keys(skipped) as Array<keyof FileSkipped>)
+      skipped[key] += result.skipped[key];
+    done += chunk.rows.length;
+  }
+  return { items, skipped };
 }
 
 /** 压缩失败就用原图。 */
