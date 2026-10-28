@@ -162,3 +162,15 @@ export function byPartner(
   const names = memberNames(household);
   return (byRole === 'a' ? names.a : names.b) + action;
 }
+
+/** 分享卡片的内容：有邀请码时带进加入页，没有时回到首页。 */
+export function inviteShare(code?: string): {
+  title: string;
+  path: string;
+} {
+  if (!code) return { title: '喵喵记一笔', path: '/pages/home/index' };
+  return {
+    title: '来我们的小家，一起记账',
+    path: `/pages/welcome/index?code=${code}`,
+  };
+}

@@ -5,7 +5,7 @@ import type {
   LedgerMonth,
   Todo,
 } from '../../models';
-import { peekHousehold } from '../../services/household';
+import { inviteShare, peekHousehold } from '../../services/household';
 import { listMonth, peekMonth } from '../../services/ledger';
 import {
   dateService,
@@ -116,6 +116,11 @@ Page({
   },
   importBill() {
     void chooseBillImport();
+  },
+  /** 微信卡片邀请：对方点开直接进加入页，邀请码已填好。 */
+  onShareAppMessage() {
+    const code = this.data.household?.inviteCode;
+    return inviteShare(code);
   },
   copyCode() {
     const code = this.data.household?.inviteCode;
