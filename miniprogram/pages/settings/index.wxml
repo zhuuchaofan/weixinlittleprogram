@@ -19,7 +19,31 @@
     </view>
 
     <view class="section">
-      <view class="section-head"><view class="section-title">个人与小家</view></view>
+      <view class="section-head"><view class="section-title">会员</view></view>
+      <view class="list">
+        <view class="list-row" bindtap="openVip" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view>{{vipText}}</view><view class="row-sub">截图记账、喵喵小结每天的次数更多。一个人开通，两个人共用。</view></view>
+          <text class="chevron">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">记账</view><text class="small muted">两个人共用</text></view>
+      <view class="list">
+        <view class="list-row">
+          <view class="row-main"><view>两人分摊与结算</view><view class="row-sub">关闭时只记账：不选怎么分，不算谁该给谁多少。</view></view>
+          <switch checked="{{household.splitting}}" color="{{accent}}" bindchange="toggleSplitting" />
+        </view>
+        <view class="list-row" bindtap="openBudgets" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view>分类预算</view><view class="row-sub">给某几类定每月上限，花到 80% 和超出时提醒。</view></view>
+          <text class="chevron">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">我的资料</view></view>
       <view class="card">
         <view class="field">
           <text class="field-label">我的称呼</text>
@@ -30,31 +54,7 @@
           <input value="{{myPayName}}" maxlength="20" placeholder="可不填" bindinput="inputPayName" />
         </view>
         <view class="small muted">填你在微信、支付宝里显示的名字，导入账单时对方转给你、你转给对方的钱就不会重复记。</view>
-        <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
-      </view>
-    </view>
-
-    <view class="section">
-      <view class="section-head"><view class="section-title">记账</view></view>
-      <view class="list">
-        <view class="list-row">
-          <view class="row-main"><view>两人分摊与结算</view><view class="row-sub">关闭时只记账：不选怎么分，不算谁该给谁多少。两个人共用这个设置。</view></view>
-          <switch checked="{{household.splitting}}" color="{{accent}}" bindchange="toggleSplitting" />
-        </view>
-        <view class="list-row" bindtap="openBudgets" hover-class="list-row-active" aria-role="button">
-          <view class="row-main"><view>分类预算</view><view class="row-sub">给某几类定每月上限，花到 80% 和超出时提醒。两个人共用。</view></view>
-          <text class="chevron">›</text>
-        </view>
-      </view>
-    </view>
-
-    <view class="section">
-      <view class="section-head"><view class="section-title">会员</view></view>
-      <view class="list">
-        <view class="list-row" bindtap="openVip" hover-class="list-row-active" aria-role="button">
-          <view class="row-main"><view>{{vipText}}</view><view class="row-sub">截图记账、喵喵小结每天的次数更多。一个人开通，两个人共用。</view></view>
-          <text class="chevron">›</text>
-        </view>
+        <button class="primary save-button" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
       </view>
     </view>
 
@@ -69,16 +69,12 @@
     </view>
 
     <view class="section">
-      <view class="section-head"><view class="section-title">数据备份</view></view>
-      <view class="card">
-        <view class="small muted">把记账、清单、菜单、想去和纪念日全部复制为文本（JSON），粘贴到备忘录或文件里保存。</view>
-        <button class="secondary export-button" bindtap="exportData" loading="{{exporting}}" disabled="{{exporting}}">复制全部数据</button>
-      </view>
-    </view>
-
-    <view class="section">
-      <view class="section-head"><view class="section-title">小家</view></view>
+      <view class="section-head"><view class="section-title">数据与小家</view></view>
       <view class="list">
+        <view class="list-row" bindtap="exportData" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view>复制全部数据</view><view class="row-sub">复制成文本，粘贴到备忘录里留个备份。</view></view>
+          <text class="row-action">{{exporting ? '复制中…' : '复制'}}</text>
+        </view>
         <view wx:if="{{household.copying}}" class="list-row" data-page="leave" bindtap="open" hover-class="list-row-active" aria-role="button">
           <view class="row-main"><view>继续复制旧账</view><view class="row-sub">退出时带走的副本还没复制完。</view></view>
           <text class="chevron">›</text>

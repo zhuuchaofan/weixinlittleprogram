@@ -1,8 +1,10 @@
 .avatar { width: 64rpx; height: 64rpx; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28rpx; font-weight: 700; }
-.export-button { margin-top: 20rpx; }
+.save-button, button.save-button:not([size='mini']) { margin-top: var(--gap); }
+.row-action { flex-shrink: 0; color: var(--accent); font-size: 28rpx; }
 .themes { display: flex; justify-content: space-between; gap: 8rpx; padding: 28rpx 20rpx; }
 .theme { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10rpx; color: var(--muted); }
 .theme-on { color: var(--ink); font-weight: 600; }
-.swatch { width: 80rpx; height: 80rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 32rpx; font-weight: 700; border: 4rpx solid transparent; }
-.theme-on .swatch { border-color: var(--surface); box-shadow: 0 0 0 4rpx var(--accent); }
+.swatch { width: 80rpx; height: 80rpx; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 32rpx; font-weight: 700; }
+/* 选中圈用两层阴影画（白缝 + 主色圈），不用 border：border 下面的渐变会重复铺，边上看得出方块。 */
+.theme-on .swatch { box-shadow: 0 0 0 4rpx var(--surface), 0 0 0 8rpx var(--accent); }
 .danger-text { color: var(--danger); }
