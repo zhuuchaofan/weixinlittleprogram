@@ -58,6 +58,12 @@ function memoryHouseholds() {
       });
       return true;
     },
+    async withdraw(id, openid, { members, inviteCode, by }) {
+      const d = docs.get(id);
+      if (!d || d.memberCount !== 2 || !has(d, openid)) return false;
+      docs.set(id, { ...d, members, memberCount: 1, inviteCode, by });
+      return true;
+    },
     async vacate(id, openid) {
       const d = docs.get(id);
       if (!d || d.memberCount !== 1 || !has(d, openid)) return false;
@@ -133,6 +139,16 @@ function memoryRecords(prefix) {
     async count(householdId, notBy) {
       return [...docs.values()].filter((d) => match(d, householdId, notBy))
         .length;
+    },
+    async anonymize(householdId, openid) {
+      let changed = 0;
+      for (const [id, d] of docs)
+        for (const field of ['by', 'editedBy'])
+          if (d.householdId === householdId && d[field] === openid) {
+            docs.set(id, { ...docs.get(id), [field]: '' });
+            changed++;
+          }
+      return changed;
     },
     async removeAll(householdId, notBy) {
       let removed = 0;
@@ -479,4 +495,110 @@ test('B 刚退出还没复制，A 只剩自己就退出：先替 B 复制完再�
     (await call('B', 'expense.list', { month: '2026-10' })).data.records.length,
     2,
   );
+});
+
+const everyone = (repos) =>
+  Object.values(repos).flatMap((repo) => [...repo.docs.values()]);
+
+test('注销需要确认', async () => {
+  const { call } = await setup();
+  const result = await call('B', 'account.delete', {});
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'VALIDATION');
+  assert.equal((await call('B', 'household.get')).data.members.length, 2);
+});
+
+test('两人时注销：B 退出，共同账本留给 A，B 的身份从记录里抹掉', async () => {
+  const { households, repos, call, oldId } = await setup();
+  await fill(call);
+  const before = await repos.expenses.count(oldId);
+  const result = await call('B', 'account.delete', { confirm: true });
+  assert.deepEqual(result.data, { deleted: true });
+  assert.equal((await call('B', 'household.get')).data, null);
+  const home = households.docs.get(oldId);
+  assert.equal(home.memberCount, 1);
+  assert.deepEqual(
+    home.members.map((member) => member.openid),
+    ['A'],
+  );
+  assert.ok(home.inviteCode);
+  // 账本一条没少；B 记的、改的只剩「不是 A」
+  assert.equal(await repos.expenses.count(oldId), before);
+  const rows = everyone(repos).filter((d) => d.householdId === oldId);
+  assert.ok(rows.length > 0);
+  assert.equal(
+    rows.some((d) => d.by === 'B' || d.editedBy === 'B'),
+    false,
+  );
+  assert.equal(
+    rows.some((d) => d.by === 'A'),
+    true,
+  );
+  assert.equal(JSON.stringify(home).includes('佳益'), false);
+  // A 能继续用、邀请新人
+  assert.equal((await call('A', 'household.get')).data.members.length, 1);
+});
+
+test('只剩自己时注销：清空整个小家，会员作废，回到创建 / 加入', async () => {
+  const { households, repos, call, oldId } = await setup();
+  await fill(call);
+  await call('B', 'household.leave', { copy: false });
+  const result = await untilDone(call, 'A', 'account.delete', {
+    confirm: true,
+  });
+  assert.deepEqual(result.data, { deleted: true });
+  assert.equal((await call('A', 'household.get')).data, null);
+  for (const repo of Object.values(repos))
+    assert.equal(await repo.count(oldId), 0);
+  const home = households.docs.get(oldId);
+  assert.equal(home.purge, false);
+  assert.deepEqual(home.members, []);
+  assert.equal(JSON.stringify(home).includes('A'), false);
+  // 之后可以用同一个微信重新开始
+  assert.equal(
+    (await call('A', 'household.create', { name: '超凡' })).ok,
+    true,
+  );
+});
+
+test('注销：退出过的小家里留着的我的称呼和 openid 被抹掉，对方的副本不受影响', async () => {
+  const { households, repos, call, oldId } = await setup();
+  await fill(call);
+  await call('B', 'household.leave', {});
+  await copyAll(call, 'B');
+  const newId = (await households.findByMember('B'))._id;
+  const copied = await repos.expenses.count(newId);
+  assert.ok(copied > 0);
+  assert.equal((await call('B', 'account.delete', { confirm: true })).ok, true);
+  // B 的新小家：只有 B，注销后记录全删
+  assert.equal(await repos.expenses.count(newId), 0);
+  // A 的小家：账本还在，退出记录里没有 B 的身份
+  const home = households.docs.get(oldId);
+  assert.equal((await repos.expenses.count(oldId)) > 0, true);
+  assert.equal(home.departed.length, 1);
+  assert.equal(home.departed[0].openid, '');
+  assert.equal(home.departed[0].name, '');
+  assert.equal((await call('A', 'household.get')).data.members.length, 1);
+});
+
+test('A 先注销、B 刚退出还没复制：先替 B 复制完再删，B 的副本完整', async () => {
+  const { call, households, repos } = await setup();
+  await fill(call);
+  await call('B', 'household.leave', {});
+  const first = await call('A', 'account.delete', { confirm: true });
+  assert.equal(first.data.waiting, true);
+  assert.equal(
+    (await untilDone(call, 'A', 'account.delete', { confirm: true })).ok,
+    true,
+  );
+  const mine = await households.findByMember('B');
+  assert.equal(mine.copy.done, true);
+  assert.equal(await repos.expenses.count(mine._id), 2);
+});
+
+test('没有小家也能注销；重复注销没有副作用', async () => {
+  const { call } = await setup();
+  await call('B', 'account.delete', { confirm: true });
+  const again = await call('B', 'account.delete', { confirm: true });
+  assert.deepEqual(again.data, { deleted: true });
 });
