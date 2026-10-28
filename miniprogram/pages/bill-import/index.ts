@@ -4,6 +4,7 @@ import {
   importBills,
   matchBills,
   parseBillFile,
+  type FileApp,
   parseScreenshot,
   takePendingFile,
   takePendingImages,
@@ -122,14 +123,14 @@ Page({
   onLoad(query: Record<string, string | undefined>) {
     allRows = [];
     if (query.mode === 'file') {
-      const path = takePendingFile();
+      const { path, app } = takePendingFile();
       if (!path) {
         wx.navigateBack();
         return;
       }
       wx.setNavigationBarTitle({ title: '导入账单文件' });
       this.setData({ mode: 'file', progressText: '正在读取账单文件…' });
-      void this.readFile(path);
+      void this.readFile(path, app);
       return;
     }
     const paths = takePendingImages();
@@ -203,11 +204,11 @@ Page({
     allRows = matched.map(present);
     this.show();
   },
-  /** 账单文件：手机上读出几列 → 云端整理、查重。文件读完就丢，不上传。 */
-  async readFile(path: string) {
+  /** 账单文件（微信 Excel、支付宝 CSV）：手机上读出几列 → 云端整理、查重。文件读完就丢，不上传。 */
+  async readFile(path: string, app: FileApp) {
     try {
       household = await getHousehold();
-      const { items, skipped } = await parseBillFile(path, (done, total) =>
+      const { items, skipped } = await parseBillFile(path, app, (done, total) =>
         this.setData({ progressText: `正在整理账单 ${done}/${total} 笔…` }),
       );
       if (!items.length) {
