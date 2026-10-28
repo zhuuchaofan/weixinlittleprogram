@@ -1,6 +1,8 @@
 import type { BillItem, FileSkipped } from '../models';
 import { BILL_IMPORT } from '../config/options';
 import {
+  alipayChunks,
+  alipayRows,
   fileChunks,
   sharedStrings,
   sheetRows,
@@ -11,6 +13,9 @@ import { ApiError, callApi, initializeCloud } from './cloud';
 // 主页或记账页选好的截图或账单文件，导入页取走后清空。
 let pending: string[] = [];
 let pendingFile = '';
+let pendingApp: FileApp = 'wechat';
+
+export type FileApp = 'wechat' | 'alipay';
 
 // 第一次用截图记账时说明截图交给谁识别；同意过就记在这台手机上。
 const NOTICE_KEY = 'billImportNoticed';
@@ -63,10 +68,10 @@ export function takePendingImages(): string[] {
   return paths;
 }
 
-export function takePendingFile(): string {
+export function takePendingFile(): { path: string; app: FileApp } {
   const path = pendingFile;
   pendingFile = '';
-  return path;
+  return { path, app: pendingApp };
 }
 
 /** 记账页、主页的「导入账单」：选截图还是微信账单文件。 */
@@ -74,7 +79,11 @@ export async function chooseBillImport(): Promise<void> {
   let tapIndex: number;
   try {
     ({ tapIndex } = await wx.showActionSheet({
-      itemList: ['账单截图（AI 识别）', '微信账单文件（Excel）'],
+      itemList: [
+        '账单截图（AI 识别）',
+        '微信账单文件（Excel）',
+        '支付宝账单文件（CSV）',
+      ],
     }));
   } catch {
     return; // 取消
@@ -82,43 +91,54 @@ export async function chooseBillImport(): Promise<void> {
   // 等选项框收起再弹下一个框，否则有的手机上后面的说明框弹不出来。
   await new Promise((resolve) => setTimeout(resolve, 300));
   if (tapIndex === 0) await pickBillScreenshots();
-  else await pickBillFile();
+  else await pickBillFile(tapIndex === 1 ? 'wechat' : 'alipay');
 }
 
-// 第一次选账单文件时说明怎么拿到文件；看过就记在这台手机上。
-const FILE_GUIDE_KEY = 'billFileGuided';
+// 第一次选账单文件时说明怎么拿到文件；看过就记在这台手机上（微信、支付宝各说明一次）。
+const FILE_GUIDES: Record<FileApp, { key: string; content: string }> = {
+  wechat: {
+    key: 'billFileGuided',
+    content:
+      '微信：我 → 服务 → 钱包 → 账单 → 右上角「…」→ 下载账单 → 用于个人对账，选好时间，微信支付会发来一张「账单流水文件」通知。点「查看详情」打开文件，用右上角「…」发送给「文件传输助手」，再回到这里，从文件传输助手里选这个文件。文件只在手机上读取，不会上传。',
+  },
+  alipay: {
+    key: 'billFileGuidedAlipay',
+    content:
+      '支付宝：我的 → 账单 → 右上角「…」→ 开具交易流水证明 → 用于个人对账 → 申请，选好时间和接收方式，拿到 CSV 文件后发送到微信的「文件传输助手」，再回到这里，从文件传输助手里选这个文件。文件只在手机上读取，不会上传。',
+  },
+};
 
-async function readGuide(): Promise<boolean> {
+async function readGuide(app: FileApp): Promise<boolean> {
+  const guide = FILE_GUIDES[app];
   try {
-    if (wx.getStorageSync(FILE_GUIDE_KEY)) return true;
+    if (wx.getStorageSync(guide.key)) return true;
   } catch {
     /* 读不到就再说明一次 */
   }
   const result = await wx.showModal({
     title: '怎么拿到账单文件',
-    content:
-      '微信：我 → 服务 → 钱包 → 账单 → 右上角「…」→ 下载账单 → 用于个人对账，选好时间，微信支付会发来一张「账单流水文件」通知。点「查看详情」打开文件，用右上角「…」发送给「文件传输助手」，再回到这里，从文件传输助手里选这个文件。文件只在手机上读取，不会上传。',
+    content: guide.content,
     confirmText: '去选文件',
     cancelText: '先不用',
   });
   if (!result.confirm) return false;
   try {
-    wx.setStorageSync(FILE_GUIDE_KEY, 1);
+    wx.setStorageSync(guide.key, 1);
   } catch {
     /* 存不下次再说明 */
   }
   return true;
 }
 
-/** 账单文件：从微信聊天里选微信账单 Excel，到导入页读取和确认。 */
-export async function pickBillFile(): Promise<void> {
-  if (!(await readGuide())) return;
+/** 账单文件：从微信聊天里选微信账单 Excel / 支付宝账单 CSV，到导入页读取和确认。 */
+export async function pickBillFile(app: FileApp): Promise<void> {
+  if (!(await readGuide(app))) return;
   let path: string;
   try {
     const result = await wx.chooseMessageFile({
       count: 1,
       type: 'file',
-      extension: ['xlsx'],
+      extension: [app === 'alipay' ? 'csv' : 'xlsx'],
     });
     path = result.tempFiles[0]?.path || '';
   } catch (error) {
@@ -136,11 +156,27 @@ export async function pickBillFile(): Promise<void> {
   }
   if (!path) return;
   pendingFile = path;
+  pendingApp = app;
   wx.navigateTo({ url: '/pages/bill-import/index?mode=file' });
 }
 
-const NOT_WECHAT =
-  '没能读懂这个文件，请选微信「下载账单 → 用于个人对账」发来的 Excel。';
+const NOT_FILE: Record<FileApp, string> = {
+  wechat: '没能读懂这个文件，请选微信「下载账单 → 用于个人对账」发来的 Excel。',
+  alipay:
+    '没能读懂这个文件，请选支付宝「开具交易流水证明 → 用于个人对账」发来的 CSV。',
+};
+
+/** 支付宝账单 CSV：读成字节，在手机上按逗号切开，不解码。 */
+function readAlipayFile(path: string): Promise<ReturnType<typeof alipayRows>> {
+  return new Promise((resolve, reject) =>
+    wx.getFileSystemManager().readFile({
+      filePath: path,
+      success: (result) =>
+        resolve(alipayRows(new Uint8Array(result.data as ArrayBuffer))),
+      fail: reject,
+    }),
+  );
+}
 
 /** 在手机上解开 xlsx，读出微信账单的行；临时解压的目录读完就删。 */
 function readWechatFile(path: string): Promise<ReturnType<typeof wechatRows>> {
@@ -181,19 +217,35 @@ function readWechatFile(path: string): Promise<ReturnType<typeof wechatRows>> {
  */
 export async function parseBillFile(
   path: string,
+  app: FileApp,
   onProgress?: (done: number, total: number) => void,
 ): Promise<{ items: BillItem[]; skipped: FileSkipped }> {
-  let rows: ReturnType<typeof wechatRows>;
+  let rows: unknown[] | null = null;
+  let chunks: Array<{ rows: unknown[]; context: unknown[] }> = [];
+  let enc: string | undefined;
   try {
-    rows = await readWechatFile(path);
+    if (app === 'alipay') {
+      const file = await readAlipayFile(path);
+      if (file) {
+        enc = file.enc;
+        rows = file.rows;
+        chunks = alipayChunks(file.rows, file.enc);
+      }
+    } else {
+      const file = await readWechatFile(path);
+      if (file) {
+        rows = file;
+        chunks = fileChunks(file);
+      }
+    }
   } catch {
-    throw new ApiError(NOT_WECHAT, 'VALIDATION');
+    throw new ApiError(NOT_FILE[app], 'VALIDATION');
   }
-  if (!rows) throw new ApiError(NOT_WECHAT, 'VALIDATION');
+  if (!rows) throw new ApiError(NOT_FILE[app], 'VALIDATION');
   if (!rows.length) throw new ApiError('这份账单里没有交易。', 'VALIDATION');
   if (rows.length > BILL_IMPORT.maxFileRows)
     throw new ApiError(
-      `一次最多导入 ${BILL_IMPORT.maxFileRows} 笔，请在微信里把时间范围选短一些。`,
+      `一次最多导入 ${BILL_IMPORT.maxFileRows} 笔，请把账单的时间范围选短一些。`,
       'VALIDATION',
     );
   const items: BillItem[] = [];
@@ -204,11 +256,11 @@ export async function parseBillFile(
     broken: 0,
   };
   let done = 0;
-  for (const chunk of fileChunks(rows)) {
+  for (const chunk of chunks) {
     onProgress?.(done, rows.length);
     const result = await callApi<{ items: BillItem[]; skipped: FileSkipped }>(
       'bill.file',
-      { app: 'wechat', rows: chunk.rows, context: chunk.context },
+      { app, enc, rows: chunk.rows, context: chunk.context },
     );
     items.push(...result.items);
     for (const key of Object.keys(skipped) as Array<keyof FileSkipped>)

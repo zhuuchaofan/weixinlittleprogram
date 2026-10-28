@@ -981,7 +981,11 @@ test('账单文件：查重、两人互转不记、保存后再导是已导入�
     'VALIDATION',
   );
   assert.equal(
-    (await call('A', 'bill.file', { app: 'alipay', rows })).code,
+    (await call('A', 'bill.file', { app: 'other', rows })).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('A', 'bill.file', { app: 'alipay', rows: [{ x: 1 }] })).code,
     'VALIDATION',
   );
   assert.equal(
@@ -1061,5 +1065,181 @@ test('转账：填了微信名字的对方也认得出，别人不会被当成�
   assert.deepEqual(
     matched.map((item) => item.status),
     ['partner', 'new'],
+  );
+});
+
+// ── 支付宝账单文件（GBK 的 CSV）。账目是编造的，字节是把整份文件按 GBK 编码后的十六进制。 ──
+
+const {
+  alipayRows,
+  alipayChunks,
+} = require('../miniprogram/utils/bill-file.ts');
+const { parseAlipayRows } = require('../cloudfunctions/api/bill-alipay');
+
+const ALIPAY_GBK = Buffer.from(
+  '2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d' +
+    '2d0d0ab5bcb3f6d0c5cfa2a3ba0d0ad0d5c3fba3bab2e2cad40d0ab9b239b1cabcc7c2bc0d0a0d0a2d2d2d2d2d2d2d2d2d2d' +
+    '2d2d2d2d2d2d2d2d2d2d2d2d2d2dd6a7b8b6b1a6d6a7b8b6bfc6bcbcd3d0cfdeb9abcbbe2020b5e7d7d3bfcdbba7bbd8b5a5' +
+    '2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d0d0abdbbd2d7cab1bce42cbdbbd2d7b7d6c0e02cbdbbd2d7b6d4' +
+    'b7bd2cb6d4b7bdd5cbbac52cc9ccc6b7cbb5c3f72ccad52fd6a72cbdf0b6ee2ccad52fb8b6bfeeb7bdcabd2cbdbbd2d7d7b4' +
+    'ccac2cbdbbd2d7b6a9b5a5bac52cc9ccbcd2b6a9b5a5bac52cb1b8d7a22c0d0a323032362d31302d32322031313a31313a35' +
+    '342cb2cdd2fbc3c0cab32cccd4b1a6c9c1b9ba2c6535302a2a2a40616c69626162612d696e632e636f6d2cc1f9baccd4aac8' +
+    'e2cde8bafac0b1ccc0a1a4c5a3d1f2c8e2c5dde2c9cde2c2f4b6a9b5a52cd6a7b3f62c31392e33302cc4b3d2f8d0d0d0c5d3' +
+    'c3bfa82830303031292cbdbbd2d7b3c9b9a62c32303236313032323030303030303030303030303031092c4d31092c2c0d0a' +
+    '323032362d31302d32312030393a34383a33322cbdbbcda8b3f6d0d02ccef7b0b2b3c7cad0cda8b7a2d5b9d3d0cfded4f0c8' +
+    'ceb9abcbbe2c782c22c6bbb9fbb3a4b0b2cda82cd7d4b6afb3e4d6b5222cd6a7b3f62c35302e30302cc4b3d2f8d0d0b4a2d0' +
+    'eebfa82830303032292cbdbbd2d7b3c9b9a62c32303236313032313030303030303030303030303032092c4d32092c2c0d0a' +
+    '323032362d31302d31312030303a35363a30352ccafdc2ebb5e7c6f72c74622a2a392c782ccaf3b1eab7c0bbacccf92cd6a7' +
+    'b3f62c302e30302c2cd6a7b8b6b3c9b9a62c32303236313031313030303030303030303030303033092c4d33092c2c0d0a32' +
+    '3032362d30392d30392030383a35393a34312cb3e8ceef2cb9cfd6de2a2ab5ea2c782cb7c0c3a8d7a5c9b3b7a2b1a3bba4c3' +
+    'a8d7a5b5e62cd6a7b3f62c31382e36372cc4b3d2f8d0d0b4a2d0eebfa82830303032292cd6a7b8b6b3c9b9a62c3230323630' +
+    '3930393030303030303030303030303034092c4d34092c2c0d0a323032362d30392d30352032333a32393a33312ccdcbbfee' +
+    '2cccd8c0b4b5e72c782ccdcbbfee2dccd8c0b4b5e7b3e4d6b52cb2bbbcc6cad5d6a72c31322e36372cc4b3d2f8d0d0b4a2d0' +
+    'eebfa82830303032292ccdcbbfeeb3c9b9a62c32303236303930353030303030303030303030303035092c4d35092c2c0d0a' +
+    '323032362d30392d30352032333a30303a31332cc6e4cbfb2cccd8c0b4b5e72c782cccd8c0b4b5e7b3e4d6b52cd6a7b3f62c' +
+    '32392e35302cc4b3d2f8d0d0b4a2d0eebfa82830303032292cbdbbd2d7b3c9b9a62c32303236303930353030303030303030' +
+    '303030303036092c4d36092c2c0d0a323032362d30362d32332032303a31353a33382ccdcbbfee2cd0a1baeccae92c782ccd' +
+    'cbbfee2dd0a1baeccae9b6a9b5a5a3ba50312cb2bbbcc6cad5d6a72c3333372e38352cc4b3d2f8d0d0b4a2d0eebfa8283030' +
+    '3032292ccdcbbfeeb3c9b9a62c32303236303632333030303030303030303030303037092c4d37092c2c0d0a323032362d30' +
+    '362d32332032303a30353a31372cc8d5d3c3b0d9bbf52cd0a1baeccae92c782cd0a1baeccae9b6a9b5a5a3ba50312cd6a7b3' +
+    'f62c3333372e38352cc4b3d2f8d0d0b4a2d0eebfa82830303032292cbdbbd2d7b9d8b1d52c32303236303632333030303030' +
+    '303030303030303038092c4d38092c2c0d0a323032362d30342d31342031373a34373a31312cd5cbbba7b4e6c8a12cbdbbcd' +
+    'a8d2f8d0d02c782ccce1cfd62dcab5cab1cce1cfd62cb2bbbcc6cad5d6a72c39312e36332cd3e0b6ee2cbdbbd2d7b3c9b9a6' +
+    '2c32303236303431343030303030303030303030303039092c4d39092c2c0d0a323032362d30342d31312030363a35303a31' +
+    '382cd7aad5cbbaecb0fc2c2ac8d82c782cd7aad5cb2ccad5c8eb2c36302e38302cd5cbbba7d3e0b6ee2cbdbbd2d7b3c9b9a6' +
+    '2c32303236303431313030303030303030303030303130092c4d3130092c2c0d0a323032362d30332d30322030393a32383a' +
+    '32372ccad5c8eb2cc4b3c4b32c782ccad5c7aec2ebcad5bfee2ccad5c8eb2c32302e30302c2cbdbbd2d7b3c9b9a62c323032' +
+    '36303330323030303030303030303030303131092c4d3131092c2c0d0a',
+  'hex',
+);
+
+function alipayItems() {
+  const file = alipayRows(new Uint8Array(ALIPAY_GBK));
+  return { file, ...parseAlipayRows(file.rows, [], file.enc) };
+}
+
+test('支付宝账单：按字节读出要用的几列，认出 GBK，说明行和不相干的列丢掉', () => {
+  const file = alipayRows(new Uint8Array(ALIPAY_GBK));
+  assert.equal(file.enc, 'gbk');
+  assert.equal(file.rows.length, 11);
+  assert.deepEqual(Object.keys(file.rows[0]).sort(), [
+    'amount',
+    'cls',
+    'goods',
+    'io',
+    'peer',
+    'status',
+    'time',
+    'tx',
+  ]);
+  assert.equal(file.rows[0].time, '2026-10-22 11:11:54');
+  assert.equal(file.rows[0].amount, '19.30');
+  assert.equal(file.rows[0].tx, '2026102200000000000001');
+  // 引号里的逗号不切开
+  assert.equal(file.rows[1].amount, '50.00');
+  // 银行卡、对方账号、商家订单号不出手机
+  assert.equal(JSON.stringify(file.rows).includes('(0001)'), false);
+  assert.equal(JSON.stringify(file.rows).includes('alibaba'), false);
+  // 文字列是没解码的字节，不是汉字
+  assert.notEqual(file.rows[0].peer, '淘宝闪购');
+  // UTF-8 的文件也认得；不是支付宝账单返回 null
+  const utf8 = Buffer.from(
+    '交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注,\n' +
+      '2026-10-22 11:11:54,餐饮美食,店,x,饭,支出,1.00,卡,交易成功,T1,M1,,\n',
+  );
+  assert.equal(alipayRows(new Uint8Array(utf8)).enc, 'utf-8');
+  assert.equal(alipayRows(new Uint8Array(Buffer.from('a,b\n1,2'))), null);
+});
+
+test('支付宝账单：不计收支和关闭的跳过，退款从原支出里扣，分类用支付宝的', () => {
+  const { items, skipped } = alipayItems();
+  assert.deepEqual(skipped, { neutral: 4, closed: 1, refunded: 0, broken: 0 });
+  const byNote = Object.fromEntries(items.map((item) => [item.note, item]));
+  assert.deepEqual(Object.keys(byNote), [
+    '六禾元肉丸胡辣汤·牛羊肉',
+    '西安城市通发展',
+    '防猫抓沙发保护猫抓垫',
+    '特来电 已退¥12.67',
+    '转账·蓉',
+    '转账·某某',
+  ]);
+  assert.equal(byNote['特来电 已退¥12.67'].amount, 1683);
+  assert.equal(byNote['防猫抓沙发保护猫抓垫'].cat, '猫咪');
+  assert.equal(byNote['六禾元肉丸胡辣汤·牛羊肉'].cat, '吃饭');
+  assert.equal(byNote['六禾元肉丸胡辣汤·牛羊肉'].amount, 1930);
+  assert.equal(byNote['转账·蓉'].flow, 'in');
+  assert.equal(byNote['转账·蓉'].kind, '转账');
+  assert.equal(byNote['特来电 已退¥12.67'].src.app, 'alipay');
+  assert.match(items[0].key, /^[0-9a-f]{24}$/);
+  assert.equal(JSON.stringify(items).includes('2026102200000000000001'), false);
+});
+
+test('支付宝账单：退款和原支出分在不同批里也能配上', () => {
+  const file = alipayRows(new Uint8Array(ALIPAY_GBK));
+  const rows = [];
+  for (let copy = 0; copy < 40; copy++)
+    for (const row of file.rows)
+      rows.push({
+        ...row,
+        tx: `${row.tx}-${copy}`,
+        time: row.time.replace('2026', String(2000 + copy)),
+      });
+  const chunks = alipayChunks(
+    file.rows.concat(file.rows.map((row) => ({ ...row, tx: `${row.tx}b` }))),
+    'gbk',
+  );
+  assert.equal(chunks.length, 1);
+  const wide = alipayChunks(rows, 'gbk');
+  assert.ok(wide.length > 1);
+  assert.equal(wide.flatMap((chunk) => chunk.rows).length, rows.length);
+  assert.ok(
+    wide.every((chunk) => chunk.rows.length + chunk.context.length <= 400),
+  );
+  const sub = file.rows;
+  const one = parseAlipayRows(sub, [], 'gbk');
+  // 把退款行放进另一批，原支出所在的批靠上下文配对
+  const refund = sub.filter(
+    (row) => row.cls !== sub[0].cls && row.goods.length && row.io !== sub[0].io,
+  );
+  assert.ok(refund.length >= 0);
+  const paired = parseAlipayRows(
+    sub.filter((row) => row.tx.endsWith('06')),
+    sub.filter((row) => row.tx.endsWith('05')),
+    'gbk',
+  );
+  assert.equal(paired.items[0].amount, 1683);
+  assert.equal(one.items.length, 6);
+});
+
+test('支付宝账单：整条链路——查重、和小家成员的转账不记、保存后再导是已导入过', async () => {
+  const { call } = await setup();
+  const file = alipayRows(new Uint8Array(ALIPAY_GBK));
+  const send = () =>
+    call('A', 'bill.file', { app: 'alipay', enc: file.enc, rows: file.rows });
+  const first = await send();
+  assert.equal(first.ok, true, first.message);
+  const status = Object.fromEntries(
+    first.data.items.map((item) => [item.note, item.status]),
+  );
+  assert.equal(status['防猫抓沙发保护猫抓垫'], 'new');
+  const chosen = first.data.items.filter((item) => item.status === 'new');
+  const saved = await call('B', 'expense.addMany', { items: chosen });
+  assert.deepEqual(saved.data, { added: chosen.length, skipped: 0 });
+  const again = await send();
+  assert.deepEqual(
+    [...new Set(again.data.items.map((item) => item.status))].sort(),
+    ['imported', 'partner'].filter((name) =>
+      again.data.items.some((item) => item.status === name),
+    ),
+  );
+  assert.equal(
+    (
+      await call('A', 'bill.file', {
+        app: 'alipay',
+        enc: 'gbk',
+        rows: [{ x: 1 }],
+      })
+    ).code,
+    'VALIDATION',
   );
 });

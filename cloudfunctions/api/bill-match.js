@@ -43,14 +43,26 @@ function daysApart(a, b) {
   return Math.abs(keyToMs(a) - keyToMs(b)) / DAY_MS;
 }
 
+/**
+ * 对方名字是不是小家里的人。支付宝会把对方名字遮成「*蓉」，只剩姓或名的最后几个字，
+ * 这时看小家里有没有人的名字以它结尾。
+ */
+function isMember(merchant, household) {
+  const masked = /^\*+(.{1,2})$/.exec(merchant) || /^(.)$/.exec(merchant);
+  return household.members.some((member) =>
+    [member.name, member.payName].some(
+      (name) =>
+        name &&
+        (merchant.includes(name) ||
+          (masked && name.length > 1 && name.endsWith(masked[1]))),
+    ),
+  );
+}
+
 /** 转给对方、对方转来的钱：两人之间的转账不记。 */
 function isPartnerTransfer(item, household) {
   if (item.kind !== '转账' && item.kind !== '红包') return false;
-  return household.members.some((member) =>
-    [member.name, member.payName].some(
-      (name) => name && item.merchant.includes(name),
-    ),
-  );
+  return isMember(item.merchant, household);
 }
 
 /**

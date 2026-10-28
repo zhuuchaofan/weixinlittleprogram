@@ -1,6 +1,6 @@
 /**
  * 截图记账：微信 / 支付宝账单列表截图 → 视觉模型读出每一笔 → 查重 → 用户确认后批量保存。
- * 账单文件导入：手机上读出微信账单 Excel 的几列 → bill.file 整理并查重 → 同样确认后批量保存。
+ * 账单文件导入：手机上读出微信账单 Excel、支付宝账单 CSV 的几列 → bill.file 整理并查重 → 同样确认后批量保存。
  * - 导入的账一律记为上传者付款、split === 'self'（不参与分摊）。
  * - 每笔导入的账有 src.key：截图是 App + 原始日期、时刻、金额、商户、收支，文件是交易单号的指纹；
  *   _id 由小家和 key 算出，同一笔账两人同时导入也只落一次。
@@ -29,6 +29,7 @@ const {
 } = require('./bill-parse');
 const { matchItems, rememberCategories } = require('./bill-match');
 const { parseWechatRows } = require('./bill-file');
+const { parseAlipayRows } = require('./bill-alipay');
 
 const BAD_SOURCE = '截图信息无效，请重新识别。';
 
@@ -161,12 +162,12 @@ function createBillHandler({
     /** 账单文件：手机上读出的行 → 整理、查重后的每一笔，加上跳过了多少。不花 AI 次数。 */
     async 'bill.file'(openid, payload) {
       const household = await requireMembership(openid);
-      if (payload?.app !== 'wechat')
-        throw new ApiError('VALIDATION', '目前只支持微信账单文件。');
-      const { items, skipped } = parseWechatRows(
-        payload.rows,
-        payload.context ?? [],
-      );
+      if (payload?.app !== 'wechat' && payload?.app !== 'alipay')
+        throw new ApiError('VALIDATION', '不支持这种账单文件。');
+      const { items, skipped } =
+        payload.app === 'alipay'
+          ? parseAlipayRows(payload.rows, payload.context ?? [], payload.enc)
+          : parseWechatRows(payload.rows, payload.context ?? []);
       return {
         items: matchItems(
           await remembered(household, items),
