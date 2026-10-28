@@ -1,0 +1,5 @@
+.lead-note { margin: 0 4rpx 24rpx; line-height: 1.7; }
+.list-row .tick-box { flex-shrink: 0; }
+.backup { margin-top: var(--gap); }
+.backup-button, button.backup-button:not([size='mini']) { margin-top: var(--gap-sm); }
+.clear-button, button.clear-button:not([size='mini']) { margin-top: var(--gap-lg); }

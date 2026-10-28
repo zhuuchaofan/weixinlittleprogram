@@ -4,6 +4,7 @@
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
   <block wx:if="{{household}}">
+    <view wx:if="{{household.copying}}" class="notice">退出时带走的旧账还没复制完。<button class="text-button" data-page="leave" bindtap="open">继续复制</button></view>
     <view class="top-bar">
       <view class="top-greeting small muted">{{household.members.length > 1 ? '我们的小家' : '等待对方加入'}}</view>
       <view class="icon-button" data-page="settings" bindtap="open" hover-class="icon-button-active" aria-role="button" aria-label="设置">

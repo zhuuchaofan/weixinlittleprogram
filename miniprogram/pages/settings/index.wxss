@@ -5,3 +5,4 @@
 .theme-on { color: var(--ink); font-weight: 600; }
 .swatch { width: 80rpx; height: 80rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 32rpx; font-weight: 700; border: 4rpx solid transparent; }
 .theme-on .swatch { border-color: var(--surface); box-shadow: 0 0 0 4rpx var(--accent); }
+.danger-text { color: var(--danger); }

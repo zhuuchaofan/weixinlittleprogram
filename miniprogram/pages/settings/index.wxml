@@ -75,6 +75,24 @@
         <button class="secondary export-button" bindtap="exportData" loading="{{exporting}}" disabled="{{exporting}}">复制全部数据</button>
       </view>
     </view>
+
+    <view class="section">
+      <view class="section-head"><view class="section-title">小家</view></view>
+      <view class="list">
+        <view wx:if="{{household.copying}}" class="list-row" data-page="leave" bindtap="open" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view>继续复制旧账</view><view class="row-sub">退出时带走的副本还没复制完。</view></view>
+          <text class="chevron">›</text>
+        </view>
+        <view wx:if="{{household.members.length === 1 && !household.copying}}" class="list-row" data-page="clear" bindtap="open" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view>清空记录</view><view class="row-sub">只清对方记的，或全部清空。</view></view>
+          <text class="chevron">›</text>
+        </view>
+        <view wx:if="{{!household.copying}}" class="list-row" data-page="leave" bindtap="open" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view class="danger-text">退出小家</view><view class="row-sub">{{household.members.length > 1 ? '去一个自己的新小家，默认带走一份副本。' : '清空这个小家，回到创建 / 加入。'}}</view></view>
+          <text class="chevron">›</text>
+        </view>
+      </view>
+    </view>
   </block>
   <view class="page-end"></view>
 </view>

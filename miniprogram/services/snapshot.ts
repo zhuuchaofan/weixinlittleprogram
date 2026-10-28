@@ -40,3 +40,15 @@ export function readSnapshot<T>(key: string): T | undefined {
     return undefined;
   }
 }
+
+/** 换了小家（退出）后，本机存的旧快照都不能再用。 */
+export function clearSnapshots(): void {
+  loaded.clear();
+  writes++;
+  try {
+    for (const key of wx.getStorageInfoSync().keys)
+      if (key.startsWith(PREFIX)) wx.removeStorageSync(key);
+  } catch {
+    /* 删不掉也没关系，下次读云端会覆盖。 */
+  }
+}
