@@ -123,8 +123,8 @@ export async function pickBillFile(): Promise<void> {
     wx.showModal({
       title: '没能打开聊天里的文件',
       content: /privacy|scope|112/i.test(detail)
-        ? '小程序的隐私保护指引里还没声明「选中的文件」，在公众平台补上后再试。'
-        : `请稍后再试。${detail}`,
+        ? `小程序的隐私保护指引里还没声明「选中的文件」。已经补过的话，请把小程序从后台划掉再重新打开一次。\n${detail}`
+        : `请稍后再试。\n${detail}`,
       showCancel: false,
     });
     return;
