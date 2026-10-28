@@ -225,7 +225,13 @@ Page({
       });
       this.show();
     } catch (error) {
-      this.setData({ phase: 'empty', error: errorMessage(error) });
+      // 网络类错误把微信返回的原文也带上，方便定位是超时、请求太大还是云函数没部署好。
+      const detail = error instanceof ApiError ? error.detail : '';
+      this.setData({
+        phase: 'empty',
+        error:
+          errorMessage(error) + (detail ? `\n${detail.slice(0, 200)}` : ''),
+      });
     }
   },
   /** 当前月份的行放进页面，顶部统计按全部行算。 */
