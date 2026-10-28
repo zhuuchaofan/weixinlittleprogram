@@ -1,5 +1,5 @@
 .goal { padding: 28rpx 32rpx; }
-.goal + .goal { margin-top: var(--gap); }
+.goal + .goal { margin-top: var(--gap-card); }
 .goal-head { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; min-height: 56rpx; }
 .goal-head-active { opacity: 0.7; }
 .goal-title { flex: 1; min-width: 0; font-size: 32rpx; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

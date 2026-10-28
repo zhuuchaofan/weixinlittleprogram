@@ -9,7 +9,7 @@
 .hero-button, button.hero-button:not([size='mini']) { position: relative; z-index: 1; margin-top: 20rpx; min-height: 80rpx; background: #fff; color: var(--accent); font-weight: 600; }
 
 /* 按分类：一条彩色堆叠条 + 图例 */
-.categories { margin-top: 24rpx; padding: 28rpx 32rpx 16rpx; }
+.categories { margin-top: var(--gap-card); padding: 28rpx 32rpx 16rpx; }
 .stack-bar { display: flex; gap: 4rpx; height: 16rpx; border-radius: 8rpx; overflow: hidden; margin-bottom: 8rpx; }
 .stack-seg { min-width: 4rpx; height: 100%; }
 .cat-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16rpx; min-height: 64rpx; }

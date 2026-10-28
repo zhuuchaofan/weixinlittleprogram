@@ -1,6 +1,6 @@
 .rule { margin-top: var(--gap-sm); font-size: 28rpx; line-height: 1.7; }
 .warn-text { color: var(--warn); }
-.option { margin-top: var(--gap); }
+.option { margin-top: var(--gap-card); }
 .option .tick-box { flex-shrink: 0; }
 .backup-button, button.backup-button:not([size='mini']) { margin-top: var(--gap); }
 .leave-button, button.leave-button:not([size='mini']) { margin-top: var(--gap-lg); }

@@ -12,7 +12,7 @@
 .cat { position: absolute; left: 30rpx; bottom: 0; width: 240rpx; height: 240rpx; }
 .cat-outline { position: absolute; left: 0; top: 0; width: 240rpx; height: 240rpx; }
 .tail { position: absolute; left: 180rpx; top: 128rpx; width: 84rpx; height: 108rpx; transform-origin: 7% 94%; animation: wag 1.4s ease-in-out infinite; }
-.eye { position: absolute; top: 76rpx; width: 12rpx; height: 16rpx; border-radius: 50%; background: var(--accent); animation: blink 4s infinite; }
+.eye { position: absolute; top: 76rpx; width: 12rpx; height: 16rpx; border-radius: 50%; background: var(--ink); animation: blink 4s infinite; }
 .eye-left { left: 92rpx; }
 .eye-right { left: 136rpx; }
 .cup { position: absolute; right: 20rpx; bottom: 0; width: 132rpx; height: 88rpx; }

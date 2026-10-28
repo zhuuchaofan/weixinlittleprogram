@@ -32,8 +32,8 @@ function theme(
   },
 ): Theme {
   const grad = `linear-gradient(135deg, ${c.grad[0]} 0%, ${c.grad[1]} 55%, ${c.grad[2]} 100%)`;
-  // 卡片右上角的猫耳朵（app.wxss 的 .card::before）：白耳朵、浅主色内耳。不加引号，page-style 里放得下
-  const ears = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 34"><path d="M2 34 L16 7 Q20 0 25 6 L44 34 Z" fill="#ffffff"/><path d="M13 34 L20 16 L32 34 Z" fill="${c.soft}"/><path d="M56 34 L75 6 Q80 0 84 7 L98 34 Z" fill="#ffffff"/><path d="M68 34 L80 16 L87 34 Z" fill="${c.soft}"/></svg>`;
+  // 卡片右上角探头的白色小猫（app.wxss 的 .card::before），和卡片同色、同样的淡阴影。url() 不加引号，括号要转义
+  const peek = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70"><defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="-1" stdDeviation="2.5" flood-color="rgb(${c.tint})" flood-opacity="0.12"/></filter></defs><path d="M18 60 C15 44 21 32 31 26 L29 7 Q30 2 35 5 L52 16 Q60 14 68 16 L85 5 Q90 2 91 7 L89 26 C99 32 105 44 102 60 Z" fill="#ffffff" filter="url(#s)"/><path d="M36 13 L47 20 L38 25 Z M84 13 L73 20 L82 25 Z" fill="${c.soft}"/><ellipse cx="38" cy="49" rx="6" ry="3.4" fill="${c.accent}" fill-opacity="0.18"/><ellipse cx="82" cy="49" rx="6" ry="3.4" fill="${c.accent}" fill-opacity="0.18"/><circle cx="47" cy="41" r="3.4" fill="${c.ink}"/><circle cx="73" cy="41" r="3.4" fill="${c.ink}"/><path d="M56 47 Q58 50 60 47.5 Q62 50 64 47" fill="none" stroke="${c.accent}" stroke-width="2" stroke-linecap="round"/><g fill="#ffffff" stroke="${c.line}" stroke-width="1.6"><ellipse cx="27" cy="62" rx="10" ry="6"/><ellipse cx="93" cy="62" rx="10" ry="6"/></g><path d="M24 64 V61 M30 64 V61 M90 64 V61 M96 64 V61" stroke="${c.ring}" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   return {
     id,
     name,
@@ -48,7 +48,7 @@ function theme(
       '--line': c.line,
       '--accent': c.accent,
       '--accent-soft': c.soft,
-      '--card-ears': `url(data:image/svg+xml,${encodeURIComponent(ears)})`,
+      '--card-peek': `url(data:image/svg+xml,${encodeURIComponent(peek).replace(/\(/g, '%28').replace(/\)/g, '%29')})`,
       '--accent-grad': grad,
       '--ring': c.ring,
       '--glow': `rgba(${c.glow}, 0.28)`,
