@@ -9,6 +9,7 @@ const { createInsightHandler } = require('./insight');
 const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
+const { createAssistHandler } = require('./assist');
 const { createActivityLog } = require('./activity');
 const { createLeaveHandler } = require('./leave');
 
@@ -79,6 +80,13 @@ function createRouter({
     ...createInsightHandler({
       repository: expenses,
       insights,
+      households,
+      requireMembership,
+      now,
+      ai,
+    }),
+    ...createAssistHandler({
+      repositories: { dishes, dates },
       households,
       requireMembership,
       now,

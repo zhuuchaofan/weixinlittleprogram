@@ -9,6 +9,20 @@
     <view class="row-main"><view>每年重复</view><view class="row-sub">生日、纪念日打开；一次性的计划关闭</view></view>
     <switch checked="{{yearly}}" bindchange="toggleYearly" color="{{accent}}" aria-label="每年重复" />
   </view>
+  <view wx:if="{{id}}" class="card wish-card">
+    <view class="wish-head"><text class="wish-title">喵喵出主意</text><text class="tag">AI 生成</text></view>
+    <view class="small muted">礼物预算</view>
+    <view class="chips wish-budget">
+      <view wx:for="{{budgets}}" wx:key="value" class="chip {{budget === item.value ? 'chip-on' : ''}}" data-value="{{item.value}}" bindtap="chooseBudget">{{item.label}}</view>
+    </view>
+    <block wx:if="{{wish}}">
+      <view class="wish-text">{{wish}}</view>
+      <view wx:for="{{ideas}}" wx:key="index" class="wish-idea">· {{item}}</view>
+      <view class="small muted wish-note">以上由 AI 生成，仅供参考，不会保存。</view>
+    </block>
+    <button class="btn-small wish-button" bindtap="ask" loading="{{asking}}" disabled="{{asking}}">{{wish ? '换一个' : '写祝福和点子'}}</button>
+  </view>
+
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
   <button class="primary save" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
   <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">删除这个纪念日</button>

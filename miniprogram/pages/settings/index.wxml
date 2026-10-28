@@ -22,7 +22,7 @@
       <view class="section-head"><view class="section-title">会员</view></view>
       <view class="list">
         <view class="list-row" bindtap="openVip" hover-class="list-row-active" aria-role="button">
-          <view class="row-main"><view>{{vipText}}</view><view class="row-sub">截图记账、喵喵小结每天的次数更多。一个人开通，两个人共用。</view></view>
+          <view class="row-main"><view>{{vipText}}</view><view class="row-sub">截图记账、喵喵小结、一句话加清单、吃啥帮我挑、纪念日点子每天的次数更多。一个人开通，两个人共用。</view></view>
           <text class="chevron">›</text>
         </view>
       </view>
