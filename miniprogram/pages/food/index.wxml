@@ -29,8 +29,8 @@
 
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
 
-  <view wx:if="{{loading && !dishes.length}}" class="status">正在读取…</view>
-  <view wx:elif="{{!visible.length}}" class="empty list-gap">{{filter ? '这一类还没有，在上面加一个。' : '还没有记录，先加几道常吃的菜或常去的店吧。'}}</view>
+  <view wx:if="{{loading && !dishes.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!visible.length}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />{{filter ? '这一类还没有，在上面加一个。' : '还没有记录，先加几道常吃的菜或常去的店吧。'}}</view>
   <block wx:for="{{groups}}" wx:for-item="group" wx:key="tag">
     <view class="list-label">{{group.label}} · {{group.items.length}}</view>
     <view class="list">

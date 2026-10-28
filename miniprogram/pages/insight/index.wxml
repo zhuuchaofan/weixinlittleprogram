@@ -35,8 +35,8 @@
     </view>
   </view>
 
-  <view wx:if="{{loading && !ready}}" class="status">正在读取…</view>
-  <view wx:elif="{{ready && !categories.length}}" class="empty">这个月和上个月都还没有支出。</view>
+  <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。</view>
 
   <block wx:if="{{categories.length}}">
     <view class="section-head"><view class="section-title">{{compareTitle}}</view></view>

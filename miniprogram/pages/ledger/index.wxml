@@ -43,8 +43,8 @@
     <view class="section-title">明细</view>
     <text wx:if="{{total}}" class="small muted">{{total}} 笔</text>
   </view>
-  <view wx:if="{{loading && !summary}}" class="status">正在读取…</view>
-  <view wx:elif="{{!records.length}}" class="empty">这个月还没有记账。</view>
+  <view wx:if="{{loading && !summary}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!records.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月还没有记账。</view>
   <view wx:else class="list">
     <view wx:for="{{records}}" wx:key="id" class="list-row {{item.isSettlement ? 'row-settlement' : ''}}" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
       <view class="tile" style="background: {{item.tint}}"><image class="tile-icon" src="{{item.icon}}" /></view>

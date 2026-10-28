@@ -50,3 +50,5 @@
 .grid-cell { background: var(--surface); border-radius: var(--radius); padding: 28rpx; box-shadow: var(--shadow); min-width: 0; }
 .grid-cell-active { background: var(--sunken); }
 .grid-title { font-size: 32rpx; font-weight: 700; margin-top: 20rpx; }
+.top-greeting { display: flex; align-items: center; gap: 8rpx; }
+.greet-paw { width: 28rpx; height: 28rpx; }

@@ -10,3 +10,4 @@
 .form-title { margin-bottom: 24rpx; }
 .code-input { letter-spacing: 8rpx; }
 .back { margin: 12rpx auto 0; }
+.hero .kicker { margin-bottom: 8rpx; }

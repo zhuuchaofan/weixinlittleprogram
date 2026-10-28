@@ -1,8 +1,8 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
-  <view wx:if="{{loading && !goals.length && !ready}}" class="status">正在读取…</view>
-  <view wx:elif="{{!goals.length}}" class="empty">还没有攒钱目标。定一个吧：比如旅行、换手机、应急金。</view>
+  <view wx:if="{{loading && !goals.length && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!goals.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />还没有攒钱目标。定一个吧：比如旅行、换手机、应急金。</view>
 
   <view wx:for="{{goals}}" wx:key="id" class="card goal {{item.done ? 'goal-done' : ''}}">
     <view class="goal-head" data-id="{{item.id}}" bindtap="edit" hover-class="goal-head-active" aria-role="button">
