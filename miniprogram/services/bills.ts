@@ -74,6 +74,8 @@ export async function chooseBillImport(): Promise<void> {
   } catch {
     return; // 取消
   }
+  // 等选项框收起再弹下一个框，否则有的手机上后面的说明框弹不出来。
+  await new Promise((resolve) => setTimeout(resolve, 300));
   if (tapIndex === 0) await pickBillScreenshots();
   else await pickBillFile();
 }
@@ -114,8 +116,18 @@ export async function pickBillFile(): Promise<void> {
       extension: ['xlsx'],
     });
     path = result.tempFiles[0]?.path || '';
-  } catch {
-    return; // 取消选择
+  } catch (error) {
+    // 取消选择不用提示；其他失败（多半是隐私指引里没声明「选中的文件」）要说出来，不能没反应。
+    const detail = (error as { errMsg?: string })?.errMsg || '';
+    if (/cancel/i.test(detail)) return;
+    wx.showModal({
+      title: '没能打开聊天里的文件',
+      content: /privacy|scope|112/i.test(detail)
+        ? '小程序的隐私保护指引里还没声明「选中的文件」，在公众平台补上后再试。'
+        : `请稍后再试。${detail}`,
+      showCancel: false,
+    });
+    return;
   }
   if (!path) return;
   pendingFile = path;
