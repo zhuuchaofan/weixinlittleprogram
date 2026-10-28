@@ -75,6 +75,13 @@ function skippedText(skipped: FileSkipped): string {
   return parts.length ? `已跳过：${parts.join('，')}。` : '';
 }
 
+// 提示里引用已记账目的备注最多显示几个字，免得一条提示撑成好几行。
+const NOTE_SHOW = 12;
+
+function clip(text: string): string {
+  return text.length > NOTE_SHOW ? `${text.slice(0, NOTE_SHOW)}…` : text;
+}
+
 function matchText(item: BillItem): string {
   const match = item.match;
   if (!match || !household) return '';
@@ -82,7 +89,7 @@ function matchText(item: BillItem): string {
     match.byRole === household.myRole
       ? '我'
       : memberNames(household)[match.byRole || 'a'];
-  return `${who}记过：${shortDate(match.date)} ${match.note || '（无备注）'} ${formatYuan(match.amount)}`;
+  return `${who}记过：${shortDate(match.date)} ${clip(match.note) || '（无备注）'} ${formatYuan(match.amount)}`;
 }
 
 const present = (item: BillItem): DraftRow => toRow(item, matchText(item));
