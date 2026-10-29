@@ -91,7 +91,10 @@
 
 ```html
 <wxs module="money" src="../../wxs/money.wxs" />
-<view class="hero-total"><text wx:if="{{money.sign(totalText)}}" class="cur">¥</text>{{money.digits(totalText)}}</view>
+<view class="hero-total"
+  ><text wx:if="{{money.sign(totalText)}}" class="cur">¥</text
+  >{{money.digits(totalText)}}</view
+>
 ```
 
 ## 8. 按钮文字上下居中
