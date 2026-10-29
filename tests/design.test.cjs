@@ -79,3 +79,12 @@ test('wxss 里伪类前面不能光秃秃', () => {
     }
   }
 });
+
+// WXML 里没有反斜杠转义：写 \' 会在上传时报 unexpected character `\`。
+// 属性用双引号，里面的字符串直接写单引号。
+test('wxml 里不能有反斜杠', () => {
+  for (const [kind, name, dir] of folders()) {
+    const wxml = readFileSync(join(dir, 'index.wxml'), 'utf8');
+    assert.ok(!wxml.includes('\\'), `${kind}/${name}/index.wxml 里有反斜杠`);
+  }
+});
