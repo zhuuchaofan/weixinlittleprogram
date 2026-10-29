@@ -22,6 +22,19 @@
     <view class="draw-hint">最近 3 天吃过的不会抽到</view>
   </view>
 
+  <view class="card ask-card">
+    <view class="ask-head"><text class="ask-title">让喵喵帮我挑</text><text class="tag">AI 生成</text></view>
+    <view class="composer">
+      <input class="composer-input" value="{{want}}" maxlength="{{limits.dishWant}}" placeholder="想吃点什么？例如：清淡的" confirm-type="search" bindinput="inputWant" bindconfirm="ask" />
+      <button class="btn-small" bindtap="ask" loading="{{asking}}" disabled="{{asking}}">帮我挑</button>
+    </view>
+    <view wx:for="{{aiPicks}}" wx:key="id" class="ask-row" data-id="{{item.id}}" bindtap="choosePick" hover-class="list-row-active">
+      <view class="row-main"><view class="row-title">{{item.name}}</view><view wx:if="{{item.reason}}" class="row-sub">{{item.reason}}</view></view>
+      <text class="chevron">›</text>
+    </view>
+    <view wx:if="{{aiPicks.length}}" class="small muted">只从你的菜单里挑，理由由 AI 生成，仅供参考。点一个放到上面。</view>
+  </view>
+
   <view class="composer">
     <input class="composer-input" value="{{name}}" maxlength="{{limits.dishName}}" placeholder="加一个（存到「{{addText}}」）" confirm-type="done" confirm-hold bindinput="inputName" bindconfirm="add" />
     <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>

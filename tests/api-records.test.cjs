@@ -1481,3 +1481,104 @@ test('年度回顾的记录：就吃这个、勾完待办、去过了都留一�
     ['wish', '大阪', '2026-10-05'],
   ]);
 });
+
+test('AI 小帮手：一句话拆清单只返回结果、不保存，坏内容丢掉', async () => {
+  assert.equal(
+    (await (await setup()).call('A', 'todo.split', { text: '猫砂和猫粮' }))
+      .code,
+    'UNAVAILABLE',
+  );
+  const prompts = [];
+  const vision = {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'todoSplit');
+      prompts.push(prompt);
+      return '```json\n{"items":[{"text":"猫砂","kind":"shop"},{"text":"**猫砂**","kind":"shop"},{"text":"","kind":"todo"},{"text":"预约疫苗","kind":"x"}]}\n```';
+    },
+  };
+  const { call, todos } = await setup({ vision });
+  assert.equal(
+    (await call('A', 'todo.split', { text: '猫' })).code,
+    'VALIDATION',
+  );
+  const result = await call('A', 'todo.split', { text: '买猫砂，预约疫苗' });
+  assert.deepEqual(result.data.items, [
+    { text: '猫砂', kind: 'shop' },
+    { text: '预约疫苗', kind: 'todo' },
+  ]);
+  assert.ok(prompts[0].includes('买猫砂，预约疫苗'));
+  assert.equal(todos.docs.size, 0);
+  assert.equal(
+    (await call('X', 'todo.split', { text: '买猫砂，预约疫苗' })).ok,
+    true,
+  );
+});
+
+test('AI 小帮手：吃啥只能挑菜单里有的，编号错了或重复的丢掉', async () => {
+  let reply = '{"picks":[{"n":9,"reason":"没有这个"}]}';
+  const vision = {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'dishPick');
+      assert.ok(prompt.includes('清淡'));
+      return reply;
+    },
+  };
+  const { call } = await setup({ vision });
+  assert.equal(
+    (await call('A', 'dish.pick', { want: '清淡' })).code,
+    'VALIDATION',
+  );
+  await call('A', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('A', 'dish.add', { name: '咖喱饭', tag: '在家做' });
+  await call('A', 'dish.add', { name: '炒青菜', tag: '在家做' });
+  assert.equal(
+    (await call('A', 'dish.pick', { want: '清淡' })).code,
+    'UNAVAILABLE',
+  );
+  reply =
+    '{"picks":[{"n":1,"reason":"**清淡**好消化"},{"n":1,"reason":"重复"},{"n":2,"reason":"简单"},{"n":9,"reason":"没有"}]}';
+  const picked = await call('A', 'dish.pick', { want: '清淡' });
+  assert.equal(picked.data.picks.length, 2);
+  const names = ['拉面', '咖喱饭', '炒青菜'];
+  for (const pick of picked.data.picks) {
+    assert.ok(names.includes(pick.name));
+    assert.ok(pick.id);
+  }
+  assert.equal(picked.data.picks[0].reason, '清淡好消化');
+  assert.equal(
+    (await call('A', 'dish.pick', { want: '清淡', tag: '夜宵' })).code,
+    'VALIDATION',
+  );
+});
+
+test('AI 小帮手：纪念日祝福只用自己家的纪念日，不存', async () => {
+  const prompts = [];
+  const vision = {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'dateWish');
+      prompts.push(prompt);
+      return '{"wish":"**一起走过** 三年。","ideas":["散步","做顿饭","写张卡","多余的"]}';
+    },
+  };
+  const { call, dates } = await setup({ vision });
+  const added = await call('A', 'date.add', {
+    title: '恋爱纪念日',
+    date: '2023-10-25',
+    yearly: true,
+  });
+  const id = added.data.id;
+  const before = dates.docs.size;
+  const result = await call('A', 'date.wish', { id, budget: 'low' });
+  assert.equal(result.data.wish, '一起走过 三年。');
+  assert.deepEqual(result.data.ideas, ['散步', '做顿饭', '写张卡']);
+  assert.ok(prompts[0].includes('恋爱纪念日'));
+  assert.ok(prompts[0].includes('预算几十元'));
+  assert.equal(dates.docs.size, before);
+  assert.equal(
+    (await call('X', 'date.wish', { id, budget: 'low' })).code,
+    'NOT_FOUND',
+  );
+});

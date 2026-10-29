@@ -30,6 +30,9 @@
 - 次数：`contract.json` 的 `ai.<功能>` 写 `free`、`vip`、`per`（day / month）；计数存在 `households.<功能>Quota`（截图和小结沿用 `billQuota`、`summaryQuota`）。
 - 全站费用：每次调用按 `ai.js` 的估算单价记进 `ai_usage`；当天到 `AI_DAILY_BUDGET`（默认 20 元）的 80% 停 `write`、100% 停 `organize`。
 - 发给模型的只有这个功能需要的文字，不发名字和 openid；日志只记功能名、模型、耗时、token 数和错误码。
+- 提示词都在 `cloudfunctions/api/prompts.js`：用户写的内容放在分隔线里、一律当数据；要求只回 JSON 的功能由 `assist.js` / `bill-parse.js` 校验后再返回，模型说了什么都不直接信。
+- 清单、吃啥、纪念日三项在 `assist.js`：`todo.split`（organize，只返回拆分结果，由用户勾选后用 `todo.add` 保存）、`dish.pick`（write，模型只回编号，按编号找回菜单里的菜，挑不在菜单里的丢掉）、`date.wish`（write，不保存，不发名字，只发纪念日名称、周年数和预算档）。模型用 `ASSIST_MODEL`，没填依次用 `SUMMARY_MODEL`、`BILL_MODEL`。
+- 第一次用文字类功能弹说明（本机存 `aiTextNoticed`），写文字的结果旁一律标「AI 生成」。
 - 「先确认再保存」的列表是组件 `components/draft-list`，行的计算在 `utils/drafts.ts`。
 
 ## 退出小家

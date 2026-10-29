@@ -57,6 +57,33 @@ export const CONTRACT = {
       "per": "day",
       "free": 5,
       "vip": 30
+    },
+    "todoSplit": {
+      "name": "一句话加清单",
+      "verb": "整理",
+      "unit": "次",
+      "what": "清单",
+      "per": "day",
+      "free": 10,
+      "vip": 100
+    },
+    "dishPick": {
+      "name": "吃啥帮我挑",
+      "verb": "挑",
+      "unit": "次",
+      "what": "菜",
+      "per": "day",
+      "free": 3,
+      "vip": 30
+    },
+    "dateWish": {
+      "name": "纪念日祝福和点子",
+      "verb": "写",
+      "unit": "次",
+      "what": "祝福",
+      "per": "day",
+      "free": 2,
+      "vip": 20
     }
   },
   "vip": {
@@ -111,6 +138,8 @@ export const CONTRACT = {
     "wishWhy": 100,
     "wishPlan": 300,
     "dateTitle": 20,
+    "todoSplitText": 120,
+    "dishWant": 30,
     "goalTitle": 20
   }
 } as const;

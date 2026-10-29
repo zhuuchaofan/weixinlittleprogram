@@ -6,6 +6,11 @@ import { createLoader } from '../../services/page-load';
 import { DISH_TAG_OPTIONS, LENGTHS, dishTagLabel } from '../../config/options';
 import { daysBetween, todayKey } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
+import {
+  agreedToAiText,
+  pickDishes,
+  type DishPick,
+} from '../../services/assist';
 
 type Row = Dish & { ateText: string; ateDays: number; ateToday: boolean };
 type Group = {
@@ -49,6 +54,10 @@ Page({
     visible: [] as Row[],
     groups: [] as Group[],
     picked: null as Row | null,
+    // 喵喵帮我挑
+    want: '',
+    asking: false,
+    aiPicks: [] as DishPick[],
     name: '',
     loading: true,
     busy: false,
@@ -121,6 +130,33 @@ Page({
       error: '',
       picked: candidates[Math.floor(Math.random() * candidates.length)],
     });
+  },
+  inputWant(event: WechatMiniprogram.Input) {
+    this.setData({ want: event.detail.value });
+  },
+  /** 说说想吃什么，让喵喵从菜单里挑 3 个。 */
+  async ask() {
+    if (this.data.asking) return;
+    if (!(await agreedToAiText())) return;
+    this.setData({ asking: true, error: '', aiPicks: [] });
+    try {
+      const { picks } = await pickDishes(
+        this.data.want.trim(),
+        this.data.filter,
+      );
+      this.setData({ aiPicks: picks });
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+    } finally {
+      this.setData({ asking: false });
+    }
+  },
+  /** 喵喵挑的某一个，放到上面的大卡片里，用「就吃这个」记下。 */
+  choosePick(event: WechatMiniprogram.TouchEvent) {
+    const dish = this.data.dishes.find(
+      (item) => item.id === event.currentTarget.dataset.id,
+    );
+    if (dish) this.setData({ picked: dish });
   },
   /** 就吃这个：记下今天吃过，之后几天不会再抽到。 */
   async eat() {

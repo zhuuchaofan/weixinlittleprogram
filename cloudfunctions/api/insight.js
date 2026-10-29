@@ -16,6 +16,7 @@ const validate = require('./validate');
 const { categories, settlement: SETTLEMENT } = require('./contract.json');
 const { normalizeCategory } = require('./ledger');
 const { takeQuota } = require('./quota');
+const { summaryHeader } = require('./prompts');
 
 const TREND_MONTHS = 6;
 const BIG_AMOUNT = 50000;
@@ -183,11 +184,7 @@ function summaryPrompt(insight) {
   const { compare } = insight;
   const { rule, fact } = compareLines(insight);
   const lines = [
-    '你是一对小夫妻记账本里的小猫助手「喵喵」。下面是他们这个月的支出汇总（金额单位：元），请只根据这些数据写一段月度小结：',
-    '- 3 到 5 句，总共不超过 150 字，口吻亲切，称呼「你们」；',
-    rule,
-    '- 最后给一条具体、做得到的省钱建议；',
-    '- 不要编造数据里没有的数字，不要标题、列表或 Markdown 符号。',
+    ...summaryHeader(rule),
     '',
     `${monthText(insight.month)}支出合计 ${yuan(insight.total)} 元，共 ${insight.count} 笔；${fact}`,
   ];

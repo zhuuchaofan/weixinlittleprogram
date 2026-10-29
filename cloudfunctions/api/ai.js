@@ -14,6 +14,10 @@ const { DEFAULT_MODEL } = require('./vision');
 const DEFAULT_BUDGET = 20;
 const WRITE_SHARE = 0.8;
 
+/** 清单、吃啥、纪念日这几个纯文字功能的模型：ASSIST_MODEL，没填用小结的，再没填用截图识别的。 */
+const assistModel = (env) =>
+  env.ASSIST_MODEL || env.SUMMARY_MODEL || env.BILL_MODEL || DEFAULT_MODEL;
+
 /** 每个功能的模型和参数；env 是云函数的环境变量。键必须和 contract.json 的 ai 一一对应。 */
 const FEATURES = {
   billImage: {
@@ -28,6 +32,27 @@ const FEATURES = {
     temperature: 0.3,
     // 小结 150 字以内，中文大约 1 字 1 token；封顶防止模型写长了拖时间。
     maxTokens: 300,
+  },
+  // 一句话拆成清单条目：结果先让用户确认，才加进清单。
+  todoSplit: {
+    tier: 'organize',
+    model: assistModel,
+    temperature: 0,
+    maxTokens: 400,
+  },
+  // 从自己的菜单里挑：编号过一遍校验，只能挑菜单里有的；理由是模型写的短句。
+  dishPick: {
+    tier: 'write',
+    model: assistModel,
+    temperature: 0.5,
+    maxTokens: 300,
+  },
+  // 纪念日祝福和点子：生成式文字，界面标「AI 生成」。
+  dateWish: {
+    tier: 'write',
+    model: assistModel,
+    temperature: 0.8,
+    maxTokens: 600,
   },
 };
 
