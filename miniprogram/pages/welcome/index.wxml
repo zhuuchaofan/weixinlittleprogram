@@ -17,6 +17,21 @@
     <button class="primary" data-mode="create" bindtap="choose">创建小家</button>
     <button class="secondary" data-mode="join" bindtap="choose">用邀请码加入</button>
   </view>
+  <view wx:elif="{{mode === 'occupied'}}">
+    <view class="card">
+      <view class="section-title">你已经在一个小家里了</view>
+      <view wx:if="{{alone}}" class="rule">· 要加入新小家，得先退出现在的小家。你的小家现在只有你一个人，退出会清空里面的全部记录，删了找不回来。</view>
+      <block wx:else>
+        <view class="rule">· 你现在和{{partner}}在一个小家里。要加入新小家，得先退出。</view>
+        <view class="rule">· 第一次退出会带着副本去一个只有你的新小家，{{partner}}那边不动；再从新小家退出一次（会清空里面的记录），才能加入。</view>
+      </block>
+      <view class="rule">· 邀请码 {{code}} 已经记下了，退出后回到这里会自动填好。</view>
+    </view>
+    <view class="stack occupied-actions">
+      <button class="primary" bindtap="stay">留在现在的小家</button>
+      <button class="secondary" bindtap="toLeave">看看怎么退出</button>
+    </view>
+  </view>
   <view wx:else class="card">
     <view class="section-title form-title">{{mode === 'create' ? '创建小家' : '加入小家'}}</view>
     <view class="field">
