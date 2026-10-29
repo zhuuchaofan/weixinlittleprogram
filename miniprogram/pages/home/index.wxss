@@ -48,8 +48,6 @@
 /* 四个入口 */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-card) 20rpx; margin-top: var(--gap-card); }
 .grid-cell { position: relative; background: var(--surface); border-radius: var(--radius); padding: 28rpx; box-shadow: var(--shadow); min-width: 0; }
-/* 和 .card 一样右上角小猫探头（app.wxss） */
-.grid-cell::before { content: ''; position: absolute; right: 28rpx; top: -50rpx; width: 100rpx; height: 58rpx; background: var(--card-peek) no-repeat center / contain; pointer-events: none; }
 .grid-cell-active { background: var(--sunken); }
 .grid-title { font-size: 32rpx; font-weight: 700; margin-top: 20rpx; }
 .top-greeting { display: flex; align-items: center; gap: 8rpx; }
