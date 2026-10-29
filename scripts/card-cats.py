@@ -24,22 +24,29 @@ def head(x,y,s=1,r=0,eyes='open',coat='white',hid='h'):
       f'{e}<path d="M-4 1 Q-2 4 0 1.5 Q2 4 4 1" fill="none" stroke="{T["accent"]}" stroke-width="2" stroke-linecap="round"/></g>')
 def body(d,coat): return f'<path d="{d}" fill="{COATS[coat]["fill"]}" filter="url(#s)"/>'
 def tail(d,coat,w=8): return f'<path d="{d}" fill="none" stroke="{COATS[coat]["fill"]}" stroke-width="{w}" stroke-linecap="round" filter="url(#s)"/>'
-def paw(x,y,coat,rx=10,ry=6,r=0): return f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" transform="rotate({r} {x} {y})" fill="{COATS[coat]["fill"]}" stroke="{T["line"]}" stroke-width="1.6"/>'
 def zz(x,y): return f'<path d="M{x} {y} h8 l-8 8 h8 M{x+12} {y-10} h6 l-6 6 h6" fill="none" stroke="{T["accent"]}" stroke-opacity="0.5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+def fillet(x1,x2,coat,r=9):  # 身子和卡片边的接缝：两边向外的圆弧，像从卡片里长出来；不加阴影
+    return f'<path d="M{x1-r} 70 Q{x1} 70 {x1} {70-r} H{x2} Q{x2} 70 {x2+r} 70 Z" fill="{COATS[coat]["fill"]}"/>'
+# 每种姿势：名字、画法、身子落在卡片边上的左右两端（y=70 是卡片上边）
+SIT='M58 70 C54 48 66 34 80 32 C94 34 106 48 102 70 Z'
 POSES={
- 'peek':  ('探头', lambda c: head(80,50,1,0,'open',c)+paw(56,70,c)+paw(104,70,c)),
- 'sleep': ('趴着睡', lambda c: tail('M128 64 C146 66 146 82 132 86',c)+body('M44 72 C44 50 70 42 96 42 C124 42 138 54 136 72 Z',c)+head(58,50,.78,-8,'closed',c)+zz(96,22)),
- 'sit':   ('坐着', lambda c: tail('M98 68 C118 70 122 52 112 42',c,7)+body('M58 72 C54 48 66 34 80 32 C94 34 106 48 102 72 Z',c)+head(80,24,.82,0,'open',c)+f'<path d="M72 72 V60 M88 72 V60" stroke="{T["line"]}" stroke-width="1.8" stroke-linecap="round"/>'),
- 'stretch':('伸懒腰', lambda c: tail('M132 36 C140 22 150 18 150 8',c,7)+body('M34 72 C34 64 46 62 62 62 C84 60 104 40 124 32 C140 28 144 50 138 72 Z',c)+paw(22,69,c,11,5)+paw(36,70,c,11,5)+head(58,48,.72,-14,'closed',c)),
- 'wash':  ('洗脸', lambda c: tail('M98 68 C118 70 122 52 112 42',c,7)+body('M58 72 C54 48 66 34 80 32 C94 34 106 48 102 72 Z',c)+head(80,24,.82,6,'closed',c)+paw(66,30,c,7,10,-25)),
- 'hang':  ('趴在边上', lambda c: tail('M120 58 C138 56 144 40 136 30',c,7)+body('M60 70 C60 50 86 44 106 46 C124 48 130 58 128 70 Z',c)+head(66,53,.82,-8,'open',c)),
+ 'peek':  ('探头', lambda c: body('M58 70 C58 62 64 58 72 58 H88 C96 58 102 62 102 70 Z',c)+head(80,48,1,0,'open',c), (60,100)),
+ 'sleep': ('趴着睡', lambda c: tail('M128 64 C146 62 150 46 140 38',c)+body('M44 70 C44 50 70 42 96 42 C124 42 138 54 136 70 Z',c)+head(58,50,.78,-8,'closed',c)+zz(96,22), (46,134)),
+ 'sit':   ('坐着', lambda c: tail('M98 66 C118 68 122 52 112 42',c,7)+body(SIT,c)+head(80,24,.82,0,'open',c), (58,102)),
+ 'stretch':('伸懒腰', lambda c: tail('M132 36 C140 22 150 18 150 8',c,7)+body('M30 70 C30 62 44 60 62 60 C84 58 104 40 124 32 C140 28 144 50 138 70 Z',c)+head(54,48,.72,-14,'closed',c), (32,136)),
+ 'tilt':  ('歪头眯眼', lambda c: tail('M98 66 C118 68 122 52 112 42',c,7)+body(SIT,c)+head(78,24,.82,-12,'closed',c), (58,102)),
+ 'hang':  ('趴在边上', lambda c: tail('M120 58 C138 56 144 40 136 30',c,7)+body('M60 70 C60 50 86 44 106 46 C124 48 130 58 128 70 Z',c)+head(66,53,.82,-8,'open',c), (62,126)),
 }
-SH=f'<defs><filter id="s" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="2.4" flood-color="rgb({T["tint"]})" flood-opacity="0.16"/></filter></defs>'
-def svg(pose,coat): return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 160 110">{SH}{POSES[pose][1](coat)}</svg>'
+SH=(f'<defs><filter id="s" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="-0.5" stdDeviation="2.4" flood-color="rgb({T["tint"]})" flood-opacity="0.16"/></filter>'
+    '<clipPath id="edge"><rect x="0" y="-20" width="160" height="90"/></clipPath></defs>')
+def svg(pose,coat):
+    _, draw, (x1, x2) = POSES[pose]
+    # 阴影只留在卡片上边以上，接缝处不出现一道灰线
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 160 110">{SH}<g clip-path="url(#edge)">{draw(coat)}{fillet(x1,x2,coat)}</g></svg>'
 
 
 # 第 n 张卡片用哪只猫（按顺序轮流）：姿势、毛色
-ORDER = [('peek', 'white'), ('sleep', 'orange'), ('sit', 'grey'), ('stretch', 'white'), ('wash', 'cow'), ('hang', 'orange')]
+ORDER = [('peek', 'white'), ('sleep', 'orange'), ('sit', 'grey'), ('stretch', 'white'), ('tilt', 'cow'), ('hang', 'orange')]
 START = '/* card-cats:start（scripts/card-cats.py 生成，别手改） */'
 END = '/* card-cats:end */'
 
