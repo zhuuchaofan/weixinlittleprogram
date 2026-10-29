@@ -6,25 +6,23 @@
   <block wx:if="{{household}}">
     <view wx:if="{{household.copying}}" class="notice">退出时带走的旧账还没复制完。<button class="text-button" data-page="leave" bindtap="open">继续复制</button></view>
     <view class="top-bar">
-      <view class="top-greeting small muted">{{household.members.length > 1 ? '我们的小家' : '等待对方加入'}}</view>
+      <view class="top-greeting small muted">{{household.members.length > 1 ? '我们的小家' : '我的小家'}}</view>
       <view class="icon-button" data-page="settings" bindtap="open" hover-class="icon-button-active" aria-role="button" aria-label="设置">
         <image class="icon" src="/images/settings.png" mode="aspectFit" />
       </view>
     </view>
 
-    <view wx:if="{{household.inviteCode}}" class="card invite">
-      <view class="home-tile"><image class="home-icon" src="/images/ui/home.svg" /></view>
-      <view class="invite-title">我们的小家</view>
-      <view class="small muted">把邀请码发给对方，在「用邀请码加入」里输入</view>
-      <view class="pair" aria-hidden="true">
-        <view class="avatar-lg avatar-a">{{household.members[0].name[0]}}</view>
-        <view class="pair-line"></view>
-        <view class="pair-heart"><image class="pair-heart-icon" src="/images/ui/heart.svg" /></view>
-        <view class="pair-line"></view>
-        <view class="avatar-lg avatar-wait">TA</view>
+    <view wx:if="{{household.inviteCode}}" class="card solo">
+      <view class="pair-mini" aria-hidden="true">
+        <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>
+        <view class="avatar-sm avatar-wait">TA</view>
       </view>
-      <view class="invite-code">{{household.inviteCode}}</view>
-      <button class="primary" bindtap="copyCode">复制邀请码</button>
+      <view class="solo-main">
+        <view class="solo-title">先一个人用也行</view>
+        <view class="small muted">想一起记时，把小家发给 TA</view>
+      </view>
+      <button class="solo-share" open-type="share">邀请 TA</button>
+      <button class="text-button solo-copy" bindtap="copyCode">邀请码 {{household.inviteCode}}</button>
     </view>
     <view wx:else class="couple grad-card" data-page="dates" bindtap="open" aria-role="button">
       <view class="couple-names">

@@ -7,6 +7,8 @@
  * - 两人同时退出：后到的那个条件更新失败，提示「对方已经退出」。
  * - 只剩一个人时退出：清空这个小家的全部记录，回到创建 / 加入页。
  * - 清空（household.clear）只在小家里只有自己时能用：只清对方记的（按记录人），或全部清空；对方带走的副本在别的小家，动不到。
+ * - 注销（account.delete）：删掉自己的全部数据并退出。两人时共同的账本留给对方（里面我记的账目保留，但记录人、修改人抹掉）；
+ *   只剩自己时清空整个小家；退出过的小家里留着的我的身份信息也抹掉。会员订单只留交易需要的字段，不动。
  */
 const { createHash, randomBytes } = require('node:crypto');
 const { ApiError } = require('./errors');
@@ -201,6 +203,32 @@ function createLeaveHandler({
       .filter((item) => item.others.length);
   }
 
+  /** 把某个小家所有记录里的记录人、修改人是我的抹掉（记录本身留给对方）。 */
+  async function anonymize(householdId, openid) {
+    for (const name of names) {
+      for (let round = 0; round < MAX_REMOVE_ROUNDS; round++) {
+        if (!(await records[name].anonymize(householdId, openid))) break;
+      }
+    }
+  }
+
+  /** 我退出过的小家里还留着我的称呼、微信名字和 openid：抹掉，其余（去了哪个新小家、是否复制）不动。 */
+  async function scrubDeparted(openid) {
+    if (!households.findDeparted) return;
+    for (let round = 0; round < 5; round++) {
+      const left = await households.findDeparted(openid);
+      if (!left.length) return;
+      for (const doc of left)
+        await households.update(doc._id, {
+          departed: doc.departed.map((entry) =>
+            entry.openid === openid
+              ? { ...entry, openid: '', name: '', payName: '' }
+              : entry,
+          ),
+        });
+    }
+  }
+
   /** 只剩自己才能清空、才算「只剩一人」。 */
   function requireAlone(household, message) {
     if (household.members.length !== 1)
@@ -273,6 +301,37 @@ function createLeaveHandler({
         }
         await openNewHome(household, entry);
         return { left: true, copy: entry.copy };
+      },
+
+      /**
+       * 注销：payload.confirm 必须是 true。没有小家也能注销（只抹掉退出记录）。
+       * 只剩自己时返回 waiting 表示在替先走的人复制副本、还没删，小程序接着调用。
+       * 中途失败可以重来：先退出小家、再抹掉记录人，没有小家时重来只做最后的清理。
+       */
+      async 'account.delete'(openid, payload) {
+        if (payload?.confirm !== true)
+          throw new ApiError('VALIDATION', '请先确认注销。');
+        const household = await households.findByMember(openid);
+        if (household && household.members.length === 1) {
+          if (await finishPartnerCopy(household)) return { waiting: true };
+          if (!(await households.vacate(household._id, openid)))
+            throw new ApiError('BUSY', '小家刚有变动，请刷新后再试。');
+          await removeAll(household._id);
+          await households.update(household._id, { purge: false, by: '' });
+        } else if (household) {
+          const other = household.members.find(
+            (member) => member.openid !== openid,
+          );
+          const left = await households.withdraw(household._id, openid, {
+            members: [other],
+            inviteCode: await uniqueCode(),
+            by: household.by === openid ? '' : household.by,
+          });
+          if (!left) throw new ApiError('BUSY', '小家刚有变动，请刷新后再试。');
+          await anonymize(household._id, openid);
+        }
+        await scrubDeparted(openid);
+        return { deleted: true };
       },
 
       /** 复制一批；返回 { done, copied }，没复制完小程序接着调用。 */

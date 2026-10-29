@@ -14,6 +14,7 @@
       </view>
       <view wx:if="{{household.inviteCode}}" class="list-row">
         <view class="row-main"><view class="row-title">邀请码 {{household.inviteCode}}</view><view class="row-sub">对方加入后自动失效</view></view>
+        <button class="text-button" open-type="share">发给 TA</button>
         <button class="text-button" bindtap="copyCode">复制</button>
       </view>
     </view>
@@ -85,6 +86,10 @@
         </view>
         <view wx:if="{{!household.copying}}" class="list-row" data-page="leave" bindtap="open" hover-class="list-row-active" aria-role="button">
           <view class="row-main"><view class="danger-text">退出小家</view><view class="row-sub">{{household.members.length > 1 ? '去一个自己的新小家，默认带走一份副本。' : '清空这个小家，回到创建 / 加入。'}}</view></view>
+          <text class="chevron">›</text>
+        </view>
+        <view class="list-row" data-page="account" bindtap="open" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view class="danger-text">注销账号</view><view class="row-sub">删除我的全部数据，不能恢复。</view></view>
           <text class="chevron">›</text>
         </view>
       </view>

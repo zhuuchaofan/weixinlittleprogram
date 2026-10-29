@@ -1,5 +1,9 @@
 import type { Household } from '../../models';
-import { getHousehold, updateHousehold } from '../../services/household';
+import {
+  getHousehold,
+  inviteShare,
+  updateHousehold,
+} from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
 import { applyTheme, setTheme, themeData } from '../../services/theme';
@@ -117,6 +121,9 @@ Page({
       if (this.data.household)
         this.setData({ household: { ...this.data.household } });
     }
+  },
+  onShareAppMessage() {
+    return inviteShare(this.data.household?.inviteCode);
   },
   copyCode() {
     const code = this.data.household?.inviteCode;

@@ -18,6 +18,11 @@ Page({
     checking: true,
     error: '',
   },
+  /** 从分享卡片点进来：直接是加入页，邀请码已填好。 */
+  onLoad(options: Record<string, string | undefined>) {
+    const code = (options.code || '').toUpperCase();
+    if (/^[A-Z0-9]{6}$/.test(code)) this.setData({ mode: 'join', code });
+  },
   async onShow() {
     applyTheme(this);
     this.setData({ checking: true, error: '' });

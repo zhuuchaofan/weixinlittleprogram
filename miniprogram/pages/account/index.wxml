@@ -1,0 +1,35 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view wx:if="{{loading}}" class="status">正在读取…</view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{message}}" class="notice">{{message}}</view>
+
+  <block wx:if="{{!loading}}">
+    <view class="card">
+      <view class="section-title">注销后会怎样</view>
+      <view class="rule">· 你在云端的全部数据会被删除，删了找不回来。想留着的话，先复制全部数据保存。</view>
+      <block wx:if="{{mode === 'pair'}}">
+        <view class="rule">· 你会退出小家，称呼和微信名字都会删掉。</view>
+        <view class="rule">· 你们共同的账本留给{{partner}}，不会删：里面你记过的账目、清单还在，但不再关联你。</view>
+        <view class="rule">· {{vipDays ? '会员还剩 ' + vipDays + ' 天，全部留给' + partner + '。' : '你们还没有开通会员。'}}</view>
+      </block>
+      <block wx:if="{{mode === 'alone'}}">
+        <view class="rule">· 这个小家里的全部记录都会删掉：记账、清单、吃啥、想去、纪念日、攒钱。</view>
+        <view wx:if="{{vipDays}}" class="rule warn-text">· 会员还剩 {{vipDays}} 天，注销后会一起作废。</view>
+      </block>
+      <view wx:if="{{mode === 'none'}}" class="rule">· 你现在不在任何小家里，只会清理你留下的退出记录。</view>
+      <view class="rule">· 你以前退出小家时带走的副本，也在你的数据里，一并删除。{{partner ? partner + '那边的账不受影响。' : ''}}</view>
+      <view class="rule">· 会员订单会按规定保留订单号、金额和时间，用来对账和处理退款，不含你的称呼和账本内容。</view>
+      <button class="secondary backup-button" bindtap="exportData" loading="{{exporting}}" disabled="{{exporting}}">先复制全部数据</button>
+    </view>
+
+    <view class="card confirm-card">
+      <view class="field">
+        <text class="field-label">确认注销：请输入「注销」两个字</text>
+        <input value="{{typed}}" maxlength="4" placeholder="注销" bindinput="inputTyped" />
+      </view>
+      <button class="secondary delete-button" bindtap="confirm" loading="{{busy}}" disabled="{{busy || typed.trim() !== '注销'}}">注销账号</button>
+    </view>
+  </block>
+  <view class="page-end"></view>
+</view>
