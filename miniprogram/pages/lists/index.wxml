@@ -9,9 +9,27 @@
     <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
   </view>
 
+  <view wx:if="{{text.length > 3 && !split.length}}" class="split-hint">
+    <text class="small muted">一次写了好几样？</text>
+    <button class="btn-small" bindtap="splitText" loading="{{splitting}}" disabled="{{splitting || busy}}">让喵喵拆成多条</button>
+  </view>
+  <view wx:if="{{split.length}}" class="card split-card">
+    <view class="split-head"><text class="split-title">喵喵拆好了，勾选要加的</text><text class="tag">AI 整理</text></view>
+    <view wx:for="{{split}}" wx:key="index" class="split-row" data-index="{{index}}" bindtap="toggleSplit" aria-role="checkbox" aria-checked="{{item.on}}" aria-label="{{item.text}}">
+      <view class="tick-box {{item.on ? 'tick-on' : ''}}">{{item.on ? '✓' : ''}}</view>
+      <view class="row-main"><view class="row-title">{{item.text}}</view></view>
+      <text class="tag">{{item.kind === 'shop' ? '购物' : '待办'}}</text>
+    </view>
+    <view class="small muted split-note">以上由 AI 根据你写的话整理，仅供参考，确认后才保存。</view>
+    <view class="split-actions">
+      <button class="text-button" bindtap="cancelSplit" disabled="{{busy}}">不要了</button>
+      <button class="primary btn-inline" bindtap="addSplit" disabled="{{busy}}">加进清单</button>
+    </view>
+  </view>
+
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
-  <view wx:if="{{loading && !all.length}}" class="status">正在读取…</view>
-  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap">{{kind === 'shop' ? '还没有要买的，在上面写一样。' : '还没有待办，在上面写一件。'}}</view>
+  <view wx:if="{{loading && !all.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />{{kind === 'shop' ? '还没有要买的，在上面写一样。' : '还没有待办，在上面写一件。'}}</view>
 
   <view wx:if="{{open.length}}" class="list list-gap">
     <view wx:for="{{open}}" wx:key="id" class="list-row todo-row">
@@ -40,7 +58,7 @@
     </view>
     <view wx:if="{{showDone}}" class="list">
       <view wx:for="{{done}}" wx:key="id" class="list-row todo-row todo-done">
-        <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="tick-box tick-on">✓</view></view>
+        <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消完成 {{item.text}}"><view class="tick-box tick-on"><image class="tick-paw" src="/images/ui/paw.svg" /></view></view>
         <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active"><view class="row-title struck">{{item.text}}</view></view>
       </view>
     </view>

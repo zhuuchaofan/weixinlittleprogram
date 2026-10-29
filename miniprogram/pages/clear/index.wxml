@@ -3,15 +3,15 @@
   <view class="small muted lead-note">对方已经退出，这里清的是你这个小家里的记录。对方退出时带走的副本在对方自己的小家里，不会被删。</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
-  <view wx:if="{{loading}}" class="status">正在数有多少条…</view>
+  <view wx:if="{{loading}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在数有多少条…</view>
   <block wx:else>
     <view class="list">
       <view class="list-row" data-scope="others" bindtap="chooseScope" hover-class="list-row-active" aria-role="radio" aria-checked="{{scope === 'others'}}">
-        <view class="tick-box {{scope === 'others' ? 'tick-on' : ''}}">{{scope === 'others' ? '✓' : ''}}</view>
+        <view class="tick-box {{scope === 'others' ? 'tick-on' : ''}}"><image wx:if="{{scope === \'others\'}}" class="tick-paw" src="/images/ui/paw.svg" /></view>
         <view class="row-main"><view>只清对方记的</view><view class="row-sub">按每条是谁记的算，你记的都留着。共 {{counts.others}} 条</view></view>
       </view>
       <view class="list-row" data-scope="all" bindtap="chooseScope" hover-class="list-row-active" aria-role="radio" aria-checked="{{scope === 'all'}}">
-        <view class="tick-box {{scope === 'all' ? 'tick-on' : ''}}">{{scope === 'all' ? '✓' : ''}}</view>
+        <view class="tick-box {{scope === 'all' ? 'tick-on' : ''}}"><image wx:if="{{scope === \'all\'}}" class="tick-paw" src="/images/ui/paw.svg" /></view>
         <view class="row-main"><view>全部清空</view><view class="row-sub">记账、清单、吃啥、想去、纪念日、攒钱都删掉，设置和会员不变。共 {{counts.all}} 条</view></view>
       </view>
     </view>

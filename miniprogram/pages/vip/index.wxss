@@ -7,3 +7,9 @@
 .buy, button.buy:not([size='mini']) { margin-top: var(--gap); }
 .terms { font-size: 26rpx; line-height: 1.7; color: var(--muted); }
 .terms view + view { margin-top: 8rpx; }
+/* 选中的套餐整行浅主色底，价格放大一点 */
+.plan-on { background: var(--accent-soft); }
+.plan-on .plan-price { font-size: 40rpx; }
+.plan-price { transition: font-size 0.18s; }
+.agree { margin-top: 20rpx; text-align: center; font-size: 24rpx; color: var(--muted); }
+.agree-link { color: var(--accent); }

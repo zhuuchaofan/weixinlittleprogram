@@ -7,7 +7,7 @@
 .section-head { margin-top: 32rpx; }
 
 /* 喵喵小结 */
-.ai { margin-top: 24rpx; }
+.ai { margin-top: var(--gap-card); }
 .ai-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
 .ai-cat { width: 44rpx; height: 44rpx; }
 .ai-title { font-size: 30rpx; font-weight: 700; }

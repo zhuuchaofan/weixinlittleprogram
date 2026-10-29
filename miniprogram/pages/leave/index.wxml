@@ -1,6 +1,6 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
-  <view wx:if="{{loading}}" class="status">正在读取…</view>
+  <view wx:if="{{loading}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button wx:if="{{mode === 'copying'}}" class="text-button" bindtap="copy">重试</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
 
@@ -14,7 +14,7 @@
     </view>
     <view class="list option">
       <view class="list-row" bindtap="toggleNoCopy" hover-class="list-row-active" aria-role="checkbox" aria-checked="{{noCopy}}">
-        <view class="tick-box {{noCopy ? 'tick-on' : ''}}">{{noCopy ? '✓' : ''}}</view>
+        <view class="tick-box {{noCopy ? 'tick-on' : ''}}"><image wx:if="{{noCopy}}" class="tick-paw" src="/images/ui/paw.svg" /></view>
         <view class="row-main"><view>不带副本，从空开始</view><view class="row-sub">只影响你自己，{{partner}}那边的账不动。</view></view>
       </view>
     </view>

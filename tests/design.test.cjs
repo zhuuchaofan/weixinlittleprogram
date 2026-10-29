@@ -39,3 +39,43 @@ test('不用 size="mini" 按钮', () => {
     );
   }
 });
+
+// 按主题换色的图标每套主题都要有（新增后运行 scripts/theme-icons.py）
+test('页面用到的主题图标每套主题都有', () => {
+  const themes = join(__dirname, '../miniprogram/images/themes');
+  for (const [kind, name, dir] of folders()) {
+    const wxml = readFileSync(join(dir, 'index.wxml'), 'utf8');
+    for (const [, file] of wxml.matchAll(
+      /\/images\/themes\/\{\{themeId\}\}\/([\w.-]+)/g,
+    ))
+      for (const theme of readdirSync(themes))
+        assert.ok(
+          readdirSync(join(themes, theme)).includes(file),
+          `${kind}/${name} 用了 ${file}，images/themes/${theme} 里没有`,
+        );
+  }
+});
+
+// 微信开发者工具的 WXSS 编译器不认 `> :nth-child()` 这种没有标签或类名的子选择器，
+// 会报 error at token ':' 并白屏；`>`、`+`、`~` 和空格后面的伪类前必须有标签或类名。
+test('wxss 里伪类前面不能光秃秃', () => {
+  const files = [join(__dirname, '../miniprogram/app.wxss')];
+  for (const [, , dir] of folders()) files.push(join(dir, 'index.wxss'));
+  for (const file of files) {
+    let css;
+    try {
+      css = readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    // 只看选择器部分（{ 之前），去掉注释
+    const selectors = css
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\{[^{}]*\}/g, '{}')
+      .split('{}');
+    for (const sel of selectors) {
+      const bare = sel.match(/(^|[\s>+~,])\s*:[a-z-]+/);
+      assert.equal(bare, null, `${file} 有没带标签或类名的伪类：${sel.trim()}`);
+    }
+  }
+});

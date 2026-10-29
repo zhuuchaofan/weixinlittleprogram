@@ -82,6 +82,28 @@ export async function leaveHousehold(
   forget();
 }
 
+/**
+ * 注销账号：云端删掉我的全部数据（规则见 docs/PLAN.md「注销账号」），本机的缓存也清掉。
+ * 只剩自己时云端可能先替先走的人复制副本（waiting），一直调到真正注销为止，onWait 报告进度。
+ */
+export async function deleteAccount(
+  onWait: () => void = () => {},
+): Promise<void> {
+  for (;;) {
+    const result = await callApi<{ waiting?: boolean }>('account.delete', {
+      confirm: true,
+    });
+    if (!result.waiting) break;
+    onWait();
+  }
+  forget();
+  try {
+    wx.clearStorageSync();
+  } catch {
+    /* 清不掉也没关系，数据已经在云端删了。 */
+  }
+}
+
 /** 复制一批旧账，返回 { done, copied }；没完时接着调用。 */
 export async function copyStep(): Promise<{ done: boolean; copied: number }> {
   const result = await callApi<{ done: boolean; copied: number }>(
@@ -139,4 +161,16 @@ export function byPartner(
   if (!byRole || byRole === household.myRole) return '';
   const names = memberNames(household);
   return (byRole === 'a' ? names.a : names.b) + action;
+}
+
+/** 分享卡片的内容：有邀请码时带进加入页，没有时回到首页。 */
+export function inviteShare(code?: string): {
+  title: string;
+  path: string;
+} {
+  if (!code) return { title: '喵喵记一笔', path: '/pages/home/index' };
+  return {
+    title: '来我们的小家，一起记账',
+    path: `/pages/welcome/index?code=${code}`,
+  };
 }

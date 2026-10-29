@@ -76,6 +76,13 @@ function createHouseholdRepository(db) {
         });
       return result.updated === 1;
     },
+    async withdraw(id, openid, { members, inviteCode, by }) {
+      // 注销时从两人小家里拿掉自己：条件同 leave，但不留退出记录（记录里会有我的身份）。
+      const result = await collection
+        .where({ _id: id, memberCount: 2, 'members.openid': openid })
+        .update({ members: _.set(members), memberCount: 1, inviteCode, by });
+      return result.updated === 1;
+    },
     async vacate(id, openid) {
       // 只剩自己时退出：小家留着（会员订单还挂在上面），成员清空；purge 表示记录还没删完。
       const result = await collection
@@ -278,6 +285,17 @@ function createRecordRepository(db, collectionName) {
       const where = notBy ? { householdId, by: _.neq(notBy) } : { householdId };
       const result = await collection.where(where).remove();
       return result.deleted || 0;
+    },
+    /** 注销用：把记录人、修改人是我的抹掉，返回改了多少条；记录本身留着。 */
+    async anonymize(householdId, openid) {
+      let changed = 0;
+      for (const field of ['by', 'editedBy']) {
+        const result = await collection
+          .where({ householdId, [field]: openid })
+          .update({ [field]: '' });
+        changed += result.updated || 0;
+      }
+      return changed;
     },
     async removeWhere(householdId, where) {
       const result = await collection.where({ ...where, householdId }).remove();

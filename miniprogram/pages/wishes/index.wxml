@@ -5,8 +5,8 @@
     <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
   </view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
-  <view wx:if="{{loading && !wishes.length}}" class="status">正在读取…</view>
-  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap">想去的地方、想一起做的事，先记下来。</view>
+  <view wx:if="{{loading && !wishes.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />想去的地方、想一起做的事，先记下来。</view>
 
   <view wx:if="{{open.length}}" class="list list-gap">
     <view wx:for="{{open}}" wx:key="id" class="list-row wish-row">
@@ -22,7 +22,7 @@
     <view class="fold-head" bindtap="toggleDone" aria-role="button">去过的 {{done.length}} {{showDone ? '▾' : '▸'}}</view>
     <view wx:if="{{showDone}}" class="list">
       <view wx:for="{{done}}" wx:key="id" class="list-row wish-row">
-        <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消去过了 {{item.title}}"><view class="tick-box tick-on">✓</view></view>
+        <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="true" aria-label="取消去过了 {{item.title}}"><view class="tick-box tick-on"><image class="tick-paw" src="/images/ui/paw.svg" /></view></view>
         <view class="row-main wish-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
           <view class="row-title">{{item.title}}</view>
           <view class="row-sub">{{item.subText}}</view>

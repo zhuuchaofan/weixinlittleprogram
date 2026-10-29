@@ -1,6 +1,6 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
-  <view wx:if="{{loading && !household}}" class="status">正在读取…</view>
+  <view wx:if="{{loading && !household}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
 
@@ -14,6 +14,7 @@
       </view>
       <view wx:if="{{household.inviteCode}}" class="list-row">
         <view class="row-main"><view class="row-title">邀请码 {{household.inviteCode}}</view><view class="row-sub">对方加入后自动失效</view></view>
+        <button class="text-button" open-type="share">发给 TA</button>
         <button class="text-button" bindtap="copyCode">复制</button>
       </view>
     </view>
@@ -22,7 +23,7 @@
       <view class="section-head"><view class="section-title">会员</view></view>
       <view class="list">
         <view class="list-row" bindtap="openVip" hover-class="list-row-active" aria-role="button">
-          <view class="row-main"><view>{{vipText}}</view><view class="row-sub">截图记账、喵喵小结每天的次数更多。一个人开通，两个人共用。</view></view>
+          <view class="row-main"><view>{{vipText}}</view><view class="row-sub">截图记账、喵喵小结、一句话加清单、吃啥帮我挑、纪念日点子每天的次数更多。一个人开通，两个人共用。</view></view>
           <text class="chevron">›</text>
         </view>
       </view>
@@ -62,7 +63,7 @@
       <view class="section-head"><view class="section-title">主题</view><text class="small muted">只改这台手机</text></view>
       <view class="card themes">
         <view wx:for="{{themes}}" wx:key="id" class="theme {{themeId === item.id ? 'theme-on' : ''}}" data-id="{{item.id}}" bindtap="chooseTheme" aria-role="radio" aria-checked="{{themeId === item.id}}" aria-label="{{item.name}}">
-          <view class="swatch" style="background: {{item.swatch}}">{{themeId === item.id ? '✓' : ''}}</view>
+          <view class="swatch" style="background: {{item.swatch}}"><image wx:if="{{themeId === item.id}}" class="swatch-paw" src="/images/ui/paw.svg" /></view>
           <view class="small">{{item.name}}</view>
         </view>
       </view>
@@ -85,6 +86,10 @@
         </view>
         <view wx:if="{{!household.copying}}" class="list-row" data-page="leave" bindtap="open" hover-class="list-row-active" aria-role="button">
           <view class="row-main"><view class="danger-text">退出小家</view><view class="row-sub">{{household.members.length > 1 ? '去一个自己的新小家，默认带走一份副本。' : '清空这个小家，回到创建 / 加入。'}}</view></view>
+          <text class="chevron">›</text>
+        </view>
+        <view class="list-row" data-page="account" bindtap="open" hover-class="list-row-active" aria-role="button">
+          <view class="row-main"><view class="danger-text">注销账号</view><view class="row-sub">删除我的全部数据，不能恢复。</view></view>
           <text class="chevron">›</text>
         </view>
       </view>

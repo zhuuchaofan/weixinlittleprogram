@@ -7,6 +7,11 @@ import { errorMessage } from '../../services/cloud';
 import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
+import {
+  agreedToAiText,
+  splitTodos,
+  type SplitItem,
+} from '../../services/assist';
 
 type Row = Todo & { whoName: string };
 
@@ -34,6 +39,9 @@ Page({
     // 正在保存勾选状态的条目；各条互不阻塞。
     pending: {} as Record<string, boolean>,
     text: '',
+    // 喵喵拆出来的条目，勾选后才加进清单。
+    split: [] as (SplitItem & { on: boolean })[],
+    splitting: false,
     loading: true,
     busy: false,
     error: '',
@@ -118,6 +126,58 @@ Page({
       this.setData({ error: errorMessage(error) });
     } finally {
       this.setData({ busy: false });
+    }
+  },
+  /** 一句话拆成多条：先给你看，勾选后才加。 */
+  async splitText() {
+    const text = this.data.text.trim();
+    if (this.data.splitting || this.data.busy) return;
+    if (text.length < 2) {
+      this.setData({ error: '先写下要买或要做的事。' });
+      return;
+    }
+    if (!(await agreedToAiText())) return;
+    this.setData({ splitting: true, error: '', split: [] });
+    try {
+      const { items } = await splitTodos(text);
+      this.setData({ split: items.map((item) => ({ ...item, on: true })) });
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+    } finally {
+      this.setData({ splitting: false });
+    }
+  },
+  toggleSplit(event: WechatMiniprogram.TouchEvent) {
+    const index = Number(event.currentTarget.dataset.index);
+    this.setData({ [`split[${index}].on`]: !this.data.split[index].on });
+  },
+  cancelSplit() {
+    this.setData({ split: [] });
+  },
+  async addSplit() {
+    const items = this.data.split.filter((item) => item.on);
+    if (this.data.busy || !items.length) return;
+    this.setData({ busy: true, error: '' });
+    const added: Row[] = [];
+    try {
+      for (const item of items) {
+        const todo = await todoService.add({
+          text: item.text,
+          kind: item.kind,
+          who: 'both',
+        });
+        added.unshift(toRow(todo));
+      }
+      this.setData({ text: '', split: [] });
+      wx.showToast({ title: `加了 ${added.length} 条`, icon: 'success' });
+    } catch (error) {
+      this.setData({
+        error: `加了 ${added.length} 条，后面的没有保存：${errorMessage(error)}`,
+        split: this.data.split.slice(added.length),
+      });
+    } finally {
+      this.setData({ all: [...added, ...this.data.all], busy: false });
+      this.filter();
     }
   },
   async toggle(event: WechatMiniprogram.TouchEvent) {

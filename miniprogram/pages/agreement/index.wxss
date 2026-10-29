@@ -1,0 +1,5 @@
+.dates { margin-bottom: var(--gap); }
+.text { font-size: 28rpx; line-height: 1.8; }
+.para + .para { margin-top: 12rpx; }
+.sub { padding-left: 32rpx; color: var(--muted); }
+.strong { font-weight: 700; }

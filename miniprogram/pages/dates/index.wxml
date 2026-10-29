@@ -1,6 +1,6 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
-  <view wx:if="{{loading && !household}}" class="status">正在读取…</view>
+  <view wx:if="{{loading && !household}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
   <block wx:if="{{household}}">
@@ -15,7 +15,7 @@
 
     <button class="primary add" bindtap="addDate"><text class="plus">+</text>添加纪念日</button>
 
-    <view wx:if="{{!dates.length && !next && !datesError}}" class="empty list-gap">还没有纪念日。结婚纪念日、生日，都可以记在这里。</view>
+    <view wx:if="{{!dates.length && !next && !datesError}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />还没有纪念日。结婚纪念日、生日，都可以记在这里。</view>
     <view wx:elif="{{dates.length}}" class="list list-gap">
       <view wx:for="{{dates}}" wx:key="id" class="list-row {{item.passed ? 'date-passed' : ''}}" data-id="{{item.id}}" bindtap="openDate" hover-class="list-row-active">
         <view class="row-main">

@@ -1,16 +1,17 @@
 <page-meta page-style="{{themeStyle}}" />
+<wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
   <view class="month-bar">
-    <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹</view>
+    <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹ 上月</view>
     <view class="month-text">{{monthText}}</view>
-    <view class="month-arrow {{isCurrentMonth ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeMonth" hover-class="{{isCurrentMonth ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="下个月">›</view>
+    <view class="month-arrow {{isCurrentMonth ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeMonth" hover-class="{{isCurrentMonth ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="下个月">下月 ›</view>
   </view>
 
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
   <view class="hero grad-card">
     <view class="hero-label">{{monthText}} · 支出 {{ready ? count + ' 笔' : ''}}</view>
-    <view class="hero-total">{{ready ? totalText : '—'}}</view>
+    <view class="hero-total"><block wx:if="{{ready}}"><text wx:if="{{money.sign(totalText)}}" class="cur">¥</text>{{money.digits(totalText)}}</block><block wx:else>—</block></view>
     <view wx:if="{{ready}}" class="hero-change">{{changeText}}</view>
     <view wx:if="{{incomeText}}" class="hero-income">本月收入 {{incomeText}}（不算在支出里）</view>
   </view>
@@ -35,8 +36,8 @@
     </view>
   </view>
 
-  <view wx:if="{{loading && !ready}}" class="status">正在读取…</view>
-  <view wx:elif="{{ready && !categories.length}}" class="empty">这个月和上个月都还没有支出。</view>
+  <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。</view>
 
   <block wx:if="{{categories.length}}">
     <view class="section-head"><view class="section-title">{{compareTitle}}</view></view>

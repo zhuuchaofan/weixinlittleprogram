@@ -3,7 +3,7 @@
   <view class="kicker">答谢宴 / 2026.09.28</view>
   <view class="title">登记与祝福</view>
   <view class="lead">那天亲友留下的回复和心意，只有我们俩能看到。</view>
-  <view wx:if="{{loading}}" class="status">正在读取…</view>
+  <view wx:if="{{loading}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
 
   <block wx:if="{{archive}}">
@@ -15,7 +15,7 @@
 
     <view class="section">
       <view class="section-head"><view class="section-title">祝福</view></view>
-      <view wx:if="{{!archive.messages.length}}" class="empty">没有祝福记录。</view>
+      <view wx:if="{{!archive.messages.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />没有祝福记录。</view>
       <view wx:for="{{archive.messages}}" wx:key="index" class="card message">
         <view class="message-text">{{item.message}}</view>
         <view class="inline row-sub"><text>— {{item.signature || '未署名'}}</text><text>{{item.updatedAt}}</text></view>
@@ -27,7 +27,7 @@
         <view class="section-title">到场登记</view>
         <text class="small muted">{{archive.summary.attending}} 份到场 · {{archive.summary.declined}} 份遥寄</text>
       </view>
-      <view wx:if="{{!archive.rsvps.length}}" class="empty">没有登记记录。</view>
+      <view wx:if="{{!archive.rsvps.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />没有登记记录。</view>
       <view wx:else class="list">
         <view wx:for="{{archive.rsvps}}" wx:key="index" class="list-row rsvp-row">
           <view class="row-main">

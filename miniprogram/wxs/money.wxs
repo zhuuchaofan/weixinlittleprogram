@@ -1,0 +1,8 @@
+// 把「¥1,234.50」拆成符号和数字，符号单独小一号显示（app.wxss 的 .cur）。不是 ¥ 开头的原样返回。
+function sign(text) {
+  return text && text.charAt(0) === '¥' ? '¥' : '';
+}
+function digits(text) {
+  return text && text.charAt(0) === '¥' ? text.slice(1) : text;
+}
+module.exports = { sign: sign, digits: digits };
