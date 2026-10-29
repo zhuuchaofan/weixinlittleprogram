@@ -1,5 +1,6 @@
 import { errorMessage } from '../../services/cloud';
 import { applyTheme, themeData } from '../../services/theme';
+import { withLoading } from '../../services/page-load';
 import { buyVip, getVip, type VipInfo } from '../../services/vip';
 import { formatYuan } from '../../utils/money';
 import { todayKey } from '../../utils/date';
@@ -36,15 +37,10 @@ Page({
   onLoad() {
     void this.load();
   },
-  async load() {
-    this.setData({ loading: true, error: '' });
-    try {
+  load() {
+    return withLoading(this, async () => {
       this.show(await getVip());
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ loading: false });
-    }
+    });
   },
   show(info: VipInfo) {
     const plans = info.plans.map((plan) => ({

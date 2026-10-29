@@ -40,3 +40,21 @@ export function createLoader() {
     }
   };
 }
+
+/**
+ * 不走小家列表流程的页面（设置、会员、退出小家这类每次都读最新的）共用的读取外壳：
+ * 转圈 → 执行 → 出错写进 data.error → 收起转圈。task 里自己处理"没有小家"之类的跳转。
+ */
+export async function withLoading(
+  page: LoadingPage,
+  task: () => Promise<void>,
+): Promise<void> {
+  page.setData({ loading: true, error: '' });
+  try {
+    await task();
+  } catch (error) {
+    page.setData({ error: errorMessage(error) });
+  } finally {
+    page.setData({ loading: false });
+  }
+}

@@ -6,6 +6,7 @@ import {
 } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
+import { withLoading } from '../../services/page-load';
 import { applyTheme, setTheme, themeData } from '../../services/theme';
 import { THEMES } from '../../config/themes';
 import { todayKey } from '../../utils/date';
@@ -48,16 +49,11 @@ Page({
   onLoad() {
     void this.load();
   },
-  async load() {
-    this.setData({ loading: true, error: '' });
-    try {
+  load() {
+    return withLoading(this, async () => {
       const household = await getHousehold(true);
       if (household) this.show(household);
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ loading: false });
-    }
+    });
   },
   show(household: Household) {
     this.setData({
