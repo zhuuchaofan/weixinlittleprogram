@@ -39,3 +39,19 @@ test('不用 size="mini" 按钮', () => {
     );
   }
 });
+
+// 按主题换色的图标每套主题都要有（新增后运行 scripts/theme-icons.py）
+test('页面用到的主题图标每套主题都有', () => {
+  const themes = join(__dirname, '../miniprogram/images/themes');
+  for (const [kind, name, dir] of folders()) {
+    const wxml = readFileSync(join(dir, 'index.wxml'), 'utf8');
+    for (const [, file] of wxml.matchAll(
+      /\/images\/themes\/\{\{themeId\}\}\/([\w.-]+)/g,
+    ))
+      for (const theme of readdirSync(themes))
+        assert.ok(
+          readdirSync(join(themes, theme)).includes(file),
+          `${kind}/${name} 用了 ${file}，images/themes/${theme} 里没有`,
+        );
+  }
+});

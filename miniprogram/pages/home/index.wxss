@@ -25,14 +25,14 @@
 .solo-copy { width: 100%; text-align: center; font-size: 24rpx; color: var(--muted); }
 
 /* 本月支出：点开进记账 */
-.month { margin-top: 24rpx; }
+.month { margin-top: var(--gap-card); }
 .card-active { background: var(--sunken); }
 .month-head { display: flex; align-items: center; justify-content: space-between; }
 .chevron-sm { font-size: 32rpx; }
 .month-total { font-size: 64rpx; line-height: 1.3; margin: 4rpx 0; }
 
 /* 攒钱：最要紧的一个目标 */
-.saving { margin-top: 24rpx; padding: 28rpx 32rpx; }
+.saving { margin-top: var(--gap-card); padding: 28rpx 32rpx; }
 .saving-track { height: 14rpx; margin: 16rpx 0 12rpx; border-radius: 7rpx; background: var(--sunken); overflow: hidden; }
 .saving-bar { height: 100%; border-radius: 7rpx; background: var(--accent-grad); }
 .saving-done { background: var(--ok); }
@@ -43,7 +43,12 @@
 .actions button { flex: 1; min-height: 100rpx; font-weight: 600; }
 
 /* 四个入口 */
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; margin-top: 32rpx; }
-.grid-cell { background: var(--surface); border-radius: var(--radius); padding: 28rpx; box-shadow: var(--shadow); min-width: 0; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-card) 20rpx; margin-top: var(--gap-card); }
+.grid-cell { position: relative; background: var(--surface); border-radius: var(--radius); padding: 28rpx; box-shadow: var(--shadow); min-width: 0; }
 .grid-cell-active { background: var(--sunken); }
 .grid-title { font-size: 32rpx; font-weight: 700; margin-top: 20rpx; }
+.top-greeting { display: flex; align-items: center; gap: 8rpx; }
+.greet-paw { width: 28rpx; height: 28rpx; }
+/* 顶上一行当页面标题：比说明文字重一档 */
+.top-bar .top-greeting { font-size: 30rpx; font-weight: 600; color: var(--ink); gap: 12rpx; }
+.top-bar .greet-paw { width: 32rpx; height: 32rpx; }

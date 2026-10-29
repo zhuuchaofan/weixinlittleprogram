@@ -4,10 +4,12 @@ page {
   --surface: #ffffff;
   --sunken: #eee8f6;
   --ink: #26203a;
-  --muted: #8a8299;
+  --muted: #736c7f;
   --line: #e9e2f2;
   --accent: #8a5fd6;
   --accent-soft: #efe7fb;
+  /* 卡片之间：留出小猫探头的高度 */
+  --gap-card: 56rpx;
   --accent-grad: linear-gradient(135deg, #c8a2f7 0%, #9a72ea 55%, #e785c0 100%);
   --dark: #26211f;
   --ok: #24a466;
@@ -16,7 +18,7 @@ page {
   --danger: #a1302a;
   --danger-soft: #fde3df;
   --warn: #9a6a1f;
-  --shadow: 0 8rpx 32rpx rgba(110, 80, 150, 0.08);
+  --shadow: 0 2rpx 6rpx rgba(110, 80, 150, 0.05), 0 12rpx 36rpx rgba(110, 80, 150, 0.08);
   /* 主题色衍生：勾选圈、主色阴影、卡片阴影、头像。换主题见 config/themes.ts，这里是默认（香芋紫）。 */
   --ring: #cfb8f2;
   --glow: rgba(138, 95, 214, 0.28);
@@ -55,9 +57,28 @@ view, button, input, textarea { box-sizing: border-box; }
 .section-head .section-title { margin: 0; }
 
 /* 卡片与列表 */
-.card { background: var(--surface); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
-.card + .card { margin-top: var(--gap); }
-.list { background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.card { position: relative; background: var(--surface); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
+.card + .card { margin-top: var(--gap-card); }
+.list { position: relative; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
+/* 白卡片、列表（和主页入口 .grid-cell）右上角趴着一只小猫，6 种姿势按顺序轮流，图在下面 card-cats 段。
+   列表不能 overflow: hidden（会把小猫剪掉），首尾行自己圆角 */
+.card::before, .list::before, .grid-cell::before { content: ''; position: absolute; right: 32rpx; top: -54rpx; width: 96rpx; height: 66rpx; background: var(--card-cat-1) no-repeat center / contain; pointer-events: none; }
+/* card-cats:start（scripts/card-cats.py 生成，别手改） */
+page { --card-cat-1: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgLTIwIDE2MCAxMTAiPjxkZWZzPjxmaWx0ZXIgaWQ9InMiIHg9Ii0zMCUiIHk9Ii0zMCUiIHdpZHRoPSIxNjAlIiBoZWlnaHQ9IjE2MCUiPjxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSItMC41IiBzdGREZXZpYXRpb249IjIuNCIgZmxvb2QtY29sb3I9InJnYig5MCwgODAsIDExMCkiIGZsb29kLW9wYWNpdHk9IjAuMTYiLz48L2ZpbHRlcj48Y2xpcFBhdGggaWQ9ImVkZ2UiPjxyZWN0IHg9IjAiIHk9Ii0yMCIgd2lkdGg9IjE2MCIgaGVpZ2h0PSI5MCIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNlZGdlKSI+PHBhdGggZD0iTTU4IDcwIEM1OCA2MiA2NCA1OCA3MiA1OCBIODggQzk2IDU4IDEwMiA2MiAxMDIgNzAgWiIgZmlsbD0iI2ZmZmZmZiIgZmlsdGVyPSJ1cmwoI3MpIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoODAgNDgpIHJvdGF0ZSgwKSBzY2FsZSgxKSI+PHBhdGggZD0iTS00MCA2IEMtNDQgLTggLTM4IC0xOCAtMjkgLTIyIEwtMzEgLTQwIFEtMzAgLTQ1IC0yNSAtNDIgTC04IC0zMSBRMCAtMzMgOCAtMzEgTDI1IC00MiBRMzAgLTQ1IDMxIC00MCBMMjkgLTIyIEMzOCAtMTggNDQgLTggNDAgNiBDMzYgMjQgLTM2IDI0IC00MCA2IFoiIGZpbGw9IiNmZmZmZmYiIGZpbHRlcj0idXJsKCNzKSIvPjxwYXRoIGQ9Ik0tMjUgLTM2IEwtMTQgLTI4IEwtMjMgLTIzIFogTTI1IC0zNiBMMTQgLTI4IEwyMyAtMjMgWiIgZmlsbD0iI2ZhZGJlMiIvPjxlbGxpcHNlIGN4PSItMjMiIGN5PSIzIiByeD0iNiIgcnk9IjMuNCIgZmlsbD0iI2U5OGFhMiIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+PGVsbGlwc2UgY3g9IjIzIiBjeT0iMyIgcng9IjYiIHJ5PSIzLjQiIGZpbGw9IiNlOThhYTIiIGZpbGwtb3BhY2l0eT0iMC4xOCIvPjxjaXJjbGUgY3g9Ii0xMyIgY3k9Ii02IiByPSIzLjYiIGZpbGw9IiMzYjM0NDAiLz48Y2lyY2xlIGN4PSIxMyIgY3k9Ii02IiByPSIzLjYiIGZpbGw9IiMzYjM0NDAiLz48cGF0aCBkPSJNLTQgMSBRLTIgNCAwIDEuNSBRMiA0IDQgMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTk4YWEyIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz48cGF0aCBkPSJNNTEgNzAgUTYwIDcwIDYwIDYxIEgxMDAgUTEwMCA3MCAxMDkgNzAgWiIgZmlsbD0iI2ZmZmZmZiIvPjwvZz48L3N2Zz4='); }
+page { --card-cat-2: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgLTIwIDE2MCAxMTAiPjxkZWZzPjxmaWx0ZXIgaWQ9InMiIHg9Ii0zMCUiIHk9Ii0zMCUiIHdpZHRoPSIxNjAlIiBoZWlnaHQ9IjE2MCUiPjxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSItMC41IiBzdGREZXZpYXRpb249IjIuNCIgZmxvb2QtY29sb3I9InJnYig5MCwgODAsIDExMCkiIGZsb29kLW9wYWNpdHk9IjAuMTYiLz48L2ZpbHRlcj48Y2xpcFBhdGggaWQ9ImVkZ2UiPjxyZWN0IHg9IjAiIHk9Ii0yMCIgd2lkdGg9IjE2MCIgaGVpZ2h0PSI5MCIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNlZGdlKSI+PHBhdGggZD0iTTEyOCA2NCBDMTQ2IDYyIDE1MCA0NiAxNDAgMzgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbHRlcj0idXJsKCNzKSIvPjxwYXRoIGQ9Ik00NCA3MCBDNDQgNTAgNzAgNDIgOTYgNDIgQzEyNCA0MiAxMzggNTQgMTM2IDcwIFoiIGZpbGw9IiNmZmZmZmYiIGZpbHRlcj0idXJsKCNzKSIvPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU4IDUwKSByb3RhdGUoLTgpIHNjYWxlKDAuNzgpIj48cGF0aCBkPSJNLTQwIDYgQy00NCAtOCAtMzggLTE4IC0yOSAtMjIgTC0zMSAtNDAgUS0zMCAtNDUgLTI1IC00MiBMLTggLTMxIFEwIC0zMyA4IC0zMSBMMjUgLTQyIFEzMCAtNDUgMzEgLTQwIEwyOSAtMjIgQzM4IC0xOCA0NCAtOCA0MCA2IEMzNiAyNCAtMzYgMjQgLTQwIDYgWiIgZmlsbD0iI2ZmZmZmZiIgZmlsdGVyPSJ1cmwoI3MpIi8+PGNsaXBQYXRoIGlkPSJoYyI+PHBhdGggZD0iTS00MCA2IEMtNDQgLTggLTM4IC0xOCAtMjkgLTIyIEwtMzEgLTQwIFEtMzAgLTQ1IC0yNSAtNDIgTC04IC0zMSBRMCAtMzMgOCAtMzEgTDI1IC00MiBRMzAgLTQ1IDMxIC00MCBMMjkgLTIyIEMzOCAtMTggNDQgLTggNDAgNiBDMzYgMjQgLTM2IDI0IC00MCA2IFoiLz48L2NsaXBQYXRoPjxwYXRoIGQ9Ik0tNTAgLTUwIEgtMiBDMCAtMzAgLTYgLTE0IC0yNCAtMTIgQy0zOCAtMTEgLTQ2IC0yMCAtNTAgLTI0IFoiIGZpbGw9IiNmNWI3NzAiIGNsaXAtcGF0aD0idXJsKCNoYykiLz48cGF0aCBkPSJNLTI1IC0zNiBMLTE0IC0yOCBMLTIzIC0yMyBaIE0yNSAtMzYgTDE0IC0yOCBMMjMgLTIzIFoiIGZpbGw9IiNmYWRiZTIiLz48ZWxsaXBzZSBjeD0iLTIzIiBjeT0iMyIgcng9IjYiIHJ5PSIzLjQiIGZpbGw9IiNlOThhYTIiIGZpbGwtb3BhY2l0eT0iMC4xOCIvPjxlbGxpcHNlIGN4PSIyMyIgY3k9IjMiIHJ4PSI2IiByeT0iMy40IiBmaWxsPSIjZTk4YWEyIiBmaWxsLW9wYWNpdHk9IjAuMTgiLz48cGF0aCBkPSJNLTE4IC02IFEtMTMgLTEgLTggLTYgTTggLTYgUTEzIC0xIDE4IC02IiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjM0NDAiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNLTQgMSBRLTIgNCAwIDEuNSBRMiA0IDQgMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTk4YWEyIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz48cGF0aCBkPSJNOTYgMjIgaDggbC04IDggaDggTTEwOCAxMiBoNiBsLTYgNiBoNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTk4YWEyIiBzdHJva2Utb3BhY2l0eT0iMC41IiBzdHJva2Utd2lkdGg9IjIuNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTM3IDcwIFE0NiA3MCA0NiA2MSBIMTM0IFExMzQgNzAgMTQzIDcwIFoiIGZpbGw9IiNmZmZmZmYiLz48L2c+PC9zdmc+'); }
+page { --card-cat-3: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgLTIwIDE2MCAxMTAiPjxkZWZzPjxmaWx0ZXIgaWQ9InMiIHg9Ii0zMCUiIHk9Ii0zMCUiIHdpZHRoPSIxNjAlIiBoZWlnaHQ9IjE2MCUiPjxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSItMC41IiBzdGREZXZpYXRpb249IjIuNCIgZmxvb2QtY29sb3I9InJnYig5MCwgODAsIDExMCkiIGZsb29kLW9wYWNpdHk9IjAuMTYiLz48L2ZpbHRlcj48Y2xpcFBhdGggaWQ9ImVkZ2UiPjxyZWN0IHg9IjAiIHk9Ii0yMCIgd2lkdGg9IjE2MCIgaGVpZ2h0PSI5MCIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNlZGdlKSI+PHBhdGggZD0iTTk4IDY2IEMxMTggNjggMTIyIDUyIDExMiA0MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTllNmVlIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI3MpIi8+PHBhdGggZD0iTTU4IDcwIEM1NCA0OCA2NiAzNCA4MCAzMiBDOTQgMzQgMTA2IDQ4IDEwMiA3MCBaIiBmaWxsPSIjZTllNmVlIiBmaWx0ZXI9InVybCgjcykiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg4MCAyNCkgcm90YXRlKDApIHNjYWxlKDAuODIpIj48cGF0aCBkPSJNLTQwIDYgQy00NCAtOCAtMzggLTE4IC0yOSAtMjIgTC0zMSAtNDAgUS0zMCAtNDUgLTI1IC00MiBMLTggLTMxIFEwIC0zMyA4IC0zMSBMMjUgLTQyIFEzMCAtNDUgMzEgLTQwIEwyOSAtMjIgQzM4IC0xOCA0NCAtOCA0MCA2IEMzNiAyNCAtMzYgMjQgLTQwIDYgWiIgZmlsbD0iI2U5ZTZlZSIgZmlsdGVyPSJ1cmwoI3MpIi8+PHBhdGggZD0iTS03IC0zMyBRLTYgLTI0IC01IC0xOCBNMCAtMzQgVi0xNyBNNyAtMzMgUTYgLTI0IDUgLTE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNjNGJkY2YiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTS0yNSAtMzYgTC0xNCAtMjggTC0yMyAtMjMgWiBNMjUgLTM2IEwxNCAtMjggTDIzIC0yMyBaIiBmaWxsPSIjZmFkYmUyIi8+PGVsbGlwc2UgY3g9Ii0yMyIgY3k9IjMiIHJ4PSI2IiByeT0iMy40IiBmaWxsPSIjZTk4YWEyIiBmaWxsLW9wYWNpdHk9IjAuMTgiLz48ZWxsaXBzZSBjeD0iMjMiIGN5PSIzIiByeD0iNiIgcnk9IjMuNCIgZmlsbD0iI2U5OGFhMiIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+PGNpcmNsZSBjeD0iLTEzIiBjeT0iLTYiIHI9IjMuNiIgZmlsbD0iIzNiMzQ0MCIvPjxjaXJjbGUgY3g9IjEzIiBjeT0iLTYiIHI9IjMuNiIgZmlsbD0iIzNiMzQ0MCIvPjxwYXRoIGQ9Ik0tNCAxIFEtMiA0IDAgMS41IFEyIDQgNCAxIiBmaWxsPSJub25lIiBzdHJva2U9IiNlOThhYTIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9nPjxwYXRoIGQ9Ik00OSA3MCBRNTggNzAgNTggNjEgSDEwMiBRMTAyIDcwIDExMSA3MCBaIiBmaWxsPSIjZTllNmVlIi8+PC9nPjwvc3ZnPg=='); }
+page { --card-cat-4: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgLTIwIDE2MCAxMTAiPjxkZWZzPjxmaWx0ZXIgaWQ9InMiIHg9Ii0zMCUiIHk9Ii0zMCUiIHdpZHRoPSIxNjAlIiBoZWlnaHQ9IjE2MCUiPjxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSItMC41IiBzdGREZXZpYXRpb249IjIuNCIgZmxvb2QtY29sb3I9InJnYig5MCwgODAsIDExMCkiIGZsb29kLW9wYWNpdHk9IjAuMTYiLz48L2ZpbHRlcj48Y2xpcFBhdGggaWQ9ImVkZ2UiPjxyZWN0IHg9IjAiIHk9Ii0yMCIgd2lkdGg9IjE2MCIgaGVpZ2h0PSI5MCIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNlZGdlKSI+PHBhdGggZD0iTTEzMiAzNiBDMTQwIDIyIDE1MCAxOCAxNTAgOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI3MpIi8+PHBhdGggZD0iTTMwIDcwIEMzMCA2MiA0NCA2MCA2MiA2MCBDODQgNTggMTA0IDQwIDEyNCAzMiBDMTQwIDI4IDE0NCA1MCAxMzggNzAgWiIgZmlsbD0iI2ZmZmZmZiIgZmlsdGVyPSJ1cmwoI3MpIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTQgNDgpIHJvdGF0ZSgtMTQpIHNjYWxlKDAuNzIpIj48cGF0aCBkPSJNLTQwIDYgQy00NCAtOCAtMzggLTE4IC0yOSAtMjIgTC0zMSAtNDAgUS0zMCAtNDUgLTI1IC00MiBMLTggLTMxIFEwIC0zMyA4IC0zMSBMMjUgLTQyIFEzMCAtNDUgMzEgLTQwIEwyOSAtMjIgQzM4IC0xOCA0NCAtOCA0MCA2IEMzNiAyNCAtMzYgMjQgLTQwIDYgWiIgZmlsbD0iI2ZmZmZmZiIgZmlsdGVyPSJ1cmwoI3MpIi8+PHBhdGggZD0iTS0yNSAtMzYgTC0xNCAtMjggTC0yMyAtMjMgWiBNMjUgLTM2IEwxNCAtMjggTDIzIC0yMyBaIiBmaWxsPSIjZmFkYmUyIi8+PGVsbGlwc2UgY3g9Ii0yMyIgY3k9IjMiIHJ4PSI2IiByeT0iMy40IiBmaWxsPSIjZTk4YWEyIiBmaWxsLW9wYWNpdHk9IjAuMTgiLz48ZWxsaXBzZSBjeD0iMjMiIGN5PSIzIiByeD0iNiIgcnk9IjMuNCIgZmlsbD0iI2U5OGFhMiIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+PHBhdGggZD0iTS0xOCAtNiBRLTEzIC0xIC04IC02IE04IC02IFExMyAtMSAxOCAtNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2IzNDQwIiBzdHJva2Utd2lkdGg9IjIuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTS00IDEgUS0yIDQgMCAxLjUgUTIgNCA0IDEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U5OGFhMiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+PHBhdGggZD0iTTIzIDcwIFEzMiA3MCAzMiA2MSBIMTM2IFExMzYgNzAgMTQ1IDcwIFoiIGZpbGw9IiNmZmZmZmYiLz48L2c+PC9zdmc+'); }
+page { --card-cat-5: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgLTIwIDE2MCAxMTAiPjxkZWZzPjxmaWx0ZXIgaWQ9InMiIHg9Ii0zMCUiIHk9Ii0zMCUiIHdpZHRoPSIxNjAlIiBoZWlnaHQ9IjE2MCUiPjxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSItMC41IiBzdGREZXZpYXRpb249IjIuNCIgZmxvb2QtY29sb3I9InJnYig5MCwgODAsIDExMCkiIGZsb29kLW9wYWNpdHk9IjAuMTYiLz48L2ZpbHRlcj48Y2xpcFBhdGggaWQ9ImVkZ2UiPjxyZWN0IHg9IjAiIHk9Ii0yMCIgd2lkdGg9IjE2MCIgaGVpZ2h0PSI5MCIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNlZGdlKSI+PHBhdGggZD0iTTk4IDY2IEMxMTggNjggMTIyIDUyIDExMiA0MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsdGVyPSJ1cmwoI3MpIi8+PHBhdGggZD0iTTU4IDcwIEM1NCA0OCA2NiAzNCA4MCAzMiBDOTQgMzQgMTA2IDQ4IDEwMiA3MCBaIiBmaWxsPSIjZmZmZmZmIiBmaWx0ZXI9InVybCgjcykiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg3OCAyNCkgcm90YXRlKC0xMikgc2NhbGUoMC44MikiPjxwYXRoIGQ9Ik0tNDAgNiBDLTQ0IC04IC0zOCAtMTggLTI5IC0yMiBMLTMxIC00MCBRLTMwIC00NSAtMjUgLTQyIEwtOCAtMzEgUTAgLTMzIDggLTMxIEwyNSAtNDIgUTMwIC00NSAzMSAtNDAgTDI5IC0yMiBDMzggLTE4IDQ0IC04IDQwIDYgQzM2IDI0IC0zNiAyNCAtNDAgNiBaIiBmaWxsPSIjZmZmZmZmIiBmaWx0ZXI9InVybCgjcykiLz48Y2xpcFBhdGggaWQ9ImhjIj48cGF0aCBkPSJNLTQwIDYgQy00NCAtOCAtMzggLTE4IC0yOSAtMjIgTC0zMSAtNDAgUS0zMCAtNDUgLTI1IC00MiBMLTggLTMxIFEwIC0zMyA4IC0zMSBMMjUgLTQyIFEzMCAtNDUgMzEgLTQwIEwyOSAtMjIgQzM4IC0xOCA0NCAtOCA0MCA2IEMzNiAyNCAtMzYgMjQgLTQwIDYgWiIvPjwvY2xpcFBhdGg+PHBhdGggZD0iTTEwIC01MCBINTAgVi0yMCBDNDAgLTE0IDI2IC0xNiAxOCAtMjIgQzEyIC0yOCAxMCAtNDAgMTAgLTUwIFoiIGZpbGw9IiM0YTQzNTYiIGNsaXAtcGF0aD0idXJsKCNoYykiLz48cGF0aCBkPSJNLTI1IC0zNiBMLTE0IC0yOCBMLTIzIC0yMyBaIE0yNSAtMzYgTDE0IC0yOCBMMjMgLTIzIFoiIGZpbGw9IiNmYWRiZTIiLz48ZWxsaXBzZSBjeD0iLTIzIiBjeT0iMyIgcng9IjYiIHJ5PSIzLjQiIGZpbGw9IiNlOThhYTIiIGZpbGwtb3BhY2l0eT0iMC4xOCIvPjxlbGxpcHNlIGN4PSIyMyIgY3k9IjMiIHJ4PSI2IiByeT0iMy40IiBmaWxsPSIjZTk4YWEyIiBmaWxsLW9wYWNpdHk9IjAuMTgiLz48cGF0aCBkPSJNLTE4IC02IFEtMTMgLTEgLTggLTYgTTggLTYgUTEzIC0xIDE4IC02IiBmaWxsPSJub25lIiBzdHJva2U9IiMzYjM0NDAiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNLTQgMSBRLTIgNCAwIDEuNSBRMiA0IDQgMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTk4YWEyIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz48cGF0aCBkPSJNNDkgNzAgUTU4IDcwIDU4IDYxIEgxMDIgUTEwMiA3MCAxMTEgNzAgWiIgZmlsbD0iI2ZmZmZmZiIvPjwvZz48L3N2Zz4='); }
+page { --card-cat-6: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgLTIwIDE2MCAxMTAiPjxkZWZzPjxmaWx0ZXIgaWQ9InMiIHg9Ii0zMCUiIHk9Ii0zMCUiIHdpZHRoPSIxNjAlIiBoZWlnaHQ9IjE2MCUiPjxmZURyb3BTaGFkb3cgZHg9IjAiIGR5PSItMC41IiBzdGREZXZpYXRpb249IjIuNCIgZmxvb2QtY29sb3I9InJnYig5MCwgODAsIDExMCkiIGZsb29kLW9wYWNpdHk9IjAuMTYiLz48L2ZpbHRlcj48Y2xpcFBhdGggaWQ9ImVkZ2UiPjxyZWN0IHg9IjAiIHk9Ii0yMCIgd2lkdGg9IjE2MCIgaGVpZ2h0PSI5MCIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNlZGdlKSI+PHBhdGggZD0iTTEyMCA1OCBDMTM4IDU2IDE0NCA0MCAxMzYgMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbHRlcj0idXJsKCNzKSIvPjxwYXRoIGQ9Ik02MCA3MCBDNjAgNTAgODYgNDQgMTA2IDQ2IEMxMjQgNDggMTMwIDU4IDEyOCA3MCBaIiBmaWxsPSIjZmZmZmZmIiBmaWx0ZXI9InVybCgjcykiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg2NiA1Mykgcm90YXRlKC04KSBzY2FsZSgwLjgyKSI+PHBhdGggZD0iTS00MCA2IEMtNDQgLTggLTM4IC0xOCAtMjkgLTIyIEwtMzEgLTQwIFEtMzAgLTQ1IC0yNSAtNDIgTC04IC0zMSBRMCAtMzMgOCAtMzEgTDI1IC00MiBRMzAgLTQ1IDMxIC00MCBMMjkgLTIyIEMzOCAtMTggNDQgLTggNDAgNiBDMzYgMjQgLTM2IDI0IC00MCA2IFoiIGZpbGw9IiNmZmZmZmYiIGZpbHRlcj0idXJsKCNzKSIvPjxjbGlwUGF0aCBpZD0iaGMiPjxwYXRoIGQ9Ik0tNDAgNiBDLTQ0IC04IC0zOCAtMTggLTI5IC0yMiBMLTMxIC00MCBRLTMwIC00NSAtMjUgLTQyIEwtOCAtMzEgUTAgLTMzIDggLTMxIEwyNSAtNDIgUTMwIC00NSAzMSAtNDAgTDI5IC0yMiBDMzggLTE4IDQ0IC04IDQwIDYgQzM2IDI0IC0zNiAyNCAtNDAgNiBaIi8+PC9jbGlwUGF0aD48cGF0aCBkPSJNLTUwIC01MCBILTIgQzAgLTMwIC02IC0xNCAtMjQgLTEyIEMtMzggLTExIC00NiAtMjAgLTUwIC0yNCBaIiBmaWxsPSIjZjViNzcwIiBjbGlwLXBhdGg9InVybCgjaGMpIi8+PHBhdGggZD0iTS0yNSAtMzYgTC0xNCAtMjggTC0yMyAtMjMgWiBNMjUgLTM2IEwxNCAtMjggTDIzIC0yMyBaIiBmaWxsPSIjZmFkYmUyIi8+PGVsbGlwc2UgY3g9Ii0yMyIgY3k9IjMiIHJ4PSI2IiByeT0iMy40IiBmaWxsPSIjZTk4YWEyIiBmaWxsLW9wYWNpdHk9IjAuMTgiLz48ZWxsaXBzZSBjeD0iMjMiIGN5PSIzIiByeD0iNiIgcnk9IjMuNCIgZmlsbD0iI2U5OGFhMiIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+PGNpcmNsZSBjeD0iLTEzIiBjeT0iLTYiIHI9IjMuNiIgZmlsbD0iIzNiMzQ0MCIvPjxjaXJjbGUgY3g9IjEzIiBjeT0iLTYiIHI9IjMuNiIgZmlsbD0iIzNiMzQ0MCIvPjxwYXRoIGQ9Ik0tNCAxIFEtMiA0IDAgMS41IFEyIDQgNCAxIiBmaWxsPSJub25lIiBzdHJva2U9IiNlOThhYTIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9nPjxwYXRoIGQ9Ik01MyA3MCBRNjIgNzAgNjIgNjEgSDEyNiBRMTI2IDcwIDEzNSA3MCBaIiBmaWxsPSIjZmZmZmZmIi8+PC9nPjwvc3ZnPg=='); }
+.card:nth-child(6n+2)::before, .list:nth-child(6n+2)::before, .grid-cell:nth-child(6n+2)::before { background-image: var(--card-cat-2); }
+.card:nth-child(6n+3)::before, .list:nth-child(6n+3)::before, .grid-cell:nth-child(6n+3)::before { background-image: var(--card-cat-3); }
+.card:nth-child(6n+4)::before, .list:nth-child(6n+4)::before, .grid-cell:nth-child(6n+4)::before { background-image: var(--card-cat-4); }
+.card:nth-child(6n+5)::before, .list:nth-child(6n+5)::before, .grid-cell:nth-child(6n+5)::before { background-image: var(--card-cat-5); }
+.card:nth-child(6n+6)::before, .list:nth-child(6n+6)::before, .grid-cell:nth-child(6n+6)::before { background-image: var(--card-cat-6); }
+/* card-cats:end */
+.list-row:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+.list-row:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+.list-row:only-child { border-radius: var(--radius); }
 .list-row { position: relative; display: flex; align-items: center; gap: 20rpx; min-height: 112rpx; padding: 20rpx 28rpx; }
 .list-row + .list-row::before { content: ''; position: absolute; top: 0; left: 28rpx; right: 28rpx; border-top: 1rpx solid var(--line); }
 .list-row-active { background: var(--sunken); }
@@ -67,7 +88,7 @@ view, button, input, textarea { box-sizing: border-box; }
 .row-trail { flex-shrink: 0; text-align: right; }
 .chevron { color: var(--muted); font-size: 40rpx; flex-shrink: 0; }
 /* 列表与上方内容的间距（清单、吃啥、想去、纪念日） */
-.list-gap { margin-top: var(--gap); }
+.list-gap { margin-top: var(--gap-card); }
 .list-label { font-size: 24rpx; color: var(--muted); margin: 32rpx 4rpx 12rpx; }
 
 /* 按钮：覆盖基础库默认的 184px 宽度与居中外边距 */
@@ -126,10 +147,11 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 .tick { width: 96rpx; min-height: 104rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .tick-box { width: 44rpx; height: 44rpx; border: 3rpx solid var(--ring); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24rpx; font-weight: 700; }
 .tick-on { background: var(--accent-grad); border-color: transparent; }
+.tick-paw { width: 28rpx; height: 28rpx; }
 
-/* 渐变大卡片（主页两人、记账总额、吃啥抽签、纪念日最近一个）：右上角一个淡白圆 */
+/* 渐变大卡片（主页两人、记账总额、吃啥抽签、纪念日最近一个）：右上角一个淡白猫头剪影 */
 .grad-card { position: relative; overflow: hidden; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx var(--glow); }
-.grad-card::after { content: ''; position: absolute; right: -80rpx; top: -120rpx; width: 360rpx; height: 360rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
+.grad-card::after { content: ''; position: absolute; right: -48rpx; top: 4rpx; width: 320rpx; height: 294rpx; background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTEwIiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuMTMiPjxwYXRoIGQ9Ik0xNCA0NiBMMTAgNCBMNDIgMjQgUTYwIDE5IDc4IDI0IEwxMTAgNCBMMTA2IDQ2IEMxMTYgNjIgMTE2IDEwNiA2MCAxMDYgQzQgMTA2IDQgNjIgMTQgNDYgWiIvPjwvc3ZnPg==') no-repeat center / contain; pointer-events: none; }
 
 /* 状态 */
 .tag { display: inline-block; font-size: 22rpx; color: var(--accent); background: var(--accent-soft); padding: 4rpx 16rpx; border-radius: 999rpx; }
@@ -137,6 +159,11 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 .error { background: var(--danger-soft); color: var(--danger); }
 .status { padding: 48rpx 20rpx; text-align: center; color: var(--muted); font-size: 26rpx; }
 .empty { padding: 56rpx 24rpx; text-align: center; color: var(--muted); font-size: 26rpx; border: 1rpx dashed var(--line); border-radius: var(--radius); }
+/* 空状态里睡觉的小猫、读取中走过的猫爪印（按主题换色，见 assets/theme-src） */
+.empty-cat { display: block; width: 240rpx; height: 150rpx; margin: 0 auto 16rpx; }
+.status-paws { width: 144rpx; height: 48rpx; margin: 0 auto 16rpx; overflow: hidden; animation: paws 1.6s step-end infinite; }
+.status-paws-img { display: block; width: 144rpx; height: 48rpx; }
+@keyframes paws { 0% { width: 0; } 25% { width: 48rpx; } 50% { width: 96rpx; } 75%, 100% { width: 144rpx; } }
 
 /* 图标按钮（齿轮、更多） */
 .icon-button { width: 88rpx; height: 88rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
@@ -155,3 +182,62 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 /* 两人头像：颜色跟主题走（config/themes.ts 的 avatarA / avatarB） */
 .avatar-a { background: var(--avatar-a); color: #fff; }
 .avatar-b { background: var(--avatar-b); color: #fff; }
+
+/* ---------- 质感：数字、渐变卡片的光、页面第一张卡片 ---------- */
+/* 金额和天数用等宽数字，翻月、改金额时不跳；大数字字距收紧一点 */
+.serif, .amount, .cat-amount, .plan-price, .days-number, .hero-total, .hero-value, .hero-days, .month-total, .couple-next-days, .goal-saved, .picked-name, .invite-code { font-variant-numeric: tabular-nums; }
+.hero-total, .hero-value, .month-total, .couple-next-days, .goal-saved { letter-spacing: -0.02em; }
+/* 大数字前的「¥」小一号、轻一点，数字更突出（wxs/money.wxs 拆开） */
+.cur { font-size: 0.56em; font-weight: 700; margin-right: 0.08em; opacity: 0.9; letter-spacing: 0; }
+/* 渐变卡片左上角一层柔光 + 顶边一道亮线，看起来有厚度 */
+.grad-card { background: radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 55%), var(--accent-grad); box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.45), 0 20rpx 48rpx -12rpx var(--glow), 0 4rpx 12rpx var(--tint); }
+/* 第一张白卡片顶上留出小猫的高度，不被页面顶边切掉 */
+.page > .card:first-child, .page > .list:first-child { margin-top: 40rpx; }
+/* 标题行右边的小字（「46 笔」「清除」）让开下面卡片的小猫 */
+.section-head, .fold-head { padding-right: 120rpx; }
+/* 输入框旁的「添加」和输入框一样高 */
+.composer .btn-inline, .composer button.btn-inline:not([size='mini']) { min-height: 96rpx; border-radius: var(--radius-sm); }
+.section-title { letter-spacing: 0.02em; }
+
+/* ---------- 动效：只动 transform 和 opacity，低端机也顺；系统开了「减弱动态效果」就不动 ---------- */
+/* 进页面：卡片依次从下面浮上来 */
+.card, .list, .grad-card, .grid-cell, .empty, .actions, .segmented, .section-head { animation: rise 0.48s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.page > :nth-child(2) { animation-delay: 0.04s; }
+.page > :nth-child(3), .grid-cell:nth-child(1) { animation-delay: 0.08s; }
+.page > :nth-child(4), .grid-cell:nth-child(2) { animation-delay: 0.12s; }
+.page > :nth-child(5), .grid-cell:nth-child(3) { animation-delay: 0.16s; }
+.page > :nth-child(n + 6), .grid-cell:nth-child(4) { animation-delay: 0.2s; }
+@keyframes rise { from { opacity: 0; transform: translateY(24rpx); } to { opacity: 1; transform: none; } }
+
+/* 进度条从左边长出来，柱子从下面长上来 */
+.saving-bar, .goal-bar, .budget-bar, .compare-bar, .hero-share { transform-origin: left center; animation: fill 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s backwards; }
+.trend-bar { transform-origin: center bottom; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.trend-col:nth-child(2) .trend-bar { animation-delay: 0.05s; }
+.trend-col:nth-child(3) .trend-bar { animation-delay: 0.1s; }
+.trend-col:nth-child(4) .trend-bar { animation-delay: 0.15s; }
+.trend-col:nth-child(5) .trend-bar { animation-delay: 0.2s; }
+.trend-col:nth-child(6) .trend-bar { animation-delay: 0.25s; }
+@keyframes fill { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes grow { from { transform: scaleY(0); } to { transform: none; } }
+
+/* 按下去：卡片、入口、按钮轻轻缩一下，松手弹回 */
+.card, .grid-cell, .grad-card, button, .chip, .segment, .tick-box, .month-arrow, .icon-button, .fab { transition: transform 0.18s cubic-bezier(0.3, 0.7, 0.4, 1.4), background-color 0.18s, color 0.18s, box-shadow 0.18s, opacity 0.18s; }
+.list-row { transition: background-color 0.18s; }
+.card-active, .grid-cell-active { transform: scale(0.98); }
+.button-hover, .fab-active { transform: scale(0.96); }
+.primary.button-hover { box-shadow: 0 4rpx 12rpx var(--glow); }
+.month-arrow-active, .icon-button-active { transform: scale(0.9); }
+
+/* 勾上时猫爪「盖章」 */
+.tick-on { animation: stamp 0.36s cubic-bezier(0.3, 0.7, 0.4, 1.5); }
+@keyframes stamp { 0% { transform: scale(0.6); } 60% { transform: scale(1.15); } 100% { transform: none; } }
+.chip-on, .segment-on { animation: pop 0.24s ease-out; }
+@keyframes pop { 0% { transform: scale(0.94); } 100% { transform: none; } }
+
+/* 空状态的小猫睡着在呼吸 */
+.empty-cat { transform-origin: center bottom; animation: breathe 3.2s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: none; } 50% { transform: scale(1.03, 0.97); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .list, .grad-card, .grid-cell, .empty, .actions, .segmented, .section-head, .saving-bar, .goal-bar, .budget-bar, .compare-bar, .hero-share, .trend-bar, .tick-on, .chip-on, .segment-on, .empty-cat { animation: none; }
+}

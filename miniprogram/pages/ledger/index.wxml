@@ -1,4 +1,5 @@
 <page-meta page-style="{{themeStyle}}" />
+<wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
   <view class="month-bar">
     <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹</view>
@@ -10,7 +11,7 @@
 
   <view class="hero grad-card">
     <view class="hero-label">{{monthText}} · {{splitting ? '共同支出' : '支出'}}</view>
-    <view class="hero-total">{{summary ? summaryText.total : '—'}}</view>
+    <view class="hero-total"><block wx:if="{{summary}}"><text wx:if="{{money.sign(summaryText.total)}}" class="cur">¥</text>{{money.digits(summaryText.total)}}</block><block wx:else>—</block></view>
     <view class="hero-track" aria-hidden="true"><view class="hero-share" style="width: {{shareA}}%"></view></view>
     <view class="hero-paid">
       <text>{{names.a}} 付 {{summary ? summaryText.a : '—'}}</text>
@@ -43,8 +44,8 @@
     <view class="section-title">明细</view>
     <text wx:if="{{total}}" class="small muted">{{total}} 笔</text>
   </view>
-  <view wx:if="{{loading && !summary}}" class="status">正在读取…</view>
-  <view wx:elif="{{!records.length}}" class="empty">这个月还没有记账。</view>
+  <view wx:if="{{loading && !summary}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!records.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月还没有记账。</view>
   <view wx:else class="list">
     <view wx:for="{{records}}" wx:key="id" class="list-row {{item.isSettlement ? 'row-settlement' : ''}}" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
       <view class="tile" style="background: {{item.tint}}"><image class="tile-icon" src="{{item.icon}}" /></view>

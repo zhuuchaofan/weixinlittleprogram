@@ -173,7 +173,7 @@ Page({
         ),
       });
       this.applyFilter();
-      wx.showToast({ title: '记下了', icon: 'success' });
+      wx.showToast({ title: '记下啦，喵', icon: 'success' });
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

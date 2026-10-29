@@ -1,6 +1,6 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
-  <view wx:if="{{loading && !household}}" class="status">正在读取…</view>
+  <view wx:if="{{loading && !household}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
 
@@ -63,7 +63,7 @@
       <view class="section-head"><view class="section-title">主题</view><text class="small muted">只改这台手机</text></view>
       <view class="card themes">
         <view wx:for="{{themes}}" wx:key="id" class="theme {{themeId === item.id ? 'theme-on' : ''}}" data-id="{{item.id}}" bindtap="chooseTheme" aria-role="radio" aria-checked="{{themeId === item.id}}" aria-label="{{item.name}}">
-          <view class="swatch" style="background: {{item.swatch}}">{{themeId === item.id ? '✓' : ''}}</view>
+          <view class="swatch" style="background: {{item.swatch}}"><image wx:if="{{themeId === item.id}}" class="swatch-paw" src="/images/ui/paw.svg" /></view>
           <view class="small">{{item.name}}</view>
         </view>
       </view>
