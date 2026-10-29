@@ -8,3 +8,4 @@ miniprogram/config/local.ts
 *.wxss
 Claude outputs
 miniprogram/config/contract.ts
+miniprogram/config/agreement.ts

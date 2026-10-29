@@ -20,6 +20,7 @@
     "pages/date-edit/index",
     "pages/settings/index",
     "pages/vip/index",
+    "pages/agreement/index",
     "pages/leave/index",
     "pages/clear/index"
   ],

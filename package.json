@@ -6,6 +6,7 @@
   "scripts": {
     "setup": "node scripts/setup.mjs && node scripts/contract.mjs && npm ci --prefix cloudfunctions/api",
     "contract": "node scripts/contract.mjs",
+    "agreement": "node scripts/agreement.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint miniprogram cloudfunctions scripts tests",
     "format": "prettier --write .",
