@@ -6,6 +6,7 @@ import {
 } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
+import { withLoading } from '../../services/page-load';
 import { applyTheme, themeData } from '../../services/theme';
 import { confirmAction } from '../../utils/confirm';
 
@@ -43,9 +44,8 @@ Page({
   onLoad() {
     void this.load();
   },
-  async load() {
-    this.setData({ loading: true, error: '' });
-    try {
+  load() {
+    return withLoading(this, async () => {
       const household = await getHousehold(true);
       if (!household) {
         wx.reLaunch({ url: '/pages/welcome/index' });
@@ -62,11 +62,7 @@ Page({
           household.members.find((member) => !member.isMe)?.name || '对方',
         vipDays: vipDays(household),
       });
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ loading: false });
-    }
+    });
   },
   toggleNoCopy() {
     this.setData({ noCopy: !this.data.noCopy });

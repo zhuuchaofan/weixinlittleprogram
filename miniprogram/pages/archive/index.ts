@@ -1,6 +1,6 @@
 import type { Archive } from '../../models';
 import { getArchive } from '../../services/archive';
-import { errorMessage } from '../../services/cloud';
+import { withLoading } from '../../services/page-load';
 import { formatDateTime } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
 
@@ -17,9 +17,8 @@ Page({
   onLoad() {
     void this.load();
   },
-  async load() {
-    this.setData({ loading: true, error: '' });
-    try {
+  load() {
+    return withLoading(this, async () => {
       const archive = await getArchive();
       this.setData({
         archive: {
@@ -34,10 +33,6 @@ Page({
           })),
         },
       });
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ loading: false });
-    }
+    });
   },
 });

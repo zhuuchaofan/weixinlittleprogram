@@ -1,6 +1,7 @@
 import { clearCount, clearRecords } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
+import { withLoading } from '../../services/page-load';
 import { applyTheme, themeData } from '../../services/theme';
 import { confirmAction } from '../../utils/confirm';
 
@@ -27,15 +28,10 @@ Page({
   onLoad() {
     void this.load();
   },
-  async load() {
-    this.setData({ loading: true, error: '' });
-    try {
+  load() {
+    return withLoading(this, async () => {
       this.setData({ counts: await clearCount() });
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ loading: false });
-    }
+    });
   },
   chooseScope(event: WechatMiniprogram.TouchEvent) {
     this.setData({ scope: event.currentTarget.dataset.scope as Scope });

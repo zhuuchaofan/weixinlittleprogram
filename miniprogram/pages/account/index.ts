@@ -2,6 +2,7 @@ import type { Household } from '../../models';
 import { deleteAccount, getHousehold } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
+import { withLoading } from '../../services/page-load';
 import { applyTheme, themeData } from '../../services/theme';
 import { confirmAction } from '../../utils/confirm';
 
@@ -39,9 +40,8 @@ Page({
   onLoad() {
     void this.load();
   },
-  async load() {
-    this.setData({ loading: true, error: '' });
-    try {
+  load() {
+    return withLoading(this, async () => {
       const household = await getHousehold(true);
       this.setData({
         mode: !household
@@ -54,11 +54,7 @@ Page({
           (household && household.members.length > 1 ? '对方' : ''),
         vipDays: household ? vipDays(household) : 0,
       });
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ loading: false });
-    }
+    });
   },
   inputTyped(event: WechatMiniprogram.Input) {
     this.setData({ typed: event.detail.value });
