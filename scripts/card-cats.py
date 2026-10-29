@@ -25,9 +25,6 @@ def head(x,y,s=1,r=0,eyes='open',coat='white',hid='h'):
 def body(d,coat): return f'<path d="{d}" fill="{COATS[coat]["fill"]}" filter="url(#s)"/>'
 def tail(d,coat,w=8): return f'<path d="{d}" fill="none" stroke="{COATS[coat]["fill"]}" stroke-width="{w}" stroke-linecap="round" filter="url(#s)"/>'
 def paw(x,y,coat,rx=10,ry=6,r=0): return f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" transform="rotate({r} {x} {y})" fill="{COATS[coat]["fill"]}" stroke="{T["line"]}" stroke-width="1.6"/>'
-def drape(x,coat):  # 搭在卡片边上的前爪：一半在边上、一半垂下来
-    return (f'<path d="M{x-11} 72 C{x-11} 62 {x+11} 62 {x+11} 72 V78 C{x+11} 84 {x-11} 84 {x-11} 78 Z" fill="{COATS[coat]["fill"]}" stroke="{T["line"]}" stroke-width="1.6"/>'
-            f'<path d="M{x-4} 79 v3 M{x+4} 79 v3" stroke="{T["line"]}" stroke-width="1.6" stroke-linecap="round"/>')
 def zz(x,y): return f'<path d="M{x} {y} h8 l-8 8 h8 M{x+12} {y-10} h6 l-6 6 h6" fill="none" stroke="{T["accent"]}" stroke-opacity="0.5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
 POSES={
  'peek':  ('探头', lambda c: head(80,50,1,0,'open',c)+paw(56,70,c)+paw(104,70,c)),
@@ -35,7 +32,7 @@ POSES={
  'sit':   ('坐着', lambda c: tail('M98 68 C118 70 122 52 112 42',c,7)+body('M58 72 C54 48 66 34 80 32 C94 34 106 48 102 72 Z',c)+head(80,24,.82,0,'open',c)+f'<path d="M72 72 V60 M88 72 V60" stroke="{T["line"]}" stroke-width="1.8" stroke-linecap="round"/>'),
  'stretch':('伸懒腰', lambda c: tail('M132 36 C140 22 150 18 150 8',c,7)+body('M34 72 C34 64 46 62 62 62 C84 60 104 40 124 32 C140 28 144 50 138 72 Z',c)+paw(22,69,c,11,5)+paw(36,70,c,11,5)+head(58,48,.72,-14,'closed',c)),
  'wash':  ('洗脸', lambda c: tail('M98 68 C118 70 122 52 112 42',c,7)+body('M58 72 C54 48 66 34 80 32 C94 34 106 48 102 72 Z',c)+head(80,24,.82,6,'closed',c)+paw(66,30,c,7,10,-25)),
- 'hang':  ('下巴搁在边上', lambda c: tail('M120 58 C138 56 144 40 136 30',c,7)+body('M60 70 C60 50 86 44 106 46 C124 48 130 58 128 70 Z',c)+head(66,48,.82,-8,'open',c)+drape(52,c)+drape(80,c)),
+ 'hang':  ('趴在边上', lambda c: tail('M120 58 C138 56 144 40 136 30',c,7)+body('M60 70 C60 50 86 44 106 46 C124 48 130 58 128 70 Z',c)+head(66,53,.82,-8,'open',c)),
 }
 SH=f'<defs><filter id="s" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="2.4" flood-color="rgb({T["tint"]})" flood-opacity="0.16"/></filter></defs>'
 def svg(pose,coat): return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 160 110">{SH}{POSES[pose][1](coat)}</svg>'
