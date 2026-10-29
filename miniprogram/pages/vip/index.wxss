@@ -11,3 +11,5 @@
 .plan-on { background: var(--accent-soft); }
 .plan-on .plan-price { font-size: 40rpx; }
 .plan-price { transition: font-size 0.18s; }
+.agree { margin-top: 20rpx; text-align: center; font-size: 24rpx; color: var(--muted); }
+.agree-link { color: var(--accent); }

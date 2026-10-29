@@ -89,6 +89,9 @@ Page({
       this.setData({ busy: false });
     }
   },
+  openAgreement() {
+    void wx.navigateTo({ url: '/pages/agreement/index' });
+  },
   async onPullDownRefresh() {
     await this.load();
     wx.stopPullDownRefresh();

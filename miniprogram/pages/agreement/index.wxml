@@ -1,0 +1,15 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view class="title">{{agreement.title}}</view>
+  <view class="small muted dates"><view wx:for="{{agreement.dates}}" wx:key="*this">{{item}}</view></view>
+  <view class="card text">
+    <view wx:for="{{agreement.intro}}" wx:key="index" class="para"><text wx:for="{{item}}" wx:for-item="span" wx:key="index" class="{{span.bold ? 'strong' : ''}}">{{span.text}}</text></view>
+  </view>
+  <view wx:for="{{agreement.sections}}" wx:key="title" class="section">
+    <view class="section-head"><view class="section-title">{{item.title}}</view></view>
+    <view class="card text">
+      <view wx:for="{{item.items}}" wx:for-item="line" wx:key="index" class="para {{line.sub ? 'sub' : ''}}"><text wx:for="{{line.spans}}" wx:for-item="span" wx:key="index" class="{{span.bold ? 'strong' : ''}}">{{span.text}}</text></view>
+    </view>
+  </view>
+  <view class="page-end"></view>
+</view>

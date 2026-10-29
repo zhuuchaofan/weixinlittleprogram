@@ -29,6 +29,7 @@
         </view>
       </view>
       <button class="primary buy" bindtap="buy" loading="{{busy}}" disabled="{{busy || !info.available}}">{{info.active ? '续费' : '开通'}} {{selectedPrice}}</button>
+      <view class="agree">开通即表示同意<text class="agree-link" bindtap="openAgreement">《会员服务协议》</text></view>
     </view>
 
     <view class="section">
