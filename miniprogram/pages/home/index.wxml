@@ -1,4 +1,5 @@
 <page-meta page-style="{{themeStyle}}" />
+<wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
   <view wx:if="{{loading && !household}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
@@ -46,7 +47,7 @@
         <view class="small muted">{{monthText}}{{household.splitting ? '共同支出' : '支出'}}</view>
         <view class="small muted">明细 <text class="chevron-sm">›</text></view>
       </view>
-      <view class="month-total serif">{{spentText || '—'}}</view>
+      <view class="month-total serif"><text wx:if="{{money.sign(spentText)}}" class="cur">¥</text>{{money.digits(spentText) || '—'}}</view>
       <view class="small muted">{{countText}}</view>
     </view>
 

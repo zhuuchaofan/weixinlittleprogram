@@ -1,4 +1,5 @@
 <page-meta page-style="{{themeStyle}}" />
+<wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
   <view class="month-bar">
     <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹</view>
@@ -10,7 +11,7 @@
 
   <view class="hero grad-card">
     <view class="hero-label">{{monthText}} · {{splitting ? '共同支出' : '支出'}}</view>
-    <view class="hero-total">{{summary ? summaryText.total : '—'}}</view>
+    <view class="hero-total"><block wx:if="{{summary}}"><text wx:if="{{money.sign(summaryText.total)}}" class="cur">¥</text>{{money.digits(summaryText.total)}}</block><block wx:else>—</block></view>
     <view class="hero-track" aria-hidden="true"><view class="hero-share" style="width: {{shareA}}%"></view></view>
     <view class="hero-paid">
       <text>{{names.a}} 付 {{summary ? summaryText.a : '—'}}</text>

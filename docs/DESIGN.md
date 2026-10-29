@@ -1,6 +1,6 @@
 # 喵喵记一笔 设计规范
 
-更新：2026-10-27。这份规范是把现在的界面归纳出来的，不是新风格。新页面、改页面都照这里来；想破例，先在这里改规则。
+更新：2026-10-29（加了动效、数字两节）。这份规范是把现在的界面归纳出来的，不是新风格。新页面、改页面都照这里来；想破例，先在这里改规则。
 
 一句话风格：**浅底白卡片、一张主题色渐变大卡片当主角、线条小猫图标、圆角大、字少**。
 
@@ -70,11 +70,31 @@
   - 文字按钮 `.text-button`、删除 `.danger-button`。
 - **分段切换** `.segmented`、**胶囊** `.chips`、**勾选圈** `.tick`、**月份切换** `.month-bar`、**分类色点** `.cat-dot`、**折叠标题** `.fold-head`：都在 `app.wxss`，直接用。
 - **空状态** `.empty`：虚线框 + 睡觉的小猫（`<image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" />`）+ 一句话，告诉人下一步点哪儿。加载中用 `.status`，文字前放走路的猫爪印（`.status-paws`，照现有页面抄），出错用 `.notice.error` + 「重试」按钮。
-- **猫咪元素**：名字叫喵喵记一笔，新页面别忘了小猫。小猫一律是**实心、淡阴影、深色眼睛**，和白卡片一个质感，不画主色线条猫。勾选圈勾上后是白色猫爪（`.tick-paw`，`images/ui/paw.svg`），不是「✓」；渐变大卡片右上角是淡白猫头剪影（`.grad-card::after`，不用自己加）；白卡片 `.card`、列表 `.list`、主页入口右上角自动趴着一只小猫，6 种姿势（探头、趴着睡、坐着、伸懒腰、歪头眯眼、趴在边上）和毛色按顺序轮流（`::before`，图由 `scripts/card-cats.py` 写进 `app.wxss`，不跟主题变色），所以 `.card`、`.list` 别再写 `overflow: hidden` 或自己的 `::before`，卡片之间用 `--gap-card`（56）给小猫留高度；主页宫格图标都带猫耳朵。文案偶尔带一个「喵」就够，别每句都加。
+- **猫咪元素**：名字叫喵喵记一笔，新页面别忘了小猫。小猫一律是**实心、淡阴影、深色眼睛**，和白卡片一个质感，不画主色线条猫。勾选圈勾上后是白色猫爪（`.tick-paw`，`images/ui/paw.svg`），不是「✓」；渐变大卡片右上角是淡白猫头剪影（`.grad-card::after`，不用自己加）；白卡片 `.card`、列表 `.list`、主页入口右上角自动趴着一只小猫，6 种姿势（探头、趴着睡、坐着、伸懒腰、歪头眯眼、趴在边上）和毛色按顺序轮流（`::before`，图由 `scripts/card-cats.py` 写进 `app.wxss`，不跟主题变色），所以 `.card`、`.list` 别再写 `overflow: hidden` 或自己的 `::before`，卡片之间用 `--gap-card`（56）给小猫留高度；`.section-head`、`.fold-head` 右边已经留了 120 给下面卡片的小猫，标题行右边的小字不会被挡；主页宫格图标都带猫耳朵。文案偶尔带一个「喵」就够，别每句都加。
 - **图标**：线条小猫和线条图标在 `images/cat-icons`、`images/ui`，按主题换色的在 `images/themes`（源文件在 `assets/theme-src`，主色写 `#f2614f`，`scripts/theme-icons.py` 生成；`npm test` 会检查每套主题都有）。列表前面的图标放在 `.tile` 色块里。
 - **等待动画**：截图识别时的小猫喝茶（`pages/bill-import`），以后要等超过 3 秒的地方复用它。
 
-## 6. 按钮文字上下居中
+## 6. 动效
+
+都写在 `app.wxss` 的「动效」一段，新页面用公共类就自动有，不用自己写：
+
+- **进场**：`.card`、`.list`、`.grad-card`、`.grid-cell`、`.empty`、`.section-head` 等从下面浮上来（0.48 秒），按在页面里的顺序错开 0.04 秒。
+- **数据**：进度条（`.saving-bar`、`.goal-bar`、`.budget-bar`、`.compare-bar`、`.hero-share`）从左长出，柱子 `.trend-bar` 从下长出。
+- **反馈**：按下缩放见上面「写法约定」；`.tick-on` 勾上时盖章，`.chip-on`、`.segment-on` 选中时回弹一下。
+- **一直在动的**只有空状态的睡猫呼吸、欢迎页小猫浮动和心跳，别的地方不加循环动画（费电）。
+
+规则：只动 `transform` 和 `opacity`（低端机也顺），时长 0.2–0.9 秒；`animation` 的填充用 `backwards`，不要 `both` / `forwards`，否则会盖住按下去的缩放；新加的动画写进末尾 `prefers-reduced-motion` 那段，系统开了减弱动态效果就不放。
+
+## 7. 数字
+
+金额、天数用等宽数字（`font-variant-numeric: tabular-nums`，常用的类已经加了）。页面上最大的那个金额，「¥」拆出来小一号：
+
+```html
+<wxs module="money" src="../../wxs/money.wxs" />
+<view class="hero-total"><text wx:if="{{money.sign(totalText)}}" class="cur">¥</text>{{money.digits(totalText)}}</view>
+```
+
+## 8. 按钮文字上下居中
 
 全局 `button` 已经是 flex 居中，**正常写 `<button class="primary">` 就居中**。容易出问题的两种：
 
@@ -83,9 +103,9 @@
 
 按钮里的「+」用 `<text class="plus">+</text>`。
 
-## 7. 写法约定
+## 9. 写法约定
 
 - 公共的东西放 `app.wxss`，页面 wxss 只写本页特有的布局。两个页面写了一样的样式，就挪到 `app.wxss`。
-- 按下去的反馈用 `hover-class`，颜色 `--sunken` 或 `opacity: 0.7`。
+- 按下去的反馈用 `hover-class`，颜色 `--sunken` 或 `opacity: 0.7`。卡片、入口按下去会缩到 0.98、按钮 0.96（`app.wxss` 已经写好，`.card-active`、`.grid-cell-active`、按钮默认的 `button-hover`）。
 - 点按区域至少 88 高（图标按钮、月份箭头、文字按钮）。
 - 文案大白话，出错按钮统一叫「重试」。

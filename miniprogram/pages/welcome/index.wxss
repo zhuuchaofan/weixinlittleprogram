@@ -11,3 +11,9 @@
 .code-input { letter-spacing: 8rpx; }
 .back { margin: 12rpx auto 0; }
 .hero .kicker { margin-bottom: 8rpx; }
+/* 小猫图标轻轻浮着，中间的心在跳 */
+.home-tile { animation: float 3.6s ease-in-out infinite; }
+.pair-heart { animation: beat 1.6s ease-in-out infinite; }
+@keyframes float { 0%, 100% { transform: none; } 50% { transform: translateY(-10rpx); } }
+@keyframes beat { 0%, 60%, 100% { transform: none; } 15% { transform: scale(1.18); } 30% { transform: scale(0.96); } 45% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .home-tile, .pair-heart { animation: none; } }

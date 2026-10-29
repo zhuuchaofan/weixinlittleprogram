@@ -4,7 +4,7 @@ page {
   --surface: #ffffff;
   --sunken: #eee8f6;
   --ink: #26203a;
-  --muted: #8a8299;
+  --muted: #736c7f;
   --line: #e9e2f2;
   --accent: #8a5fd6;
   --accent-soft: #efe7fb;
@@ -18,7 +18,7 @@ page {
   --danger: #a1302a;
   --danger-soft: #fde3df;
   --warn: #9a6a1f;
-  --shadow: 0 8rpx 32rpx rgba(110, 80, 150, 0.08);
+  --shadow: 0 2rpx 6rpx rgba(110, 80, 150, 0.05), 0 12rpx 36rpx rgba(110, 80, 150, 0.08);
   /* 主题色衍生：勾选圈、主色阴影、卡片阴影、头像。换主题见 config/themes.ts，这里是默认（香芋紫）。 */
   --ring: #cfb8f2;
   --glow: rgba(138, 95, 214, 0.28);
@@ -182,3 +182,62 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 /* 两人头像：颜色跟主题走（config/themes.ts 的 avatarA / avatarB） */
 .avatar-a { background: var(--avatar-a); color: #fff; }
 .avatar-b { background: var(--avatar-b); color: #fff; }
+
+/* ---------- 质感：数字、渐变卡片的光、页面第一张卡片 ---------- */
+/* 金额和天数用等宽数字，翻月、改金额时不跳；大数字字距收紧一点 */
+.serif, .amount, .cat-amount, .plan-price, .days-number, .hero-total, .hero-value, .hero-days, .month-total, .couple-next-days, .goal-saved, .picked-name, .invite-code { font-variant-numeric: tabular-nums; }
+.hero-total, .hero-value, .month-total, .couple-next-days, .goal-saved { letter-spacing: -0.02em; }
+/* 大数字前的「¥」小一号、轻一点，数字更突出（wxs/money.wxs 拆开） */
+.cur { font-size: 0.56em; font-weight: 700; margin-right: 0.08em; opacity: 0.9; letter-spacing: 0; }
+/* 渐变卡片左上角一层柔光 + 顶边一道亮线，看起来有厚度 */
+.grad-card { background: radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 55%), var(--accent-grad); box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.45), 0 20rpx 48rpx -12rpx var(--glow), 0 4rpx 12rpx var(--tint); }
+/* 第一张白卡片顶上留出小猫的高度，不被页面顶边切掉 */
+.page > .card:first-child, .page > .list:first-child { margin-top: 40rpx; }
+/* 标题行右边的小字（「46 笔」「清除」）让开下面卡片的小猫 */
+.section-head, .fold-head { padding-right: 120rpx; }
+/* 输入框旁的「添加」和输入框一样高 */
+.composer .btn-inline, .composer button.btn-inline:not([size='mini']) { min-height: 96rpx; border-radius: var(--radius-sm); }
+.section-title { letter-spacing: 0.02em; }
+
+/* ---------- 动效：只动 transform 和 opacity，低端机也顺；系统开了「减弱动态效果」就不动 ---------- */
+/* 进页面：卡片依次从下面浮上来 */
+.card, .list, .grad-card, .grid-cell, .empty, .actions, .segmented, .section-head { animation: rise 0.48s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.page > :nth-child(2) { animation-delay: 0.04s; }
+.page > :nth-child(3), .grid-cell:nth-child(1) { animation-delay: 0.08s; }
+.page > :nth-child(4), .grid-cell:nth-child(2) { animation-delay: 0.12s; }
+.page > :nth-child(5), .grid-cell:nth-child(3) { animation-delay: 0.16s; }
+.page > :nth-child(n + 6), .grid-cell:nth-child(4) { animation-delay: 0.2s; }
+@keyframes rise { from { opacity: 0; transform: translateY(24rpx); } to { opacity: 1; transform: none; } }
+
+/* 进度条从左边长出来，柱子从下面长上来 */
+.saving-bar, .goal-bar, .budget-bar, .compare-bar, .hero-share { transform-origin: left center; animation: fill 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s backwards; }
+.trend-bar { transform-origin: center bottom; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+.trend-col:nth-child(2) .trend-bar { animation-delay: 0.05s; }
+.trend-col:nth-child(3) .trend-bar { animation-delay: 0.1s; }
+.trend-col:nth-child(4) .trend-bar { animation-delay: 0.15s; }
+.trend-col:nth-child(5) .trend-bar { animation-delay: 0.2s; }
+.trend-col:nth-child(6) .trend-bar { animation-delay: 0.25s; }
+@keyframes fill { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes grow { from { transform: scaleY(0); } to { transform: none; } }
+
+/* 按下去：卡片、入口、按钮轻轻缩一下，松手弹回 */
+.card, .grid-cell, .grad-card, button, .chip, .segment, .tick-box, .month-arrow, .icon-button, .fab { transition: transform 0.18s cubic-bezier(0.3, 0.7, 0.4, 1.4), background-color 0.18s, color 0.18s, box-shadow 0.18s, opacity 0.18s; }
+.list-row { transition: background-color 0.18s; }
+.card-active, .grid-cell-active { transform: scale(0.98); }
+.button-hover, .fab-active { transform: scale(0.96); }
+.primary.button-hover { box-shadow: 0 4rpx 12rpx var(--glow); }
+.month-arrow-active, .icon-button-active { transform: scale(0.9); }
+
+/* 勾上时猫爪「盖章」 */
+.tick-on { animation: stamp 0.36s cubic-bezier(0.3, 0.7, 0.4, 1.5); }
+@keyframes stamp { 0% { transform: scale(0.6); } 60% { transform: scale(1.15); } 100% { transform: none; } }
+.chip-on, .segment-on { animation: pop 0.24s ease-out; }
+@keyframes pop { 0% { transform: scale(0.94); } 100% { transform: none; } }
+
+/* 空状态的小猫睡着在呼吸 */
+.empty-cat { transform-origin: center bottom; animation: breathe 3.2s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: none; } 50% { transform: scale(1.03, 0.97); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .list, .grad-card, .grid-cell, .empty, .actions, .segmented, .section-head, .saving-bar, .goal-bar, .budget-bar, .compare-bar, .hero-share, .trend-bar, .tick-on, .chip-on, .segment-on, .empty-cat { animation: none; }
+}

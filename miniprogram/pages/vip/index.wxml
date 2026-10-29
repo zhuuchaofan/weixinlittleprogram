@@ -22,7 +22,7 @@
       <view class="section-head"><view class="section-title">{{info.active ? '续费' : '选择套餐'}}</view></view>
       <view wx:if="{{!info.available}}" class="notice">会员购买还没开通，请稍后再来。</view>
       <view class="list">
-        <view wx:for="{{plans}}" wx:key="id" class="list-row plan" data-id="{{item.id}}" bindtap="pick" hover-class="list-row-active" aria-role="radio" aria-checked="{{item.id === selected}}" aria-label="{{item.name}} {{item.price}}">
+        <view wx:for="{{plans}}" wx:key="id" class="list-row plan {{item.id === selected ? 'plan-on' : ''}}" data-id="{{item.id}}" bindtap="pick" hover-class="list-row-active" aria-role="radio" aria-checked="{{item.id === selected}}" aria-label="{{item.name}} {{item.price}}">
           <view class="tick"><view class="tick-box {{item.id === selected ? 'tick-on' : ''}}"><image wx:if="{{item.id === selected}}" class="tick-paw" src="/images/ui/paw.svg" /></view></view>
           <view class="row-main"><view class="row-title">{{item.name}}</view><view class="row-sub">{{item.days}} 天</view></view>
           <view class="plan-price">{{item.price}}</view>
