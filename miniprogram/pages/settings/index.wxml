@@ -63,7 +63,7 @@
       <view class="section-head"><view class="section-title">主题</view><text class="small muted">只改这台手机</text></view>
       <view class="card themes">
         <view wx:for="{{themes}}" wx:key="id" class="theme {{themeId === item.id ? 'theme-on' : ''}}" data-id="{{item.id}}" bindtap="chooseTheme" aria-role="radio" aria-checked="{{themeId === item.id}}" aria-label="{{item.name}}">
-          <view class="swatch" style="background: {{item.swatch}}"><image wx:if="{{themeId === item.id}}" class="swatch-paw" src="/images/ui/paw.svg" /></view>
+          <view class="swatch" style="background: {{item.swatch}}"><image wx:if="{{themeId === item.id}}" class="swatch-paw" src="/images/ui/paw.png" /></view>
           <view class="small">{{item.name}}</view>
         </view>
       </view>

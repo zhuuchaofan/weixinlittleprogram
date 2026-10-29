@@ -3,7 +3,7 @@
   <view wx:if="{{item.showDate}}" class="list-label">{{item.dateText}}</view>
   <view class="bill {{item.selected ? '' : 'bill-off'}}">
     <view class="bill-head" data-index="{{index}}" bindtap="expand" hover-class="list-row-active">
-      <view class="check {{item.selected ? 'check-on' : ''}}" data-index="{{index}}" catchtap="toggle" aria-role="checkbox" aria-checked="{{item.selected}}" aria-label="导入这笔"><image wx:if="{{item.selected}}" class="tick-paw" src="/images/ui/paw.svg" /></view>
+      <view class="check {{item.selected ? 'check-on' : ''}}" data-index="{{index}}" catchtap="toggle" aria-role="checkbox" aria-checked="{{item.selected}}" aria-label="导入这笔"><image wx:if="{{item.selected}}" class="tick-paw" src="/images/ui/paw.png" /></view>
       <view class="row-main">
         <view class="row-title">{{item.note || item.kind}}</view>
         <view class="row-sub">{{item.cat}}<text wx:if="{{item.time}}"> · {{item.time}}</text><text wx:if="{{item.dateGuessed}}" class="warn"> · 日期按今天推算，请核对</text></view>

@@ -14,7 +14,7 @@
     </view>
     <view class="list option">
       <view class="list-row" bindtap="toggleNoCopy" hover-class="list-row-active" aria-role="checkbox" aria-checked="{{noCopy}}">
-        <view class="tick-box {{noCopy ? 'tick-on' : ''}}"><image wx:if="{{noCopy}}" class="tick-paw" src="/images/ui/paw.svg" /></view>
+        <view class="tick-box {{noCopy ? 'tick-on' : ''}}"><image wx:if="{{noCopy}}" class="tick-paw" src="/images/ui/paw.png" /></view>
         <view class="row-main"><view>不带副本，从空开始</view><view class="row-sub">只影响你自己，{{partner}}那边的账不动。</view></view>
       </view>
     </view>
