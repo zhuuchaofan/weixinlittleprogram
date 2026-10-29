@@ -57,7 +57,12 @@
    2. `orders` 里按 `outTradeNo` 找到同一条，记下 `openid`、`productId`。
    3. 云开发控制台 → 云函数 `api` → 云端测试，事件填：
       ```json
-      { "Event": "xpay_goods_deliver_notify", "OutTradeNo": "商户单号", "OpenId": "openid", "GoodsInfo": { "ProductId": "vip_month" } }
+      {
+        "Event": "xpay_goods_deliver_notify",
+        "OutTradeNo": "商户单号",
+        "OpenId": "openid",
+        "GoodsInfo": { "ProductId": "vip_month" }
+      }
       ```
    → 返回 `{"ErrCode":0,"ErrMsg":"Success"}`；会员页到期日加 31 天；`orders` 变成 `delivered`。
 5. 同一个事件再测一次。
@@ -75,7 +80,12 @@
    → 几秒后会员页到期日往回减 31 天（只减这一单，别的订单加的天数不动）；`orders` 那条有 `refunded: 900`；`api` 日志里有一次 `xpay_refund_notify`。
 2. 用云端测试把退款推送再发一次：
    ```json
-   { "Event": "xpay_refund_notify", "MchOrderId": "商户单号", "OpenId": "openid", "RetCode": 0 }
+   {
+     "Event": "xpay_refund_notify",
+     "MchOrderId": "商户单号",
+     "OpenId": "openid",
+     "RetCode": 0
+   }
    ```
    → 返回 `ErrCode 0`，到期日**不再减少**。
 3. 拿一笔**没退过款**的已开通订单，用同样的事件测一次。
