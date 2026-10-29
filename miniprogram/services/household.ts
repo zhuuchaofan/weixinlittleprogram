@@ -163,6 +163,38 @@ export function byPartner(
   return (byRole === 'a' ? names.a : names.b) + action;
 }
 
+const PENDING_INVITE = 'pendingInvite';
+// 记住的邀请码多久后作废：对方可能已经邀请了别人，或者换了新码。
+const PENDING_INVITE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** 已经在小家里的人点开了邀请卡片：把邀请码记在本机，退出后回到加入页时自动填好。 */
+export function savePendingInvite(code: string): void {
+  try {
+    wx.setStorageSync(PENDING_INVITE, { code, at: Date.now() });
+  } catch {
+    /* 存不下就算了，退出后再点一次卡片也一样。 */
+  }
+}
+
+export function readPendingInvite(): string {
+  try {
+    const saved = wx.getStorageSync(PENDING_INVITE) as
+      { code: string; at: number } | '';
+    if (saved && Date.now() - saved.at < PENDING_INVITE_MS) return saved.code;
+  } catch {
+    /* 读不到当作没有。 */
+  }
+  return '';
+}
+
+export function clearPendingInvite(): void {
+  try {
+    wx.removeStorageSync(PENDING_INVITE);
+  } catch {
+    /* 删不掉也没关系，7 天后自动作废。 */
+  }
+}
+
 /** 分享卡片的内容：有邀请码时带进加入页，没有时回到首页。 */
 export function inviteShare(code?: string): {
   title: string;
