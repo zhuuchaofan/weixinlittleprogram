@@ -147,7 +147,7 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 .tick { width: 96rpx; min-height: 104rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .tick-box { width: 44rpx; height: 44rpx; border: 3rpx solid var(--ring); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24rpx; font-weight: 700; }
 .tick-on { background: var(--accent-grad); border-color: transparent; }
-.tick-paw { width: 28rpx; height: 28rpx; }
+.tick-paw { width: 32rpx; height: 32rpx; }
 
 /* 渐变大卡片（主页两人、记账总额、吃啥抽签、纪念日最近一个）：右上角一个淡白猫头剪影 */
 .grad-card { position: relative; overflow: hidden; border-radius: var(--radius); background: var(--accent-grad); color: #fff; box-shadow: 0 16rpx 40rpx var(--glow); }
