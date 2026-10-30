@@ -1,10 +1,15 @@
 import type {
+  ActivityItem,
   Anniversary,
   AnniversaryInput,
   Dish,
+  FootprintPage,
   DishInput,
+  DishRating,
+  DishVote,
   Goal,
   GoalInput,
+  Reaction,
   SavingTip,
   Todo,
   TodoInput,
@@ -15,8 +20,29 @@ import type {
 import { callApi } from './cloud';
 import { createCollectionService } from './collection';
 
-export const dishService = createCollectionService<Dish, DishInput>('dish');
-export const wishService = createCollectionService<Wish, WishInput>('wish');
+export const dishService = {
+  ...createCollectionService<Dish, DishInput>('dish'),
+  /** 今天想吃 / 不想吃；vote 为空表示收回自己的那一票。 */
+  vote(id: string, vote: DishVote | ''): Promise<Dish> {
+    return callApi<Dish>('dish.vote', { id, vote });
+  },
+  /** 吃过之后的评价；rating 为空表示收回。 */
+  rate(id: string, rating: DishRating | ''): Promise<Dish> {
+    return callApi<Dish>('dish.rate', { id, rating });
+  },
+};
+export const wishService = {
+  ...createCollectionService<Wish, WishInput>('wish'),
+  /** 「我也想去」：只改自己那一个。 */
+  want(id: string, want: boolean): Promise<Wish> {
+    return callApi<Wish>('wish.want', { id, want });
+  },
+};
+export const footprintService = {
+  list(year?: string): Promise<FootprintPage> {
+    return callApi<FootprintPage>('footprint.list', year ? { year } : {});
+  },
+};
 export const dateService = createCollectionService<
   Anniversary,
   AnniversaryInput
@@ -41,5 +67,16 @@ export const goalService = {
   },
   tips(): Promise<SavingTip[]> {
     return callApi<SavingTip[]>('goal.tips');
+  },
+};
+
+/** 主页「TA 最近」：近两周两人做过的事，和对它的回应。 */
+export const activityService = {
+  recent(): Promise<ActivityItem[]> {
+    return callApi<ActivityItem[]>('activity.recent');
+  },
+  /** reaction 为空表示收回。 */
+  react(id: string, reaction: Reaction | ''): Promise<ActivityItem> {
+    return callApi<ActivityItem>('activity.react', { id, reaction });
   },
 };

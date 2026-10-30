@@ -10,7 +10,8 @@ const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
 const { createAssistHandler } = require('./assist');
-const { createActivityLog } = require('./activity');
+const { createActivityLog, createActivityFeed } = require('./activity');
+const { createRecapHandler } = require('./recap');
 const { createLeaveHandler } = require('./leave');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
@@ -25,6 +26,7 @@ function createRouter({
   insights = null,
   goals = null,
   activity = null,
+  storage = null,
   ai = null,
   orders = null,
   xpay = null,
@@ -55,6 +57,7 @@ function createRouter({
       insights,
       activity,
     },
+    storage,
     requireMembership,
     uniqueCode: household.uniqueCode,
     now,
@@ -92,12 +95,21 @@ function createRouter({
       now,
       ai,
     }),
+    ...createRecapHandler({
+      repositories: { expenses, goals, dates, activity },
+      households,
+      insights,
+      ai,
+      requireMembership,
+      now,
+    }),
     ...createGoalHandler({
       repository: goals,
       expenses,
       requireMembership,
       now,
     }),
+    ...createActivityFeed({ repository: activity, requireMembership, now }),
     ...createTodoHandler({
       repository: todos,
       activity: activityLog,
@@ -109,6 +121,8 @@ function createRouter({
       wishes,
       dates,
       activity: activityLog,
+      expenses,
+      storage,
       requireMembership,
       now,
     }),

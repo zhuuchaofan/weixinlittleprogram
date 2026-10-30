@@ -271,7 +271,7 @@ export async function parseBillFile(
 }
 
 /** 压缩失败就用原图。 */
-async function compressed(path: string): Promise<string> {
+export async function compressed(path: string): Promise<string> {
   try {
     const result = await wx.compressImage({ src: path, quality: 80 });
     return result.tempFilePath;

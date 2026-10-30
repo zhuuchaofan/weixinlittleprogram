@@ -97,15 +97,24 @@ function todoKind(value) {
 }
 
 function todo(payload) {
+  const kind = todoKind(payload.kind);
+  const repeat =
+    payload.repeat === undefined || payload.repeat === ''
+      ? ''
+      : oneOf(payload.repeat, CONTRACT.todoRepeat, '请选择重复周期。');
   return {
     text: text(payload?.text, {
       field: '内容',
       min: 1,
       max: LENGTHS.todoText,
     }),
-    kind: todoKind(payload.kind),
+    kind,
     who: oneOf(payload.who, CONTRACT.todoWho, '请选择负责人。'),
     done: payload.done === true,
+    // 重复只给待办用；购物每次买完再点加回去。
+    repeat: kind === 'shop' ? '' : repeat,
+    // 重复任务下一次要做的那天：还没到时清单里先折起来。
+    dueOn: optionalDate(payload.dueOn),
   };
 }
 
@@ -142,6 +151,17 @@ function dish(payload) {
   };
 }
 
+/** 想去的照片：云存储 fileID 的列表，最多会员的张数；是不是自己小家的、有几张额度由接口判断。 */
+function photos(value) {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.length > CONTRACT.photos.vip)
+    throw new ApiError('VALIDATION', '照片数量不对。');
+  for (const id of value)
+    if (typeof id !== 'string' || !id.startsWith('cloud://') || id.length > 300)
+      throw new ApiError('VALIDATION', '照片不对，请重新选择。');
+  return [...new Set(value)];
+}
+
 /** 想去的一条。界面上只有「备注」一栏（存在 plan），why 是旧数据。 */
 function wish(payload) {
   const done = payload?.done === true;
@@ -153,6 +173,9 @@ function wish(payload) {
     }),
     why: text(payload.why, { field: '想去的理由', max: LENGTHS.wishWhy }),
     plan: text(payload.plan, { field: '备注', max: LENGTHS.wishPlan }),
+    // 去过之后留的一句话和照片。
+    memo: text(payload.memo, { field: '回忆', max: LENGTHS.wishMemo }),
+    photos: photos(payload.photos),
     done,
     // 去过的日期；取消「去过了」时清空。
     doneOn: done ? optionalDate(payload.doneOn) : '',
@@ -170,6 +193,7 @@ function anniversary(payload) {
     }),
     date: payload.date,
     yearly: payload.yearly === true,
+    together: payload.together === true,
   };
 }
 
@@ -207,6 +231,7 @@ module.exports = {
   dish,
   wish,
   anniversary,
+  photos,
   oneOf,
   text,
   month,

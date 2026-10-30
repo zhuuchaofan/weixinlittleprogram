@@ -12,6 +12,8 @@
     </view>
     <view class="goal-amount"><text class="serif goal-saved"><text wx:if="{{money.sign(item.savedText)}}" class="cur">¥</text>{{money.digits(item.savedText)}}</text><text class="small muted"> / {{item.targetText}}</text><text class="goal-percent">{{item.percent}}%</text></view>
     <view class="goal-track" aria-hidden="true"><view class="goal-bar" style="width: {{item.percent}}%"></view></view>
+    <view wx:if="{{item.byText}}" class="small goal-by">{{item.byText}}</view>
+    <view wx:if="{{item.doneText}}" class="small goal-celebrate">{{item.doneText}}</view>
     <view class="goal-plan small">{{item.planText}}</view>
     <view class="goal-foot">
       <text class="small {{item.behind ? 'goal-behind' : 'goal-ok'}}">{{item.monthText}}</text>

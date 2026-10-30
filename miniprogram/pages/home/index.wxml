@@ -32,11 +32,31 @@
           <view class="avatar-sm avatar-b">{{household.members[1].name[0]}}</view>
         </view>
         <view class="couple-text">{{household.members[0].name}} & {{household.members[1].name}}</view>
+        <view wx:if="{{together.milestoneText}}" class="couple-milestone">{{together.milestoneText}}</view>
+        <view wx:if="{{together && nextHint}}" class="couple-milestone">{{nextHint}}</view>
       </view>
-      <view wx:if="{{next}}" class="couple-next">
+      <view wx:if="{{together}}" class="couple-next">
+        <view class="couple-next-label">在一起第</view>
+        <view class="couple-next-days">{{together.day}}<text class="couple-next-unit">天</text></view>
+      </view>
+      <view wx:elif="{{next}}" class="couple-next">
         <view class="couple-next-label">{{next.title}}{{next.yearly && next.years > 0 ? ' ' + next.years + ' 周年' : ''}}{{next.days === 0 ? '' : ' 还有'}}</view>
         <view wx:if="{{next.days === 0}}" class="couple-next-today">就是今天</view>
         <view wx:else class="couple-next-days">{{next.days}}<text class="couple-next-unit">天</text></view>
+      </view>
+    </view>
+
+    <view wx:if="{{household.members.length > 1 && (feed.length || partnerSpent)}}" class="card recent">
+      <view class="small muted recent-head">TA 最近</view>
+      <view wx:if="{{partnerSpent}}" class="recent-row"><view class="recent-text">{{partnerSpent}}</view></view>
+      <view wx:for="{{feed}}" wx:key="id" class="recent-row">
+        <view class="recent-line">
+          <view class="recent-text">{{item.text}}</view>
+          <view class="small muted">{{item.when}}</view>
+        </view>
+        <view wx:if="{{item.canReact}}" class="chips recent-reacts">
+          <view wx:for="{{reactions}}" wx:for-item="reaction" wx:key="value" class="chip {{item.mine === reaction.value ? 'chip-on' : ''}}" data-id="{{item.id}}" data-reaction="{{reaction.value}}" bindtap="react" aria-role="button" aria-label="{{reaction.label}}">{{reaction.label}}</view>
+        </view>
       </view>
     </view>
 
@@ -87,6 +107,14 @@
         <view class="grid-title">纪念日</view>
         <view class="small muted">倒数和已经多少天</view>
       </view>
+    </view>
+
+    <view class="card recap" data-page="recap" bindtap="open" hover-class="card-active" aria-role="button">
+      <view class="row-main">
+        <view class="recap-title">我们的小报</view>
+        <view class="small muted">看看上个月一起花了、吃了、做了什么</view>
+      </view>
+      <text class="chevron">›</text>
     </view>
   </block>
   <view class="page-end"></view>

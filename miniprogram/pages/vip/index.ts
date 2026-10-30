@@ -24,6 +24,7 @@ Page({
     info: null as VipInfo | null,
     perks: PERKS,
     untilText: '',
+    freeText: '',
     plans: [] as { id: string; name: string; days: number; price: string }[],
     // 购买须知里的「月度会员 31 天，年度会员 366 天」。
     plansText: '',
@@ -53,6 +54,7 @@ Page({
     this.setData({
       info,
       untilText: info.until ? todayKey(info.until) : '',
+      freeText: info.free ? todayKey(info.free) : '',
       plans,
       plansText: plans.map((plan) => `${plan.name} ${plan.days} 天`).join('，'),
       selected: selected?.id || '',

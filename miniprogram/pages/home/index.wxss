@@ -5,6 +5,7 @@
 .couple { display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; min-height: 220rpx; padding: 36rpx; }
 .couple-names { min-width: 0; }
 .couple-text { margin-top: 16rpx; font-size: 34rpx; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.couple-milestone { margin-top: 8rpx; font-size: 24rpx; opacity: 0.92; max-width: 340rpx; }
 .avatars { display: flex; }
 .avatar-sm { width: 64rpx; height: 64rpx; border-radius: 50%; border: 4rpx solid #fff; display: flex; align-items: center; justify-content: center; font-size: 26rpx; font-weight: 700; color: #fff; }
 .avatar-sm + .avatar-sm { margin-left: -16rpx; }
@@ -52,3 +53,14 @@
 /* 顶上一行当页面标题：比说明文字重一档 */
 .top-bar .top-greeting { font-size: 30rpx; font-weight: 600; color: var(--ink); gap: 12rpx; }
 .top-bar .greet-paw { width: 32rpx; height: 32rpx; }
+
+/* TA 最近：对方做的事，下面一排回应 */
+.recent-head { margin-bottom: 8rpx; }
+.recent-row { padding: 12rpx 0; }
+.recent-row + .recent-row { border-top: 1rpx solid var(--line); }
+.recent-line { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
+.recent-text { font-size: 28rpx; line-height: 1.5; min-width: 0; }
+.recent-reacts { margin-top: 16rpx; }
+/* 每月小报入口 */
+.recap { display: flex; align-items: center; gap: 20rpx; margin-top: var(--gap-card); }
+.recap-title { font-size: 30rpx; font-weight: 600; }

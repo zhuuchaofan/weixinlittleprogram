@@ -4,6 +4,9 @@ const { createAi, FEATURES, costOf } = require('../cloudfunctions/api/ai');
 const { periodKey, fieldOf } = require('../cloudfunctions/api/quota');
 const { ai: QUOTAS } = require('../cloudfunctions/api/contract.json');
 
+// 限时免费期间所有小家都算会员；这里测的是免费 / 会员各自的行为，所以先关掉。
+process.env.VIP_FREE_UNTIL = 'off';
+
 // 2026-10-25 12:00 UTC+8
 const NOW = Date.parse('2026-10-25T04:00:00Z');
 

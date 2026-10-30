@@ -13,13 +13,19 @@
         <button class="draw-button" bindtap="eat" disabled="{{busy}}">{{picked.ateToday ? '记下了' : '就吃这个'}}</button>
         <button class="draw-button draw-ghost" bindtap="draw">换一个</button>
       </view>
+      <block wx:if="{{picked.ateToday}}">
+        <view class="draw-label draw-rate-label">吃完觉得怎么样？</view>
+        <view class="draw-actions">
+          <button wx:for="{{ratings}}" wx:key="value" class="draw-button {{picked.myRating === item.value ? '' : 'draw-ghost'}}" data-id="{{picked.id}}" data-rating="{{item.value}}" bindtap="rate">{{item.label}}</button>
+        </view>
+      </block>
     </block>
     <block wx:else>
       <view class="draw-icon"><image class="draw-icon-img" src="/images/cat-icons/food.svg" /></view>
       <view class="draw-label">不知道吃啥？从{{filter ? '「' + filterText + '」' : ''}} {{visible.length}} 个里抽一个</view>
       <button class="draw-button" bindtap="draw">抽一个</button>
     </block>
-    <view class="draw-hint">最近 3 天吃过的不会抽到</view>
+    <view class="draw-hint">避开最近 3 天吃过的、踩雷的和有人不想吃的{{pair ? '；点了想吃的优先' : ''}}</view>
   </view>
 
   <view class="card ask-card">
@@ -51,9 +57,13 @@
         <view class="tile {{group.tile}}"><image class="tile-icon" src="{{group.icon}}" /></view>
         <view class="row-main">
           <view class="row-title">{{item.name}}</view>
-          <view wx:if="{{item.ateText}}" class="row-sub">{{item.ateText}}</view>
+          <view wx:if="{{item.subText}}" class="row-sub">{{item.subText}}</view>
         </view>
-        <text class="chevron">›</text>
+        <view wx:if="{{pair}}" class="vote">
+          <view class="vote-chip {{item.myVote === 'want' ? 'vote-want' : ''}}" data-id="{{item.id}}" data-vote="want" catchtap="vote" aria-role="button" aria-label="想吃 {{item.name}}">想吃</view>
+          <view class="vote-chip {{item.myVote === 'no' ? 'vote-no' : ''}}" data-id="{{item.id}}" data-vote="no" catchtap="vote" aria-role="button" aria-label="不想吃 {{item.name}}">不想</view>
+        </view>
+        <text wx:else class="chevron">›</text>
       </view>
     </view>
   </block>

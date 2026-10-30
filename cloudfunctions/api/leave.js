@@ -51,9 +51,31 @@ function copyRecord(name, record, job, householdId, openid) {
   if (doc.editedBy && doc.editedBy !== openid) doc.editedBy = '';
   if (name === 'expenses' && doc.payer) doc.payer = swap(doc.payer);
   if (name === 'todos' && doc.who) doc.who = swap(doc.who);
+  if (name === 'dishes') {
+    // 今天的投票不带走；评价按角色存，要跟着换。
+    delete doc.votes;
+    delete doc.votesOn;
+    if (doc.ratings)
+      doc.ratings = Object.fromEntries(
+        Object.entries(doc.ratings).map(([role, value]) => [swap(role), value]),
+      );
+  }
+  if (name === 'wishes') {
+    // 照片是旧小家文件夹里的文件，副本不带走（以后可以改成复制文件）；「我也想去」跟着换角色。
+    doc.photos = [];
+    if (doc.wants)
+      doc.wants = Object.fromEntries(
+        Object.entries(doc.wants).map(([role, value]) => [swap(role), value]),
+      );
+  }
   if (name === 'goals' && Array.isArray(doc.log))
     doc.log = doc.log.map((entry) => ({ ...entry, role: swap(entry.role) }));
-  if (name === 'insights') return { id: `${householdId}-${doc.month}`, doc };
+  if (name === 'insights')
+    return {
+      // 小报寄语和喵喵小结同一个集合，按种类分开，同一个月不会撞 id。
+      id: `${householdId}-${doc.kind === 'recap' ? 'recap-' : ''}${doc.month}`,
+      doc,
+    };
   if (name === 'activity') {
     doc.refId = copyId(householdId, doc.refId);
     return { id: `${doc.type}_${doc.refId}_${doc.date}`, doc };
@@ -70,6 +92,7 @@ function copyRecord(name, record, job, householdId, openid) {
 function createLeaveHandler({
   households,
   records,
+  storage = null,
   requireMembership,
   uniqueCode,
   now,
@@ -178,7 +201,21 @@ function createLeaveHandler({
     return false;
   }
 
+  /** 清空或注销前，把要删的想去记录里的照片也从云存储删掉；删不掉不挡清空。 */
+  async function removePhotos(householdId, notBy) {
+    if (!storage || !records.wishes?.listAll) return;
+    try {
+      const ids = (await records.wishes.listAll(householdId))
+        .filter((wish) => !notBy || wish.by !== notBy)
+        .flatMap((wish) => wish.photos || []);
+      if (ids.length) await storage.remove(ids);
+    } catch {
+      // 成了孤儿文件，可在控制台清理
+    }
+  }
+
   async function removeAll(householdId, notBy) {
+    await removePhotos(householdId, notBy);
     let removed = 0;
     for (const name of names) {
       for (let round = 0; round < MAX_REMOVE_ROUNDS; round++) {

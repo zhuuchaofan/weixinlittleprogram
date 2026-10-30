@@ -25,3 +25,5 @@
 .tip-main { flex: 1; min-width: 0; font-size: 28rpx; }
 .foot-note { margin-top: 32rpx; text-align: center; }
 .page-end { height: 80rpx; }
+.goal-by { margin-top: 8rpx; color: var(--muted); }
+.goal-celebrate { margin-top: 8rpx; color: var(--accent); font-weight: 600; }

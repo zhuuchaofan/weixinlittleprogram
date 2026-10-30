@@ -88,3 +88,24 @@ test('wxml 里不能有反斜杠', () => {
     assert.ok(!wxml.includes('\\'), `${kind}/${name}/index.wxml 里有反斜杠`);
   }
 });
+
+// app.wxss 把按钮外边距清零（button:not([size='mini'])），页面里写 `.x { margin-top }` 对按钮不生效。
+// 要写成 button.x:not([size='mini']) { … }，选择器比全局的高。
+test('按钮的外边距规则选择器要压过全局的清零', () => {
+  for (const [kind, name, dir] of folders()) {
+    const wxml = readFileSync(join(dir, 'index.wxml'), 'utf8');
+    const css = readFileSync(join(dir, 'index.wxss'), 'utf8');
+    const classes = new Set();
+    for (const tag of wxml.matchAll(/<button[^>]*?class="([^"{}]*)"/g))
+      for (const name of tag[1].split(/\s+/)) if (name) classes.add(name);
+    for (const cls of classes)
+      for (const rule of css.matchAll(
+        new RegExp(`^\\.${cls}\\s*\\{([^}]*)\\}`, 'gm'),
+      ))
+        assert.doesNotMatch(
+          rule[1].replace(/margin:\s*0\s*;?/g, ''),
+          /margin/,
+          `${kind}/${name}/index.wxss 里 .${cls} 是按钮，margin 会被全局样式盖掉，请写成 button.${cls}:not([size='mini'])`,
+        );
+  }
+});

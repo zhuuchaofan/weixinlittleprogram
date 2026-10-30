@@ -68,6 +68,7 @@
   - 行内按钮 `.btn-inline`：输入框旁边的「添加」。
   - 小按钮 `.btn-small`：卡片里的「存了一笔」「写小结」，64 高、浅主色底。
   - 文字按钮 `.text-button`、删除 `.danger-button`。
+  - **按钮间距**：全局样式把按钮外边距清零，页面里写 `.x { margin-top }` 对按钮不生效。直接放在 `.page` 里、紧跟在别的块后面的按钮，`app.wxss` 的 `.page > view + button` 自动隔 24；要别的值，用 `button.x:not([size='mini']) { margin-top: … }`（选择器要比全局的高）。
 - **分段切换** `.segmented`、**胶囊** `.chips`、**勾选圈** `.tick`、**月份切换** `.month-bar`、**分类色点** `.cat-dot`、**折叠标题** `.fold-head`：都在 `app.wxss`，直接用。
 - **空状态** `.empty`：虚线框 + 睡觉的小猫（`<image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" />`）+ 一句话，告诉人下一步点哪儿。加载中用 `.status`，文字前放走路的猫爪印（`.status-paws`，照现有页面抄），出错用 `.notice.error` + 「重试」按钮。
 - **猫咪元素**：名字叫喵喵记一笔，新页面别忘了小猫。小猫一律是**实心、淡阴影、深色眼睛**，和白卡片一个质感，不画主色线条猫。勾选圈勾上后是白色猫爪（`.tick-paw`，`images/ui/paw.png`），不是「✓」；渐变大卡片右上角是淡白猫头剪影（`.grad-card::after`，不用自己加）；白卡片 `.card`、列表 `.list`、主页入口右上角自动趴着一只小猫，6 种姿势（探头、趴着睡、坐着、伸懒腰、歪头眯眼、趴在边上）和毛色按顺序轮流（`::before`，图由 `scripts/card-cats.py` 写进 `app.wxss`，不跟主题变色），所以 `.card`、`.list` 别再写 `overflow: hidden` 或自己的 `::before`，卡片之间用 `--gap-card`（56）给小猫留高度；`.section-head`、`.fold-head` 右边已经留了 120 给下面卡片的小猫，标题行右边的小字不会被挡；主页宫格图标都带猫耳朵。文案偶尔带一个「喵」就够，别每句都加。

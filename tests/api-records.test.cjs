@@ -2,10 +2,14 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createRouter } = require('../cloudfunctions/api/router');
 
+// 限时免费期间所有小家都算会员；这里测的是免费 / 会员各自的行为，所以先关掉。
+process.env.VIP_FREE_UNTIL = 'off';
+
 function memoryHouseholds() {
   const docs = new Map();
   let seq = 0;
   return {
+    docs,
     async findByMember(openid) {
       return (
         [...docs.values()].find((d) =>
@@ -129,8 +133,20 @@ async function setup({ vision = null } = {}) {
   const dishes = memoryRecords('d');
   const wishes = memoryRecords('w');
   const dates = memoryRecords('n');
+  const households = memoryHouseholds();
+  // 云存储：记下被删的文件，换地址时原样加个前缀
+  const storage = {
+    removed: [],
+    async remove(ids) {
+      storage.removed.push(...ids);
+    },
+    async tempUrls(ids) {
+      return Object.fromEntries(ids.map((id) => [id, `https://tmp/${id}`]));
+    },
+  };
   const route = createRouter({
-    households: memoryHouseholds(),
+    households,
+    storage,
     archive: {},
     expenses,
     todos,
@@ -160,6 +176,8 @@ async function setup({ vision = null } = {}) {
     insights,
     goals,
     activity,
+    households,
+    storage,
   };
 }
 
@@ -582,6 +600,523 @@ test('纪念日：列表带倒数，按剩余天数排序，已过的不重复�
   assert.equal(list[1].years, 1);
 });
 
+test('每月小报：支出对比上月、两人各记几笔、吃了什么、做完什么、去过哪、存了多少', async () => {
+  const { call, activity, dates } = await setup();
+  assert.equal(
+    (await call('A', 'recap.get', { month: '2026-11' })).code,
+    'VALIDATION',
+    '还没到的月份',
+  );
+  assert.equal(
+    (await call('A', 'recap.get', { month: 'x' })).code,
+    'VALIDATION',
+  );
+  assert.equal((await call('X', 'recap.get', {})).ok, true);
+
+  // 默认是上个月（今天 2026-10-20 → 9 月）；上上个月（8 月）有账，9 月才有对比
+  await call('A', 'expense.add', expense({ date: '2026-08-10', amount: 4000 }));
+  await call('A', 'expense.add', expense({ date: '2026-09-02', amount: 3000 }));
+  await call(
+    'B',
+    'expense.add',
+    expense({ date: '2026-09-03', amount: 5000, cat: '日用', payer: 'b' }),
+  );
+  await call(
+    'B',
+    'expense.add',
+    expense({ date: '2026-09-04', amount: 9000, flow: 'in' }),
+  );
+  const sept = (await call('A', 'recap.get', {})).data;
+  assert.equal(sept.month, '2026-09');
+  assert.equal(sept.spend.total, 8000);
+  assert.equal(sept.spend.count, 2);
+  assert.equal(sept.spend.prevTotal, 4000);
+  assert.deepEqual(
+    sept.spend.weeks.map((w) => [w.from, w.amount]),
+    [
+      [1, 8000],
+      [8, 0],
+      [15, 0],
+      [22, 0],
+      [29, 0],
+    ],
+  );
+  assert.deepEqual(
+    [sept.spend.biggest.amount, sept.spend.biggest.date],
+    [5000, '2026-09-03'],
+  );
+  assert.deepEqual(sept.spend.peakDay, { day: 3, amount: 5000 });
+  assert.equal(sept.spend.perDay, 267);
+  assert.equal(sept.spend.freeDays, 28);
+  assert.deepEqual(sept.spend.byRole, { a: 1, b: 1 });
+  assert.deepEqual(
+    sept.spend.top.map((row) => [row.cat, row.amount]),
+    [
+      ['日用', 5000],
+      ['吃饭', 3000],
+    ],
+  );
+  assert.equal(sept.meals.count, 0);
+  assert.equal(sept.meals.top, null);
+  assert.equal(sept.togetherDay, 0);
+  // 8 月之前没有账：没有可比的上个月
+  assert.equal(
+    (await call('A', 'recap.get', { month: '2026-08' })).data.spend.prevTotal,
+    null,
+  );
+
+  // 本月（10 月）做过的事
+  const dish = await call('A', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('A', 'dish.update', { id: dish.data.id, ateOn: '2026-10-18' });
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-10-19' });
+  const curry = await call('B', 'dish.add', { name: '咖喱', tag: '在家做' });
+  await call('B', 'dish.update', { id: curry.data.id, ateOn: '2026-10-20' });
+  const todo = await call('A', 'todo.add', {
+    text: '洗碗',
+    kind: 'todo',
+    who: 'both',
+  });
+  await call('A', 'todo.update', { id: todo.data.id, done: true });
+  const wish = await call('B', 'wish.add', { title: '镰仓' });
+  await call('B', 'wish.update', {
+    id: wish.data.id,
+    done: true,
+    doneOn: '2026-10-12',
+  });
+  const goal = await call('A', 'goal.add', {
+    title: '旅行',
+    target: 100000,
+    deadline: '2027-05',
+  });
+  await call('A', 'goal.deposit', { id: goal.data.id, amount: 20000 });
+  await call('B', 'goal.deposit', { id: goal.data.id, amount: 5000 });
+  // 一个月前的活动不算进来
+  activity.docs.set('old', {
+    _id: 'old',
+    householdId: [...activity.docs.values()][0].householdId,
+    type: 'dish',
+    title: '旧的',
+    date: '2026-09-30',
+    ts: 1,
+    by: 'A',
+  });
+
+  const now = (await call('B', 'recap.get', { month: '2026-10' })).data;
+  assert.deepEqual(now.meals, { count: 3, top: { title: '拉面', count: 2 } });
+  assert.deepEqual(now.todos, { count: 1, byRole: { a: 1, b: 0 } });
+  assert.deepEqual(now.wishes, ['镰仓']);
+  assert.deepEqual(now.saved, { total: 25000, byRole: { a: 20000, b: 5000 } });
+  assert.equal(now.togetherDay, 0, '没设「在一起」起点');
+  // 设了起点（dates 里 together 的那条）：起点那天算第 1 天，数到今天；上个月的小报数到月底
+  const householdId = (await call('A', 'household.get')).data.id;
+  dates.docs.set('t', {
+    _id: 't',
+    householdId,
+    title: '在一起',
+    date: '2026-09-20',
+    together: true,
+    ts: 1,
+  });
+  assert.equal(
+    (await call('A', 'recap.get', { month: '2026-10' })).data.togetherDay,
+    31,
+  );
+  assert.equal((await call('A', 'recap.get', {})).data.togetherDay, 11);
+});
+
+test('纪念日：「在一起」起点全家只留一个，带第几天和下一个里程碑', async () => {
+  const { call } = await setup();
+  const first = await call('A', 'date.add', {
+    title: '在一起',
+    date: '2026-07-12',
+    yearly: true,
+    together: true,
+  });
+  assert.equal(first.data.together, true);
+  // 2026-07-12 是第 1 天，到 2026-10-20 是第 101 天。
+  assert.equal(first.data.togetherDay, 101);
+  assert.deepEqual(first.data.milestone, {
+    day: 200,
+    date: '2027-01-27',
+    days: 99,
+  });
+  const plain = await call('B', 'date.add', {
+    title: '生日',
+    date: '1995-10-20',
+    yearly: true,
+  });
+  assert.equal(plain.data.together, false);
+  assert.equal(plain.data.togetherDay, undefined);
+
+  // 另一条设为起点后，原来的取消。
+  const second = await call('B', 'date.add', {
+    title: '领证',
+    date: '2025-11-03',
+    yearly: true,
+    together: true,
+  });
+  assert.equal(second.data.together, true);
+  let list = (await call('A', 'date.list')).data;
+  assert.deepEqual(
+    list.filter((item) => item.together).map((item) => item.title),
+    ['领证'],
+  );
+  // 改成起点同样会取消别的；旧记录没有 together 字段时当作否。
+  await call('A', 'date.update', { id: first.data.id, together: true });
+  list = (await call('A', 'date.list')).data;
+  assert.deepEqual(
+    list.filter((item) => item.together).map((item) => item.title),
+    ['在一起'],
+  );
+});
+
+test('重复待办：勾完生成下一条（还没到时间），取消勾选收回；购物不重复', async () => {
+  const { call, todos } = await setup();
+  const bad = await call('A', 'todo.add', {
+    text: '倒垃圾',
+    kind: 'todo',
+    who: 'both',
+    repeat: 'yearly',
+  });
+  assert.equal(bad.code, 'VALIDATION');
+  const shop = await call('A', 'todo.add', {
+    text: '牛奶',
+    kind: 'shop',
+    who: 'both',
+    repeat: 'daily',
+  });
+  assert.equal(shop.data.repeat, '');
+  const added = await call('A', 'todo.add', {
+    text: '倒垃圾',
+    kind: 'todo',
+    who: 'b',
+    repeat: 'weekly',
+    dueOn: '2020-01-01',
+  });
+  assert.equal(added.data.repeat, 'weekly');
+  assert.equal(added.data.dueOn, '', 'dueOn 不接受传入');
+  const id = added.data.id;
+
+  // 今天 2026-10-20，每周重复：下一条是 10-27，做事的人和重复周期照旧。
+  await call('B', 'todo.update', { id, done: true });
+  let list = (await call('A', 'todo.list')).data.filter(
+    (t) => t.text === '倒垃圾',
+  );
+  assert.equal(list.length, 2);
+  const next = list.find((t) => !t.done);
+  assert.deepEqual(
+    [next.who, next.repeat, next.dueOn, next.done],
+    ['b', 'weekly', '2026-10-27', false],
+  );
+
+  // 取消勾选：生成的下一条没动过就收回。
+  await call('B', 'todo.update', { id, done: false });
+  list = (await call('A', 'todo.list')).data.filter((t) => t.text === '倒垃圾');
+  assert.equal(list.length, 1);
+  assert.equal(list[0].dueOn, '');
+
+  // 下一条已经做过就不删。
+  await call('B', 'todo.update', { id, done: true });
+  const spawned = (await call('A', 'todo.list')).data.find(
+    (t) => t.text === '倒垃圾' && !t.done,
+  );
+  await call('A', 'todo.update', { id: spawned.id, done: true });
+  await call('B', 'todo.update', { id, done: false });
+  assert.equal(
+    (await call('A', 'todo.list')).data.filter((t) => t.text === '倒垃圾')
+      .length,
+    3,
+  );
+  assert.equal(todos.docs.size >= 4, true);
+});
+
+test('下一次日期：每天 +1，每周 +7，每月同一天（没有就月底）', () => {
+  const { nextOccurrence } = require('../cloudfunctions/api/dates');
+  assert.equal(nextOccurrence('2026-10-31', 'daily'), '2026-11-01');
+  assert.equal(nextOccurrence('2026-12-28', 'weekly'), '2027-01-04');
+  assert.equal(nextOccurrence('2026-10-15', 'monthly'), '2026-11-15');
+  assert.equal(nextOccurrence('2026-01-31', 'monthly'), '2026-02-28');
+  assert.equal(nextOccurrence('2026-12-31', 'monthly'), '2027-01-31');
+});
+
+test('TA 最近：近 14 天的动态，只能回应对方做的，每人一个回应可改可收回', async () => {
+  const { call, activity } = await setup();
+  const todo = await call('A', 'todo.add', {
+    text: '洗碗',
+    kind: 'todo',
+    who: 'both',
+  });
+  await call('A', 'todo.update', { id: todo.data.id, done: true });
+  const dish = await call('B', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-10-20' });
+  // 一个月前的不显示
+  activity.docs.set('old', {
+    _id: 'old',
+    householdId: [...activity.docs.values()][0].householdId,
+    type: 'dish',
+    title: '很久以前',
+    date: '2026-08-01',
+    ts: NOW - 1000,
+    by: 'A',
+  });
+
+  const feed = (await call('B', 'activity.recent')).data;
+  assert.deepEqual(
+    feed
+      .map((item) => [item.title, item.byRole, item.reactions])
+      .sort((x, y) => x[0].localeCompare(y[0], 'zh')),
+    [
+      ['拉面', 'b', {}],
+      ['洗碗', 'a', {}],
+    ],
+  );
+  const wash = feed.find((item) => item.title === '洗碗');
+  assert.equal(
+    (await call('A', 'activity.react', { id: wash.id, reaction: 'great' }))
+      .code,
+    'VALIDATION',
+    '不能回应自己',
+  );
+  assert.equal(
+    (await call('B', 'activity.react', { id: wash.id, reaction: 'lol' })).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('X', 'activity.react', { id: wash.id, reaction: 'great' }))
+      .code,
+    'NOT_FOUND',
+  );
+  const reacted = await call('B', 'activity.react', {
+    id: wash.id,
+    reaction: 'thanks',
+  });
+  assert.deepEqual(reacted.data.reactions, { b: 'thanks' });
+  await call('B', 'activity.react', { id: wash.id, reaction: 'great' });
+  const seen = (await call('A', 'activity.recent')).data.find(
+    (item) => item.id === wash.id,
+  );
+  assert.deepEqual(seen.reactions, { b: 'great' });
+  const cleared = await call('B', 'activity.react', {
+    id: wash.id,
+    reaction: '',
+  });
+  assert.deepEqual(cleared.data.reactions, {});
+  assert.equal((await call('X', 'activity.recent')).data.length, 0);
+});
+
+test('吃啥：两人各投各的票，隔天作废；评价长期保留，只能改自己的', async () => {
+  const { call, dishes } = await setup();
+  const added = await call('A', 'dish.add', { name: '拉面', tag: '外食' });
+  const id = added.data.id;
+  assert.deepEqual([added.data.votes, added.data.ratings], [{}, {}]);
+
+  for (const bad of [{ vote: 'maybe' }, {}, { vote: null }])
+    assert.equal(
+      (await call('A', 'dish.vote', { id, ...bad })).code,
+      'VALIDATION',
+      JSON.stringify(bad),
+    );
+  assert.equal(
+    (await call('X', 'dish.vote', { id, vote: 'want' })).code,
+    'NOT_FOUND',
+  );
+
+  await call('A', 'dish.vote', { id, vote: 'want' });
+  const both = await call('B', 'dish.vote', { id, vote: 'no' });
+  assert.deepEqual(both.data.votes, { a: 'want', b: 'no' });
+  // 再选同一个不会收回（收回传空），改选就是覆盖自己的
+  const changed = await call('B', 'dish.vote', { id, vote: 'want' });
+  assert.deepEqual(changed.data.votes, { a: 'want', b: 'want' });
+  const cleared = await call('A', 'dish.vote', { id, vote: '' });
+  assert.deepEqual(cleared.data.votes, { b: 'want' });
+
+  // 改名等普通修改不动票和评价
+  await call('A', 'dish.update', { id, name: '豚骨拉面' });
+  assert.deepEqual((await call('B', 'dish.get', { id })).data.votes, {
+    b: 'want',
+  });
+
+  // 投票那天过了，票就不算了
+  dishes.docs.set(id, { ...dishes.docs.get(id), votesOn: '2026-10-19' });
+  assert.deepEqual((await call('A', 'dish.get', { id })).data.votes, {});
+  // 隔天第一次投票先清掉昨天的
+  const fresh = await call('A', 'dish.vote', { id, vote: 'no' });
+  assert.deepEqual(fresh.data.votes, { a: 'no' });
+
+  assert.equal(
+    (await call('A', 'dish.rate', { id, rating: 'great' })).code,
+    'VALIDATION',
+  );
+  await call('A', 'dish.rate', { id, rating: 'bad' });
+  const rated = await call('B', 'dish.rate', { id, rating: 'good' });
+  assert.deepEqual(rated.data.ratings, { a: 'bad', b: 'good' });
+  const reset = await call('A', 'dish.rate', { id, rating: '' });
+  assert.deepEqual(reset.data.ratings, { b: 'good' });
+  assert.deepEqual((await call('B', 'dish.list')).data[0].ratings, {
+    b: 'good',
+  });
+});
+
+test('想去的足迹：回忆和照片、普通 1 张会员 3 张、只能放自己小家的、删掉的照片从云存储删', async () => {
+  const { call, wishes, households, storage } = await setup();
+  const householdId = (await call('A', 'household.get')).data.id;
+  const photo = (name) =>
+    `cloud://env.x/wish-photos/${householdId}/${name}.jpg`;
+  const wish = await call('A', 'wish.add', { title: '镰仓' });
+  const id = wish.data.id;
+  assert.deepEqual(
+    [wish.data.photos, wish.data.memo, wish.data.wants],
+    [[], '', {}],
+  );
+
+  for (const bad of [
+    { photos: 'x' },
+    { photos: ['file://a'] },
+    { photos: [1] },
+    { photos: ['a', 'b', 'c', 'd'].map(photo) },
+    { memo: 'x'.repeat(101) },
+  ])
+    assert.equal(
+      (await call('A', 'wish.update', { id, ...bad })).code,
+      'VALIDATION',
+      JSON.stringify(bad),
+    );
+  // 别人家的文件夹不行
+  assert.equal(
+    (
+      await call('A', 'wish.update', {
+        id,
+        photos: ['cloud://env.x/wish-photos/other/a.jpg'],
+      })
+    ).code,
+    'VALIDATION',
+  );
+  // 普通用户 1 张
+  const over = await call('A', 'wish.update', {
+    id,
+    photos: [photo('a'), photo('b')],
+  });
+  assert.equal(over.code, 'VALIDATION');
+  assert.match(over.message, /开通会员/);
+  const one = await call('A', 'wish.update', {
+    id,
+    done: true,
+    doneOn: '2026-10-12',
+    memo: '看了海',
+    photos: [photo('a')],
+  });
+  assert.deepEqual([one.data.photos, one.data.memo], [[photo('a')], '看了海']);
+
+  // 会员 3 张；换掉的从云存储删
+  households.docs.get(householdId).vip = { until: NOW + 86400000 };
+  const three = await call('B', 'wish.update', {
+    id,
+    photos: [photo('b'), photo('c'), photo('d')],
+  });
+  assert.equal(three.data.photos.length, 3);
+  assert.deepEqual(storage.removed, [photo('a')]);
+  // 不传 photos 的修改不动照片
+  const renamed = await call('A', 'wish.update', { id, title: '去镰仓' });
+  assert.equal(renamed.data.photos.length, 3);
+  assert.deepEqual(storage.removed, [photo('a')]);
+
+  // 换临时地址：只给自己小家的
+  const urls = await call('B', 'photo.urls', { ids: [photo('b')] });
+  assert.deepEqual(urls.data, {
+    urls: { [photo('b')]: `https://tmp/${photo('b')}` },
+  });
+  assert.equal(
+    (
+      await call('B', 'photo.urls', {
+        ids: ['cloud://env.x/wish-photos/other/a.jpg'],
+      })
+    ).code,
+    'VALIDATION',
+  );
+
+  // 足迹：去过的，带那天一起花了多少
+  await call('A', 'expense.add', expense({ date: '2026-10-12', amount: 3000 }));
+  await call(
+    'B',
+    'expense.add',
+    expense({ date: '2026-10-12', amount: 2000, flow: 'in' }),
+  );
+  await call('B', 'expense.add', expense({ date: '2026-10-13', amount: 999 }));
+  await call('A', 'wish.add', { title: '还没去' });
+  const feed = await call('B', 'footprint.list');
+  assert.deepEqual(feed.data, {
+    year: '2026',
+    years: [{ year: '2026', places: 1 }],
+    total: { places: 1, photos: 3 },
+    items: [
+      {
+        id,
+        title: '去镰仓',
+        doneOn: '2026-10-12',
+        memo: '看了海',
+        photos: [photo('b'), photo('c'), photo('d')],
+        spent: 3000,
+        both: false,
+      },
+    ],
+  });
+  assert.equal((await call('X', 'footprint.list')).data.items.length, 0);
+
+  // 好几年：按年份取，默认最近一年；总数是全部年份的
+  const old = await call('A', 'wish.add', { title: '去京都' });
+  await call('A', 'wish.update', {
+    id: old.data.id,
+    title: '去京都',
+    done: true,
+    doneOn: '2024-04-02',
+  });
+  const both = await call('B', 'footprint.list');
+  assert.deepEqual(both.data.years, [
+    { year: '2026', places: 1 },
+    { year: '2024', places: 1 },
+  ]);
+  assert.equal(both.data.total.places, 2);
+  const past = await call('B', 'footprint.list', { year: '2024' });
+  assert.deepEqual(
+    past.data.items.map((item) => item.title),
+    ['去京都'],
+  );
+  assert.equal(
+    (await call('B', 'footprint.list', { year: '1999' })).data.year,
+    '2026',
+  );
+
+  // 我也想去：各点各的，再点收回
+  const open = await call('A', 'wish.add', { title: '北海道' });
+  assert.deepEqual(
+    (await call('B', 'wish.want', { id: open.data.id, want: true })).data.wants,
+    { b: true },
+  );
+  assert.deepEqual(
+    (await call('A', 'wish.want', { id: open.data.id, want: true })).data.wants,
+    { a: true, b: true },
+  );
+  assert.deepEqual(
+    (await call('B', 'wish.want', { id: open.data.id, want: false })).data
+      .wants,
+    { a: true },
+  );
+  assert.equal(
+    (await call('B', 'wish.want', { id: open.data.id })).code,
+    'VALIDATION',
+  );
+
+  // 删掉这一条，三张照片都从云存储删
+  storage.removed.length = 0;
+  await call('A', 'wish.remove', { id });
+  assert.deepEqual(storage.removed.sort(), [
+    photo('b'),
+    photo('c'),
+    photo('d'),
+  ]);
+  assert.equal(wishes.docs.has(id), false);
+});
+
 test('导出包含吃啥、周末、纪念日', async () => {
   const { call } = await setup();
   await call('A', 'dish.add', { name: '拉面', tag: '外食' });
@@ -603,6 +1138,7 @@ test('导出包含吃啥、周末、纪念日', async () => {
     'date',
     'id',
     'title',
+    'together',
     'ts',
     'yearly',
   ]);
@@ -1100,6 +1636,61 @@ test('花销分析：大额单笔最多 5 笔，没有备注时用截图商户�
   assert.equal(result.prevTotal, 0);
 });
 
+test('小报寄语：只发汇总数字，存下来，数字变了提示重新写，每天最多 2 次', async () => {
+  assert.equal(
+    (await (await setup()).call('A', 'recap.write', {})).code,
+    'UNAVAILABLE',
+  );
+  const prompts = [];
+  const vision = {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'recapNote');
+      prompts.push(prompt);
+      return '**你们**这个月很棒。\n\n\n下个月继续。';
+    },
+  };
+  const { call, insights } = await setup({ vision });
+  assert.equal(
+    (await call('A', 'recap.write', { month: '2026-11' })).code,
+    'VALIDATION',
+  );
+  await call(
+    'A',
+    'expense.add',
+    expense({ date: '2026-09-02', amount: 300000 }),
+  );
+  const dish = await call('B', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-09-10' });
+
+  assert.equal((await call('A', 'recap.get', {})).data.note, null);
+  const written = await call('A', 'recap.write', {});
+  assert.deepEqual(written.data, {
+    text: '你们这个月很棒。\n下个月继续。',
+    ts: NOW,
+    stale: false,
+  });
+  const prompt = prompts[0];
+  assert.match(prompt, /支出合计 3000 元，共 1 笔/);
+  assert.match(prompt, /吃得最多的是「拉面」/);
+  for (const secret of ['超凡', '佳益', '"A"', 'householdId'])
+    assert.equal(prompt.includes(secret), false, secret);
+  assert.equal(insights.docs.size, 1);
+  assert.equal(
+    [...insights.docs.keys()][0].includes('-recap-2026-09'),
+    true,
+    '和喵喵小结分开存',
+  );
+
+  assert.equal((await call('B', 'recap.get', {})).data.note.stale, false);
+  await call('A', 'expense.add', expense({ date: '2026-09-05', amount: 500 }));
+  assert.equal((await call('B', 'recap.get', {})).data.note.stale, true);
+  assert.equal((await call('B', 'recap.write', {})).ok, true);
+  assert.equal(insights.docs.size, 1, '每月只存一份');
+  assert.equal((await call('B', 'recap.write', {})).code, 'LIMIT');
+  assert.equal((await call('X', 'recap.get', {})).data.note, null);
+});
+
 test('AI 小结：只发汇总、存下来、账目变了提示重新生成、每天最多 5 次', async () => {
   assert.equal(
     (await (await setup()).call('A', 'insight.write', { month: '2026-10' }))
@@ -1290,6 +1881,23 @@ test('攒钱目标：每月要存、存了一笔、本月还差、改正已存�
     { amount: 50000, date: '2026-10-20', role: 'b', ts: NOW },
   ]);
   assert.equal(JSON.stringify(goals.docs.get(id)).includes('"B"'), false);
+  assert.deepEqual(deposited.data.savedBy, { a: 0, b: 50000 });
+  assert.equal(deposited.data.doneOn, '');
+  // 刚好攒够那一笔的日期；初始已存的 40 万也算在内。
+  const nearly = await call('A', 'goal.add', {
+    title: '小目标',
+    target: 30000,
+    deadline: '2027-05',
+    saved: 10000,
+  });
+  await call('B', 'goal.deposit', { id: nearly.data.id, amount: 10000 });
+  const reached = await call('A', 'goal.deposit', {
+    id: nearly.data.id,
+    amount: 20000,
+  });
+  assert.equal(reached.data.done, true);
+  assert.equal(reached.data.doneOn, '2026-10-20');
+  assert.deepEqual(reached.data.savedBy, { a: 20000, b: 10000 });
 
   // 只改名字不会动已存金额；改正已存金额要显式传。
   const renamed = await call('A', 'goal.update', { id, title: '大阪旅行' });
@@ -1310,6 +1918,7 @@ test('攒钱目标：每月要存、存了一笔、本月还差、改正已存�
     [
       ['过期的', 0, 1000],
       ['大阪旅行', 8, 0],
+      ['小目标', 8, 0],
     ],
   );
   assert.equal((await call('X', 'goal.list')).data.length, 0);

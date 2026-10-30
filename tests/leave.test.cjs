@@ -2,6 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createRouter } = require('../cloudfunctions/api/router');
 
+// 限时免费期间所有小家都算会员；这里测的是免费 / 会员各自的行为，所以先关掉。
+process.env.VIP_FREE_UNTIL = 'off';
+
 function memoryHouseholds() {
   const docs = new Map();
   let seq = 0;
@@ -235,6 +238,21 @@ async function fill(call) {
   await call('B', 'goal.deposit', { id: goal.data.id, amount: 500 });
   const dish = await call('B', 'dish.add', { name: '咖喱', tag: '在家做' });
   await call('A', 'dish.update', { id: dish.data.id, ateOn: '2026-10-19' });
+  await call('B', 'dish.vote', { id: dish.data.id, vote: 'want' });
+  await call('B', 'dish.rate', { id: dish.data.id, rating: 'good' });
+  await call('A', 'dish.rate', { id: dish.data.id, rating: 'bad' });
+}
+
+/** 想去：A 记了一条带回忆和照片、A 点了「我也想去」。 */
+async function fillWish(call) {
+  const householdId = (await call('A', 'household.get')).data.id;
+  const wish = await call('A', 'wish.add', { title: '镰仓' });
+  await call('A', 'wish.update', {
+    id: wish.data.id,
+    memo: '看了海',
+    photos: [`cloud://env.x/wish-photos/${householdId}/a.jpg`],
+  });
+  await call('A', 'wish.want', { id: wish.data.id, want: true });
 }
 
 /** 清空、只剩自己时退出：先替对方复制完（waiting），再真正执行。 */
@@ -258,6 +276,7 @@ async function copyAll(call, openid) {
 test('B 退出并带走副本：新小家里 B 是创建者，付款人、负责人、存入人跟着换', async () => {
   const { households, repos, call, oldId } = await setup();
   await fill(call);
+  await fillWish(call);
   const left = await call('B', 'household.leave', {});
   assert.equal(left.ok, true);
 
@@ -306,6 +325,15 @@ test('B 退出并带走副本：新小家里 B 是创建者，付款人、负责
   );
   // 「就吃这个」的回顾记录指向副本里的菜。
   const dish = (await call('B', 'dish.list')).data[0];
+  // 评价跟着换角色，今天的投票不带走。
+  assert.deepEqual(dish.ratings, { a: 'good', b: 'bad' });
+  assert.deepEqual(dish.votes, {});
+  // 想去：回忆一句话带走，照片留在旧小家（文件在旧小家的文件夹里）；「我也想去」跟着换角色。
+  const wish = (await call('B', 'wish.list')).data[0];
+  assert.deepEqual(
+    [wish.memo, wish.photos, wish.wants],
+    ['看了海', [], { b: true }],
+  );
   const act = [...repos.activity.docs.values()].find(
     (d) => d.householdId === mine.data.id,
   );

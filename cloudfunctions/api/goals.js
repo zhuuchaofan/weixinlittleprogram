@@ -2,6 +2,7 @@
  * 攒钱目标（docs/PLAN.md 记账规则最后一条）。金额单位为「分」：
  * - 进度靠手动「存了一笔」（goal.deposit）：saved 累加，log 记下每一笔（日期、金额、谁存的）。存入不是支出，不进记账统计。
  * - 每月要存：月初还差的钱 ÷ 从本月到截止月（含）的月数，向上取整到分；已过截止月时就是还差的全部；攒够了为 0。
+ * - savedBy：两人各通过「存了一笔」存了多少；doneOn：哪天攒够的（直接改正已存金额攒够的为空）。
  * - thisMonth：本月存入的合计；behind：本月还差多少才够「每月要存」。
  * - goal.tips：前 3 个整月里可省的分类（不含 FIXED 的固定开销）月均支出，取最多的 3 类，算省 10% / 20% 每月能多存多少。
  */
@@ -25,6 +26,26 @@ function monthsBetween(from, to) {
   return Math.max(0, (ty - fy) * 12 + (tm - fm) + 1);
 }
 
+/** 两人各通过「存了一笔」存了多少（不含新建时填的和后来改正的部分）。 */
+function savedBy(log) {
+  const total = { a: 0, b: 0 };
+  for (const entry of log)
+    if (entry.role === 'a' || entry.role === 'b')
+      total[entry.role] += entry.amount;
+  return total;
+}
+
+/** 哪天攒够的：从「已存 − 存入记录」这个起点往后累加；直接改正已存金额攒够的没有这一天。 */
+function reachedOn(target, saved, log) {
+  let running = Math.max(0, saved - log.reduce((sum, e) => sum + e.amount, 0));
+  if (running >= target) return '';
+  for (const entry of log) {
+    running += entry.amount;
+    if (running >= target) return entry.date;
+  }
+  return '';
+}
+
 function progress(view, clock) {
   const month = todayKey(clock()).slice(0, 7);
   const saved = view.saved || 0;
@@ -41,12 +62,15 @@ function progress(view, clock) {
     : monthsLeft
       ? Math.ceil(atMonthStart / monthsLeft)
       : remaining;
+  const done = saved >= view.target;
   return {
     ...view,
     saved,
+    savedBy: savedBy(log),
+    doneOn: done ? reachedOn(view.target, saved, log) : '',
     // 最近的在前，只返回最近几笔。
     log: log.slice(-LOG_SHOWN).reverse(),
-    done: saved >= view.target,
+    done,
     percent: Math.min(100, Math.floor((saved * 100) / view.target)),
     remaining,
     monthsLeft,

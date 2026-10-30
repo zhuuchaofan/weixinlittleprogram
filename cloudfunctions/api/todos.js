@@ -1,9 +1,11 @@
 const validate = require('./validate');
 const { publicRecord, requireRecord } = require('./records');
-const { todayKey } = require('./dates');
+const { todayKey, nextOccurrence } = require('./dates');
 
 // doneOn：勾完那天（YYYY-MM-DD），没勾或取消勾选为空；年度回顾按它数。
-const FIELDS = ['text', 'kind', 'who', 'done', 'doneOn'];
+// repeat：重复周期（空、daily、weekly、monthly）；勾完时生成下一条，dueOn 是下一条要做的那天，没到之前清单里先折起来。
+// spawnedId 只在云端用：取消勾选时把刚生成的下一条删掉。
+const FIELDS = ['text', 'kind', 'who', 'done', 'doneOn', 'repeat', 'dueOn'];
 
 /**
  * repository: listAll(householdId)、get、insert、update、remove、removeWhere。
@@ -34,6 +36,7 @@ function createTodoHandler({
       const record = {
         ...validate.todo({ ...payload, done: false }),
         doneOn: '',
+        dueOn: '',
         householdId: household._id,
         ts: now(),
         by: openid,
@@ -45,7 +48,12 @@ function createTodoHandler({
       const household = await requireMembership(openid);
       const id = validate.id(payload.id);
       const existing = await requireRecord(repository, household, id);
-      const checked = validate.todo({ ...existing, ...payload });
+      // dueOn 只由「勾完生成下一条」写入，不接受传入。
+      const checked = validate.todo({
+        ...existing,
+        ...payload,
+        dueOn: existing.dueOn || '',
+      });
       const justDone = checked.done && !existing.done;
       const fields = {
         ...checked,
@@ -55,6 +63,26 @@ function createTodoHandler({
             ? todayKey(now())
             : existing.doneOn || '',
       };
+      if (justDone && checked.repeat)
+        fields.spawnedId = await repository.insert({
+          text: checked.text,
+          kind: checked.kind,
+          who: checked.who,
+          done: false,
+          doneOn: '',
+          repeat: checked.repeat,
+          dueOn: nextOccurrence(fields.doneOn, checked.repeat),
+          householdId: household._id,
+          ts: now(),
+          by: existing.by,
+        });
+      if (existing.done && !checked.done && existing.spawnedId) {
+        // 取消勾选：刚生成的下一条还没动过就删掉，免得重复。
+        const next = await repository.get(household._id, existing.spawnedId);
+        if (next && !next.done)
+          await repository.remove(household._id, existing.spawnedId);
+        fields.spawnedId = '';
+      }
       await repository.update(household._id, id, fields);
       if (activity && justDone)
         await activity.add(household, openid, {

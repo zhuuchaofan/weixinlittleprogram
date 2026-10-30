@@ -14,3 +14,11 @@
 .ask-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 8rpx; }
 .ask-title { font-size: 28rpx; font-weight: 700; }
 .ask-row { display: flex; align-items: center; gap: 16rpx; min-height: 88rpx; }
+
+.draw-rate-label { position: relative; z-index: 1; margin-top: 8rpx; }
+
+/* 菜单每行右边的「想吃 / 不想」，两个人各点各的，过了今天自动清空 */
+.vote { display: flex; flex-shrink: 0; gap: 12rpx; }
+.vote-chip { height: 64rpx; padding: 0 20rpx; display: flex; align-items: center; justify-content: center; border-radius: 999rpx; border: 1rpx solid var(--line); background: var(--surface); color: var(--muted); font-size: 26rpx; white-space: nowrap; }
+.vote-want { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.vote-no { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 600; }

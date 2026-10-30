@@ -23,7 +23,8 @@ export interface Household {
   /** 退出小家时带走的旧账还没复制完（接着在「退出小家」页复制）。 */
   copying: boolean;
   /** 会员属于整个小家，两人共用；until 是到期时间戳（没开通过为 0）。 */
-  vip: { active: boolean; until: number };
+  /** active / until：真正开通的会员；free：限时免费的截止时间戳（没有为 0）；member：现在能不能用会员功能。 */
+  vip: { active: boolean; until: number; free: number; member: boolean };
   members: HouseholdMember[];
 }
 
@@ -164,12 +165,15 @@ export interface BillItem {
 
 export type TodoKind = 'shop' | 'todo' | 'chore';
 export type TodoWho = 'a' | 'b' | 'both';
+export type TodoRepeat = '' | 'daily' | 'weekly' | 'monthly';
 
 export interface TodoInput {
   text: string;
   kind: TodoKind;
   who: TodoWho;
   done?: boolean;
+  /** 重复周期，只有待办用；勾完自动生成下一条。 */
+  repeat?: TodoRepeat;
 }
 
 export interface Todo extends TodoInput {
@@ -178,7 +182,23 @@ export interface Todo extends TodoInput {
   done: boolean;
   /** 勾完那天，YYYY-MM-DD；没勾为空（旧记录没有）。 */
   doneOn?: string;
+  repeat?: TodoRepeat;
+  /** 重复任务生成的下一条要做的那天；没到之前清单里先折起来。 */
+  dueOn?: string;
   byRole: MemberRole | '';
+}
+
+export type Reaction = 'thanks' | 'great' | 'love';
+
+/** 主页「TA 最近」里的一条：两人做过的事，和两人各自的回应。 */
+export interface ActivityItem {
+  id: string;
+  ts: number;
+  byRole: MemberRole | '';
+  type: 'dish' | 'todo' | 'wish';
+  title: string;
+  date: string;
+  reactions: Partial<Record<MemberRole, Reaction>>;
 }
 
 export type DishTag = '在家做' | '外食' | '外卖';
@@ -193,6 +213,11 @@ export interface DishInput {
   ateOn?: string;
 }
 
+/** 今天想吃 / 不想吃。 */
+export type DishVote = 'want' | 'no';
+/** 吃过之后：好吃 / 一般 / 踩雷。 */
+export type DishRating = 'good' | 'ok' | 'bad';
+
 export interface WishInput {
   title: string;
   /** 旧版的「为什么想去」；现在只用 plan（界面上叫备注），编辑保存时合并进去。 */
@@ -201,12 +226,18 @@ export interface WishInput {
   done?: boolean;
   /** 去过的日期，YYYY-MM-DD；没去过为空。 */
   doneOn?: string;
+  /** 去过之后留的一句话。 */
+  memo?: string;
+  /** 云存储 fileID；普通每条 1 张，会员 3 张。保存时不带这项就是不改照片。 */
+  photos?: string[];
 }
 
 export interface AnniversaryInput {
   title: string;
   date: string;
   yearly: boolean;
+  /** 是不是「在一起」的起点；全家最多一个。 */
+  together: boolean;
 }
 
 interface RecordMeta {
@@ -215,8 +246,38 @@ interface RecordMeta {
   byRole: MemberRole | '';
 }
 
-export type Dish = DishInput & RecordMeta;
-export type Wish = WishInput & RecordMeta;
+export type Dish = DishInput &
+  RecordMeta & {
+    /** 两人今天各自的投票；过了今天就清空。 */
+    votes: Partial<Record<MemberRole, DishVote>>;
+    /** 两人各自吃过之后的评价，长期保留。 */
+    ratings: Partial<Record<MemberRole, DishRating>>;
+  };
+export type Wish = WishInput &
+  RecordMeta & {
+    /** 谁点了「我也想去」。 */
+    wants?: Partial<Record<MemberRole, boolean>>;
+  };
+
+/** 「我们的足迹」一条：去过的地方、一句话、照片，和那天一起花了多少（分）。 */
+export interface Footprint {
+  id: string;
+  title: string;
+  doneOn: string;
+  memo: string;
+  photos: string[];
+  spent: number;
+  /** 两个人都点过「我想去」。 */
+  both: boolean;
+}
+
+/** footprint.list：一年的记录，加各年个数和全部年份的总数。 */
+export interface FootprintPage {
+  year: string;
+  years: Array<{ year: string; places: number }>;
+  total: { places: number; photos: number };
+  items: Footprint[];
+}
 
 export interface Anniversary extends AnniversaryInput, RecordMeta {
   /** 下一次（每年重复）或原日期（不重复），YYYY-MM-DD。 */
@@ -226,6 +287,10 @@ export interface Anniversary extends AnniversaryInput, RecordMeta {
   passed: boolean;
   /** 每年重复时，下一次是第几周年。 */
   years: number;
+  /** 只有 together 的才有：今天是在一起第几天（起点还没到为 0）。 */
+  togetherDay?: number;
+  /** 只有 together 的才有：下一个里程碑（第几天、是哪天、还有几天）。 */
+  milestone?: { day: number; date: string; days: number } | null;
 }
 
 /** 花销分析（insight.get）：口径同 LedgerSummary.spending。 */
@@ -298,6 +363,10 @@ export interface GoalDeposit {
 export interface Goal extends GoalInput, RecordMeta {
   /** 最近 10 笔「存了一笔」，最近的在前。 */
   log: GoalDeposit[];
+  /** 两人各通过「存了一笔」存了多少（分）。 */
+  savedBy: { a: number; b: number };
+  /** 哪天攒够的；没攒够或直接改正已存金额攒够的为空。 */
+  doneOn: string;
   done: boolean;
   percent: number;
   remaining: number;
@@ -315,4 +384,39 @@ export interface SavingTip {
   average: number;
   save10: number;
   save20: number;
+}
+
+/** 每月小报（recap.get）：一个月里两人一起做了什么。金额单位为「分」。 */
+export interface MonthRecap {
+  month: string;
+  spend: {
+    total: number;
+    count: number;
+    /** 上个月的支出；上个月一笔都没记过为 null。 */
+    prevTotal: number | null;
+    byRole: { a: number; b: number };
+    top: Array<{ cat: string; amount: number }>;
+    /** 每 7 天一段的支出：from 是这段从几号开始。 */
+    weeks: Array<{ from: number; amount: number }>;
+    biggest: { amount: number; cat: string; note: string; date: string } | null;
+    peakDay: { day: number; amount: number } | null;
+    /** 日均支出（分）；当月数到今天为止。 */
+    perDay: number;
+    /** 没花钱的天数。 */
+    freeDays: number;
+  };
+  meals: { count: number; top: { title: string; count: number } | null };
+  todos: { count: number; byRole: { a: number; b: number } };
+  wishes: string[];
+  saved: { total: number; byRole: { a: number; b: number } };
+  /** 在一起第几天（数到这个月最后一天或今天）；没设起点为 0。 */
+  togetherDay: number;
+  /** AI 写的寄语；还没写过为 null，stale 表示写完之后数字变了。 */
+  note: RecapNote | null;
+}
+
+export interface RecapNote {
+  text: string;
+  ts: number;
+  stale: boolean;
 }

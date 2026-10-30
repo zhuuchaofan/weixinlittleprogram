@@ -1,0 +1,29 @@
+.hero { padding: 32rpx; }
+.hero-kicker { font-size: 24rpx; opacity: 0.85; letter-spacing: 4rpx; }
+.hero-big { font-size: 80rpx; font-weight: 800; line-height: 1.1; margin-top: 8rpx; }
+.hero-unit { font-size: 32rpx; font-weight: 600; margin-left: 8rpx; }
+.hero-sub { font-size: 26rpx; opacity: 0.92; margin-top: 8rpx; }
+
+.years { white-space: nowrap; margin-top: 24rpx; }
+.years .chip { display: inline-flex; margin-right: 16rpx; }
+
+.month { display: flex; align-items: baseline; gap: 16rpx; margin: 48rpx 4rpx 24rpx; font-size: 34rpx; font-weight: 700; }
+.month-count { font-size: 24rpx; font-weight: 400; color: var(--muted); }
+
+.wall { display: flex; gap: 24rpx; align-items: flex-start; }
+.col { flex: 1; min-width: 0; }
+.col-right { margin-top: 32rpx; }
+
+.polaroid { position: relative; background: var(--surface); padding: 16rpx 16rpx 20rpx; border-radius: 12rpx; box-shadow: var(--shadow); margin-bottom: 32rpx; transform: rotate(-1.6deg); }
+.col-right .polaroid { transform: rotate(1.4deg); }
+.tape { position: absolute; top: -16rpx; left: 50%; width: 88rpx; height: 32rpx; margin-left: -44rpx; background: var(--accent-soft); border-radius: 4rpx; transform: rotate(-3deg); box-shadow: 0 2rpx 4rpx var(--tint); }
+.photo-frame { position: relative; border-radius: 8rpx; overflow: hidden; background: var(--accent-soft); }
+.photo { display: block; width: 100%; min-height: 160rpx; }
+.badge { position: absolute; right: 12rpx; top: 12rpx; padding: 4rpx 16rpx; border-radius: 999rpx; background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 20rpx; }
+.cap { padding: 16rpx 4rpx 0; }
+.cap-title { font-size: 28rpx; font-weight: 700; }
+.cap-memo { font-size: 24rpx; line-height: 1.5; margin-top: 4rpx; }
+.cap-foot { display: flex; justify-content: space-between; gap: 8rpx; margin-top: 12rpx; font-size: 22rpx; color: var(--muted); }
+.heart { color: var(--accent); }
+.end-note { text-align: center; color: var(--muted); font-size: 24rpx; margin-top: 24rpx; }
+.polaroid-plain { background: var(--accent-soft); }

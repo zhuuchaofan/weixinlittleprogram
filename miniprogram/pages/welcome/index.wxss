@@ -11,7 +11,7 @@
 .code-input { letter-spacing: 8rpx; }
 .rule { margin-top: var(--gap-sm); font-size: 28rpx; line-height: 1.7; }
 .occupied-actions { margin-top: var(--gap-lg); }
-.back { margin: 12rpx auto 0; }
+button.back:not([size='mini']) { margin: 12rpx auto 0; }
 /* 小猫图标轻轻浮着，中间的心在跳 */
 .home-tile { animation: float 3.6s ease-in-out infinite; }
 .pair-heart { animation: beat 1.6s ease-in-out infinite; }

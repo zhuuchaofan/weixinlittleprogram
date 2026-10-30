@@ -76,6 +76,15 @@ export const CONTRACT = {
       "free": 3,
       "vip": 30
     },
+    "recapNote": {
+      "name": "小报寄语",
+      "verb": "写",
+      "unit": "次",
+      "what": "寄语",
+      "per": "day",
+      "free": 2,
+      "vip": 20
+    },
     "dateWish": {
       "name": "纪念日祝福和点子",
       "verb": "写",
@@ -87,6 +96,7 @@ export const CONTRACT = {
     }
   },
   "vip": {
+    "freeUntil": "2026-12-31",
     "plans": [
       {
         "id": "vip_month",
@@ -116,9 +126,29 @@ export const CONTRACT = {
     "b",
     "both"
   ],
+  "todoRepeat": [
+    "",
+    "daily",
+    "weekly",
+    "monthly"
+  ],
+  "reactions": [
+    "thanks",
+    "great",
+    "love"
+  ],
   "dishKinds": [
     "dish",
     "shop"
+  ],
+  "dishVotes": [
+    "want",
+    "no"
+  ],
+  "dishRatings": [
+    "good",
+    "ok",
+    "bad"
   ],
   "dishTags": [
     "在家做",
@@ -129,6 +159,10 @@ export const CONTRACT = {
     "外食",
     "外卖"
   ],
+  "photos": {
+    "free": 1,
+    "vip": 3
+  },
   "maxAmount": 1000000000,
   "lengths": {
     "expenseNote": 40,
@@ -137,6 +171,7 @@ export const CONTRACT = {
     "wishTitle": 30,
     "wishWhy": 100,
     "wishPlan": 300,
+    "wishMemo": 100,
     "dateTitle": 20,
     "todoSplitText": 120,
     "dishWant": 30,

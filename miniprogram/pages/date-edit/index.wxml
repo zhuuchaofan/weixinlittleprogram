@@ -9,6 +9,11 @@
     <view class="row-main"><view>每年重复</view><view class="row-sub">生日、纪念日打开；一次性的计划关闭</view></view>
     <switch checked="{{yearly}}" bindchange="toggleYearly" color="{{accent}}" aria-label="每年重复" />
   </view>
+  <view class="card yearly">
+    <view class="row-main"><view>作为「在一起」的起点</view><view class="row-sub">主页会显示在一起第几天，并提醒 100、520、1000 天这些日子；只能选一个</view></view>
+    <switch checked="{{together}}" bindchange="toggleTogether" color="{{accent}}" aria-label="作为在一起的起点" />
+  </view>
+  <button wx:if="{{id}}" class="secondary calendar" bindtap="addToCalendar">写进手机日历{{yearly ? '（每年提醒）' : ''}}</button>
   <view wx:if="{{id}}" class="card wish-card">
     <view class="wish-head"><text class="wish-title">喵喵出主意</text><text class="tag">AI 生成</text></view>
     <view class="small muted">礼物预算</view>

@@ -12,8 +12,10 @@ import { THEMES } from '../../config/themes';
 import { todayKey } from '../../utils/date';
 
 function vipText(household: Household): string {
-  return household.vip?.active
-    ? `会员有效中 · ${todayKey(household.vip.until)} 到期`
+  if (household.vip?.active)
+    return `会员有效中 · ${todayKey(household.vip.until)} 到期`;
+  return household.vip?.free
+    ? `限时免费 · ${todayKey(household.vip.free)} 前`
     : '开通会员';
 }
 

@@ -9,6 +9,7 @@
       <view class="hero-value">{{info.active ? untilText : '开通会员'}}</view>
       <view class="hero-sub">{{info.active ? '这天到期，到期后不会自动续费' : '一个人开通，两个人都能用'}}</view>
     </view>
+    <view wx:if="{{freeText}}" class="notice">限时免费：到 {{freeText}} 前，会员功能你们两个人都能免费用，不用开通。这期间开通会员，到期日仍从付款成功起算。</view>
     <view wx:if="{{message}}" class="notice">{{message}}</view>
 
     <view class="section">

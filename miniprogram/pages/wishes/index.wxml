@@ -1,5 +1,6 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
+  <view wx:if="{{done.length}}" class="foot-entry" bindtap="footprints" hover-class="list-row-active" aria-role="button">我们的足迹 · 去过 {{done.length}} 个地方 ›</view>
   <view class="composer">
     <input class="composer-input" value="{{title}}" maxlength="{{limits.wishTitle}}" placeholder="想去哪儿 / 想做什么…" confirm-type="done" confirm-hold bindinput="inputTitle" bindconfirm="add" />
     <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
@@ -13,8 +14,11 @@
       <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="去过了 {{item.title}}"><view class="tick-box"></view></view>
       <view class="row-main wish-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
         <view class="row-title">{{item.title}}</view>
+        <view wx:if="{{item.theirs && item.mine}}" class="row-sub">你们俩都想去</view>
+        <view wx:elif="{{item.theirs}}" class="row-sub">TA 也想去</view>
         <view wx:if="{{item.subText}}" class="row-sub">{{item.subText}}</view>
       </view>
+      <view class="chip want-chip {{item.mine ? 'chip-on' : ''}}" data-id="{{item.id}}" bindtap="want" aria-role="button" aria-label="我也想去 {{item.title}}">{{item.mine ? '想去 ✓' : '我想去'}}</view>
     </view>
   </view>
 
@@ -27,6 +31,7 @@
           <view class="row-title">{{item.title}}</view>
           <view class="row-sub">{{item.subText}}</view>
         </view>
+        <image wx:if="{{item.thumb}}" class="wish-thumb" src="{{item.thumb}}" mode="aspectFill" />
       </view>
     </view>
   </block>
