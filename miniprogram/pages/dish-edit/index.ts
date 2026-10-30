@@ -22,7 +22,7 @@ Page({
   },
   async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) {
-      this.setData({ error: '没有找到这一条，请返回刷新后重试。' });
+      this.setData({ error: '这条好像已经不在了，返回刷新一下看看吧。' });
       return;
     }
     try {
@@ -46,7 +46,7 @@ Page({
   async save() {
     if (this.data.busy || !this.data.id) return;
     if (!this.data.name.trim()) {
-      this.setData({ error: '名称不能为空。' });
+      this.setData({ error: '还没写名字哦。' });
       return;
     }
     this.setData({ busy: true, error: '' });

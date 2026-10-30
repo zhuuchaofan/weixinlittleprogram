@@ -51,9 +51,10 @@
 
     <view class="card recap-card">
       <view class="small muted recap-head">这个月一起</view>
-      <view wx:for="{{together}}" wx:key="label" class="together-row">
+      <view wx:for="{{together}}" wx:key="label" class="together-row" data-page="{{item.page}}" bindtap="openTogether" hover-class="{{item.page ? 'list-row-active' : 'none'}}" aria-role="{{item.page ? 'link' : ''}}">
         <view class="together-label {{item.on ? 'together-on' : ''}}">{{item.label}}</view>
         <view class="together-text {{item.on ? '' : 'muted'}}">{{item.text}}</view>
+        <text wx:if="{{item.page}}" class="chevron-sm muted">›</text>
       </view>
     </view>
 

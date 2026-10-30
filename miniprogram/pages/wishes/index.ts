@@ -139,7 +139,7 @@ Page({
     if (this.data.busy) return;
     const title = this.data.title.trim();
     if (!title) {
-      this.setData({ error: '请写下想去的地方或想做的事。' });
+      this.setData({ error: '写一个想去的地方或想做的事吧。' });
       return;
     }
     this.setData({ busy: true, error: '' });

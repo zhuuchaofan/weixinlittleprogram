@@ -158,7 +158,7 @@ Page({
     if (this.data.busy || this.data.isSettlement) return;
     const amount = parseYuan(this.data.amountText);
     if (!amount) {
-      this.setData({ error: '请填写大于 0 的金额，最多两位小数。' });
+      this.setData({ error: '金额要大于 0，最多写到分哦。' });
       return;
     }
     const flow = this.data.flow;

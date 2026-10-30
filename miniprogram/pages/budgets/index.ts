@@ -72,7 +72,7 @@ Page({
       if (!text) continue;
       const amount = parseYuan(text);
       if (!amount && Number(text) !== 0) {
-        this.setData({ error: `${row.cat}的金额不对，最多两位小数。` });
+        this.setData({ error: `${row.cat}的金额写到分就好，再看看。` });
         return;
       }
       if (amount) budgets[row.cat] = amount;

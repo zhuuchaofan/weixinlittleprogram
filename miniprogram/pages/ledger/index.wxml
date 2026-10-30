@@ -37,7 +37,7 @@
         <text class="small">{{item.budget.text}}</text>
       </view>
     </view>
-    <view class="insight-link" bindtap="openInsight" hover-class="insight-link-active" aria-role="button">和上月比、大额支出<text class="chevron">›</text></view>
+    <view class="insight-link" bindtap="openInsight" hover-class="insight-link-active" aria-role="button">花在哪儿了：和上月比、大额支出<text class="chevron">›</text></view>
   </view>
 
   <view class="section-head">

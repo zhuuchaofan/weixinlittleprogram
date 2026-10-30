@@ -75,7 +75,10 @@
         <view class="small muted">明细 <text class="chevron-sm">›</text></view>
       </view>
       <view class="month-total serif"><text wx:if="{{money.sign(spentText)}}" class="cur">¥</text>{{money.digits(spentText) || '—'}}</view>
-      <view class="small muted">{{countText}}</view>
+      <view class="month-foot">
+        <view class="small muted">{{countText}}</view>
+        <view class="month-link small" data-page="insight" catchtap="open" hover-stop-propagation aria-role="link">花在哪儿了 <text class="chevron-sm">›</text></view>
+      </view>
     </view>
 
     <view wx:if="{{goalsReady}}" class="card saving" data-page="goals" bindtap="open" hover-class="card-active" aria-role="button">
@@ -111,10 +114,15 @@
         <view class="grid-title">想去</view>
         <view class="small muted">想去的地方和想做的事</view>
       </view>
-      <view class="grid-cell" data-page="dates" bindtap="open" hover-class="grid-cell-active" aria-role="button">
+      <view wx:if="{{household.inviteCode}}" class="grid-cell" data-page="dates" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-dates.svg" /></view>
         <view class="grid-title">纪念日</view>
         <view class="small muted">倒数和已经多少天</view>
+      </view>
+      <view wx:else class="grid-cell" data-page="footprints" bindtap="open" hover-class="grid-cell-active" aria-role="button">
+        <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-footprints.svg" /></view>
+        <view class="grid-title">足迹</view>
+        <view class="small muted">一起去过的地方</view>
       </view>
     </view>
 

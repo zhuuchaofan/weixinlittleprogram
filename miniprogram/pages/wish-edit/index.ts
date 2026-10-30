@@ -173,7 +173,7 @@ Page({
     };
     if (this.data.photosChanged) input.photos = this.data.photos;
     if (!input.title) {
-      this.setData({ error: '请写下想去的地方或想做的事。' });
+      this.setData({ error: '写一个想去的地方或想做的事吧。' });
       return;
     }
     this.setData({ busy: true, error: '' });

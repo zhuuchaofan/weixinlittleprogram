@@ -31,7 +31,7 @@ Page({
   },
   async onLoad(options: Record<string, string | undefined>) {
     if (!options.id) {
-      this.setData({ error: '没有找到这条内容，请返回刷新后重试。' });
+      this.setData({ error: '这条好像已经不在了，返回刷新一下看看吧。' });
       return;
     }
     try {
@@ -63,7 +63,7 @@ Page({
     if (this.data.busy || !this.data.id) return;
     const text = this.data.text.trim();
     if (!text) {
-      this.setData({ error: '内容不能为空。' });
+      this.setData({ error: '还没写内容哦。' });
       return;
     }
     this.setData({ busy: true, error: '' });

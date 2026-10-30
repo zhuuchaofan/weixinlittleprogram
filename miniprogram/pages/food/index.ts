@@ -307,7 +307,7 @@ Page({
     if (this.data.busy) return;
     const name = this.data.name.trim();
     if (!name) {
-      this.setData({ error: '请先写名字，菜名或店名都行。' });
+      this.setData({ error: '先写个名字吧，菜名或店名都行。' });
       return;
     }
     this.setData({ busy: true, error: '' });

@@ -79,10 +79,10 @@ Page({
     const target = parseYuan(this.data.targetText);
     const savedText = this.data.savedText.trim();
     const saved = savedText ? parseYuan(savedText) : 0;
-    if (!title) return this.setData({ error: '请填写目标名称。' });
-    if (!target) return this.setData({ error: '请填写目标金额。' });
+    if (!title) return this.setData({ error: '给目标起个名字吧。' });
+    if (!target) return this.setData({ error: '还没写要攒多少哦。' });
     if (savedText && !saved && Number(savedText) !== 0)
-      return this.setData({ error: '已存金额不对，最多两位小数。' });
+      return this.setData({ error: '已存的金额写到分就好，再看看。' });
     const input: Partial<GoalInput> = {
       title,
       target,

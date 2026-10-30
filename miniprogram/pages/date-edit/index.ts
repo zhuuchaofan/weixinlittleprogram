@@ -83,7 +83,10 @@ Page({
     const fail = (result: { errMsg?: string }) => {
       // 用户点了取消不算出错。
       if (!/cancel|deny/i.test(result.errMsg || ''))
-        wx.showToast({ title: '没能写进日历，请在设置里允许', icon: 'none' });
+        wx.showToast({
+          title: '没写进日历，去设置里允许一下就好',
+          icon: 'none',
+        });
     };
     const event = { title, startTime, allDay: true, alarm: true };
     if (yearly)
@@ -121,7 +124,7 @@ Page({
       together: this.data.together,
     };
     if (!input.title) {
-      this.setData({ error: '请填写名称。' });
+      this.setData({ error: '还没写名字哦。' });
       return;
     }
     this.setData({ busy: true, error: '' });
