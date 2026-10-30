@@ -4,7 +4,7 @@
   <view class="title">登记与祝福</view>
   <view class="lead">那天亲友留下的回复和心意，只有我们俩能看到。</view>
   <view wx:if="{{loading}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
 
   <block wx:if="{{archive}}">
     <view class="card stats">

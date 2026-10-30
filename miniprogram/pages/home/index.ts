@@ -23,7 +23,7 @@ import { todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
 import { togetherView, type TogetherRow } from '../../utils/together';
-import { REACTIONS, reactionLabel } from '../../config/options';
+import { REACTIONS, REACTION_PHRASES } from '../../config/options';
 import { errorMessage } from '../../services/cloud';
 import { daysBetween } from '../../utils/date';
 
@@ -39,10 +39,62 @@ function partnerName(household: Household): string {
 
 const DONE_TEXT = { todo: '完成了', dish: '吃了', wish: '去过了' };
 
+/** 主页顶部的小气泡：TA 回应了我做的事。key 用来记「已经看过」。 */
+interface Nudge {
+  key: string;
+  text: string;
+  sub: string;
+}
+
+const SEEN_KEY = 'seenNudges';
+// 只记最近这么多条，够覆盖两周的动态。
+const SEEN_KEPT = 60;
+
+function seenNudges(): string[] {
+  try {
+    const value = wx.getStorageSync(SEEN_KEY);
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberSeen(keys: string[]): void {
+  try {
+    const all = [...new Set([...keys, ...seenNudges()])].slice(0, SEEN_KEPT);
+    wx.setStorageSync(SEEN_KEY, all);
+  } catch {
+    // 记不住就下次再显示一次，不影响别的。
+  }
+}
+
+/** TA 回应了我做的事、我还没看过的，最近的在前。 */
+function nudgesOf(
+  items: ActivityItem[],
+  myRole: string,
+  partner: string,
+): Nudge[] {
+  const seen = new Set(seenNudges());
+  const result: Nudge[] = [];
+  for (const item of items) {
+    if (item.byRole && item.byRole !== myRole) continue;
+    const theirs = item.reactions[myRole === 'a' ? 'b' : 'a'];
+    if (!theirs) continue;
+    const key = `${item.id}:${theirs}`;
+    if (seen.has(key)) continue;
+    result.push({
+      key,
+      text: `${partner}${REACTION_PHRASES[theirs]}`,
+      sub: `因为你${DONE_TEXT[item.type]}「${item.title}」`,
+    });
+  }
+  return result;
+}
+
 /** 主页「TA 最近」里的一行。 */
 interface FeedRow {
   id: string;
-  /** 一句话：谁做了什么，或 TA 怎么回应了你。 */
+  /** 一句话：TA 做了什么。 */
   text: string;
   when: string;
   /** 对方做的事才能点回应。 */
@@ -75,17 +127,7 @@ function feedRows(
         canReact: true,
         mine: item.reactions[myRole as 'a' | 'b'] || '',
       });
-      continue;
     }
-    const theirs = item.reactions[myRole === 'a' ? 'b' : 'a'];
-    if (theirs)
-      rows.push({
-        id: item.id,
-        text: `${partner}回应了你${verb}「${item.title}」：${reactionLabel(theirs)}`,
-        when,
-        canReact: false,
-        mine: '',
-      });
   }
   return rows.slice(0, 4);
 }
@@ -105,6 +147,10 @@ Page({
     countText: '',
     todoText: '',
     feed: [] as FeedRow[],
+    /** 顶部气泡显示的第一条，和后面还有几条没看。 */
+    nudge: null as Nudge | null,
+    nudgeMore: 0,
+    nudgeKeys: [] as string[],
     reactions: REACTIONS,
     /** TA 近一天记了几笔账。 */
     partnerSpent: '',
@@ -189,6 +235,17 @@ Page({
     this.setData({
       feed: feedRows(items, household.myRole, partnerName(household)),
     });
+    const nudges = nudgesOf(items, household.myRole, partnerName(household));
+    this.setData({
+      nudge: nudges[0] || null,
+      nudgeMore: Math.max(0, nudges.length - 1),
+      nudgeKeys: nudges.map((item) => item.key),
+    });
+  },
+  /** 「收到啦」：这几条都算看过，气泡收起。 */
+  dismissNudge() {
+    rememberSeen(this.data.nudgeKeys);
+    this.setData({ nudge: null, nudgeMore: 0, nudgeKeys: [] });
   },
   /** 点一个回应；再点同一个收回。 */
   async react(event: WechatMiniprogram.TouchEvent) {

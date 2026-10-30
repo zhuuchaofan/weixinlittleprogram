@@ -84,7 +84,7 @@ function createActivityFeed({ repository, requireMembership, now }) {
       const reaction = payload.reaction === '' ? '' : payload.reaction;
       if (reaction !== '' && !CONTRACT.reactions.includes(reaction))
         throw new ApiError('VALIDATION', '请选择回应。');
-      if (!repository) throw new ApiError('NOT_FOUND', '这条动态已不存在。');
+      if (!repository) throw new ApiError('NOT_FOUND', '这条动态已经不在了。');
       const record = await requireRecord(repository, household, id);
       if (record.by === openid)
         throw new ApiError('VALIDATION', '只能回应对方做的事。');

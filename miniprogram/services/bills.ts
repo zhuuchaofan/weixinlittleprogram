@@ -306,7 +306,7 @@ export async function parseScreenshot(
       return result.items;
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError('截图上传失败，请检查网络后重试。', 'NETWORK');
+      throw new ApiError('截图没传上去，网络好一点再试试。', 'NETWORK');
     }
   } finally {
     if (fileID)

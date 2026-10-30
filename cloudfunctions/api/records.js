@@ -29,7 +29,7 @@ function publicRecord(record, household, fields) {
 async function requireRecord(repository, household, recordId) {
   const record = await repository.get(household._id, recordId);
   if (!record)
-    throw new ApiError('NOT_FOUND', '记录不存在或已被删除，请刷新。');
+    throw new ApiError('NOT_FOUND', '这条记录可能已经被删掉了，下拉刷新看看。');
   return record;
 }
 

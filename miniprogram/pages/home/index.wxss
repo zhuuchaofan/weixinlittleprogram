@@ -64,3 +64,9 @@
 /* 每月小报入口 */
 .recap { display: flex; align-items: center; gap: 20rpx; margin-top: var(--gap-card); }
 .recap-title { font-size: 30rpx; font-weight: 600; }
+
+/* TA 回应了你：顶部小气泡，点「收到啦」收起 */
+.nudge { display: flex; align-items: center; gap: 20rpx; margin-bottom: var(--gap-card); padding: 24rpx 28rpx; background: var(--accent-soft); box-shadow: none; animation: pop 0.32s ease-out backwards; }
+.nudge-cat { width: 64rpx; height: 64rpx; flex-shrink: 0; }
+.nudge-main { flex: 1; min-width: 0; }
+.nudge-text { font-size: 30rpx; font-weight: 600; color: var(--accent); }

@@ -30,7 +30,7 @@ export async function uploadWishPhoto(
     });
     return uploaded.fileID;
   } catch {
-    throw new ApiError('照片上传失败，请检查网络后重试。', 'NETWORK');
+    throw new ApiError('照片没传上去，网络好一点再试试。', 'NETWORK');
   }
 }
 

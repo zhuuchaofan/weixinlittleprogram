@@ -108,7 +108,7 @@ function createHouseholdHandler({
       const code = makeCode();
       if (!(await repository.findByCode(code))) return code;
     }
-    throw new ApiError('UNAVAILABLE', '邀请码生成失败，请重试。');
+    throw new ApiError('UNAVAILABLE', '邀请码没生成出来，再点一次试试。');
   }
 
   const actions = {
@@ -146,12 +146,19 @@ function createHouseholdHandler({
         throw new ApiError('ALREADY_MEMBER', '你已经在一个小家里了。');
       const household = await repository.findByCode(code);
       if (!household || household.members.length >= MAX_MEMBERS)
-        throw new ApiError('INVALID_CODE', '邀请码无效或已被使用。');
+        throw new ApiError(
+          'INVALID_CODE',
+          '这个邀请码用不了啦，可能已经被用过，请 TA 再发一个新的。',
+        );
       // 原来的创建者退出过时，留下的人是 b，新加入的就是 a。
       const role = household.members[0]?.role === 'b' ? 'a' : 'b';
       const member = { openid, role, name };
       const joined = await repository.addMember(household._id, code, member);
-      if (!joined) throw new ApiError('INVALID_CODE', '邀请码无效或已被使用。');
+      if (!joined)
+        throw new ApiError(
+          'INVALID_CODE',
+          '这个邀请码用不了啦，可能已经被用过，请 TA 再发一个新的。',
+        );
       return publicHousehold(
         { ...household, members: [...household.members, member] },
         openid,

@@ -1,7 +1,7 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{loading}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button wx:if="{{mode === 'copying'}}" class="text-button" bindtap="copy">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button wx:if="{{mode === 'copying'}}" class="text-button" bindtap="copy">再试一次</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
 
   <block wx:if="{{mode === 'pair'}}">

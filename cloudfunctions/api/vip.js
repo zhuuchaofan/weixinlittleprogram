@@ -75,7 +75,8 @@ function createVipHandler({
   async function grant(householdId, order) {
     for (let attempt = 0; attempt < GRANT_ATTEMPTS; attempt++) {
       const household = await households.findById(householdId);
-      if (!household) throw new ApiError('NOT_FOUND', '小家不存在。');
+      if (!household)
+        throw new ApiError('NOT_FOUND', '没找到这个小家，可能已经不在了。');
       const last = household.vip?.last || [];
       if (last.includes(order.outTradeNo)) return;
       const current = Number(household.vip?.until) || 0;
@@ -99,7 +100,8 @@ function createVipHandler({
   async function revoke(householdId, order, refunded) {
     for (let attempt = 0; attempt < GRANT_ATTEMPTS; attempt++) {
       const household = await households.findById(householdId);
-      if (!household) throw new ApiError('NOT_FOUND', '小家不存在。');
+      if (!household)
+        throw new ApiError('NOT_FOUND', '没找到这个小家，可能已经不在了。');
       const done = household.vip?.refunded || {};
       const before = Number(done[order.outTradeNo]) || 0;
       if (refunded <= before) return;

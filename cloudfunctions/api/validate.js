@@ -39,7 +39,7 @@ function month(value) {
 
 function id(value) {
   if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(value))
-    throw new ApiError('VALIDATION', '记录编号无效，请刷新后重试。');
+    throw new ApiError('VALIDATION', '这条记录找不到了，下拉刷新一下再试。');
   return value;
 }
 

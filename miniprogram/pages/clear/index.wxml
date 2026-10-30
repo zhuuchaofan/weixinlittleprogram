@@ -1,7 +1,7 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view class="small muted lead-note">对方已经退出，这里清的是你这个小家里的记录。对方退出时带走的副本在对方自己的小家里，不会被删。</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
   <view wx:if="{{loading}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在数有多少条…</view>
   <block wx:else>

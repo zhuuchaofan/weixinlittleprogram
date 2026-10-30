@@ -27,7 +27,7 @@
     </view>
   </view>
 
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{loading && !all.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:elif="{{!open.length && !done.length && !later.length}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />{{kind === 'shop' ? '还没有要买的，在上面写一样。' : '还没有待办，在上面写一件。'}}</view>
 

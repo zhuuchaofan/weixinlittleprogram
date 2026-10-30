@@ -1,7 +1,7 @@
 <page-meta page-style="{{themeStyle}}" />
 <wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{loading && !goals.length && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:elif="{{!goals.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />还没有攒钱目标。定一个吧：比如旅行、换手机、应急金。</view>
 

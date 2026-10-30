@@ -1,10 +1,10 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{loading && !household}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
 
   <block wx:if="{{household}}">
-    <view wx:if="{{datesError}}" class="notice error">{{datesError}}<button class="text-button" bindtap="loadDates">重试</button></view>
+    <view wx:if="{{datesError}}" class="notice error">{{datesError}}<button class="text-button" bindtap="loadDates">再试一次</button></view>
 
     <view wx:if="{{together}}" class="card together" data-id="{{together.id}}" bindtap="openDate" hover-class="card-active" aria-role="button">
       <view class="small muted">我们在一起</view>

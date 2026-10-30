@@ -2,7 +2,7 @@
 <wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
   <view wx:if="{{loading && !household}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
 
   <block wx:if="{{household}}">
     <view wx:if="{{household.copying}}" class="notice">退出时带走的旧账还没复制完。<button class="text-button" data-page="leave" bindtap="open">继续复制</button></view>
@@ -11,6 +11,15 @@
       <view class="icon-button" data-page="settings" bindtap="open" hover-class="icon-button-active" aria-role="button" aria-label="设置">
         <image class="icon" src="/images/settings.png" mode="aspectFit" />
       </view>
+    </view>
+
+    <view wx:if="{{nudge}}" class="card nudge" aria-role="status">
+      <image class="nudge-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" aria-hidden="true" />
+      <view class="nudge-main">
+        <view class="nudge-text">{{nudge.text}}</view>
+        <view class="small muted">{{nudge.sub}}{{nudgeMore ? ' · 还有 ' + nudgeMore + ' 个回应' : ''}}</view>
+      </view>
+      <button class="btn-small" bindtap="dismissNudge">收到啦</button>
     </view>
 
     <view wx:if="{{household.inviteCode}}" class="card solo">
