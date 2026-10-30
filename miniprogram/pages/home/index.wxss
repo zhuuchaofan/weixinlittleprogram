@@ -52,3 +52,7 @@
 /* 顶上一行当页面标题：比说明文字重一档 */
 .top-bar .top-greeting { font-size: 30rpx; font-weight: 600; color: var(--ink); gap: 12rpx; }
 .top-bar .greet-paw { width: 32rpx; height: 32rpx; }
+
+/* 每月小报入口 */
+.recap { display: flex; align-items: center; gap: 20rpx; margin-top: var(--gap-card); }
+.recap-title { font-size: 30rpx; font-weight: 600; }

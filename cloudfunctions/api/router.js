@@ -11,6 +11,7 @@ const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
 const { createAssistHandler } = require('./assist');
 const { createActivityLog } = require('./activity');
+const { createRecapHandler } = require('./recap');
 const { createLeaveHandler } = require('./leave');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
@@ -91,6 +92,11 @@ function createRouter({
       requireMembership,
       now,
       ai,
+    }),
+    ...createRecapHandler({
+      repositories: { expenses, goals, dates, activity },
+      requireMembership,
+      now,
     }),
     ...createGoalHandler({
       repository: goals,

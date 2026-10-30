@@ -582,6 +582,113 @@ test('纪念日：列表带倒数，按剩余天数排序，已过的不重复�
   assert.equal(list[1].years, 1);
 });
 
+test('每月小报：支出对比上月、两人各记几笔、吃了什么、做完什么、去过哪、存了多少', async () => {
+  const { call, activity, dates } = await setup();
+  assert.equal(
+    (await call('A', 'recap.get', { month: '2026-11' })).code,
+    'VALIDATION',
+    '还没到的月份',
+  );
+  assert.equal(
+    (await call('A', 'recap.get', { month: 'x' })).code,
+    'VALIDATION',
+  );
+  assert.equal((await call('X', 'recap.get', {})).ok, true);
+
+  // 默认是上个月（今天 2026-10-20 → 9 月）；上上个月（8 月）有账，9 月才有对比
+  await call('A', 'expense.add', expense({ date: '2026-08-10', amount: 4000 }));
+  await call('A', 'expense.add', expense({ date: '2026-09-02', amount: 3000 }));
+  await call(
+    'B',
+    'expense.add',
+    expense({ date: '2026-09-03', amount: 5000, cat: '日用', payer: 'b' }),
+  );
+  await call(
+    'B',
+    'expense.add',
+    expense({ date: '2026-09-04', amount: 9000, flow: 'in' }),
+  );
+  const sept = (await call('A', 'recap.get', {})).data;
+  assert.equal(sept.month, '2026-09');
+  assert.equal(sept.spend.total, 8000);
+  assert.equal(sept.spend.count, 2);
+  assert.equal(sept.spend.prevTotal, 4000);
+  assert.deepEqual(sept.spend.byRole, { a: 1, b: 1 });
+  assert.deepEqual(
+    sept.spend.top.map((row) => [row.cat, row.amount]),
+    [
+      ['日用', 5000],
+      ['吃饭', 3000],
+    ],
+  );
+  assert.equal(sept.meals.count, 0);
+  assert.equal(sept.meals.top, null);
+  assert.equal(sept.togetherDay, 0);
+  // 8 月之前没有账：没有可比的上个月
+  assert.equal(
+    (await call('A', 'recap.get', { month: '2026-08' })).data.spend.prevTotal,
+    null,
+  );
+
+  // 本月（10 月）做过的事
+  const dish = await call('A', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('A', 'dish.update', { id: dish.data.id, ateOn: '2026-10-18' });
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-10-19' });
+  const curry = await call('B', 'dish.add', { name: '咖喱', tag: '在家做' });
+  await call('B', 'dish.update', { id: curry.data.id, ateOn: '2026-10-20' });
+  const todo = await call('A', 'todo.add', {
+    text: '洗碗',
+    kind: 'todo',
+    who: 'both',
+  });
+  await call('A', 'todo.update', { id: todo.data.id, done: true });
+  const wish = await call('B', 'wish.add', { title: '镰仓' });
+  await call('B', 'wish.update', {
+    id: wish.data.id,
+    done: true,
+    doneOn: '2026-10-12',
+  });
+  const goal = await call('A', 'goal.add', {
+    title: '旅行',
+    target: 100000,
+    deadline: '2027-05',
+  });
+  await call('A', 'goal.deposit', { id: goal.data.id, amount: 20000 });
+  await call('B', 'goal.deposit', { id: goal.data.id, amount: 5000 });
+  // 一个月前的活动不算进来
+  activity.docs.set('old', {
+    _id: 'old',
+    householdId: [...activity.docs.values()][0].householdId,
+    type: 'dish',
+    title: '旧的',
+    date: '2026-09-30',
+    ts: 1,
+    by: 'A',
+  });
+
+  const now = (await call('B', 'recap.get', { month: '2026-10' })).data;
+  assert.deepEqual(now.meals, { count: 3, top: { title: '拉面', count: 2 } });
+  assert.deepEqual(now.todos, { count: 1, byRole: { a: 1, b: 0 } });
+  assert.deepEqual(now.wishes, ['镰仓']);
+  assert.deepEqual(now.saved, { total: 25000, byRole: { a: 20000, b: 5000 } });
+  assert.equal(now.togetherDay, 0, '没设「在一起」起点');
+  // 设了起点（dates 里 together 的那条）：起点那天算第 1 天，数到今天；上个月的小报数到月底
+  const householdId = (await call('A', 'household.get')).data.id;
+  dates.docs.set('t', {
+    _id: 't',
+    householdId,
+    title: '在一起',
+    date: '2026-09-20',
+    together: true,
+    ts: 1,
+  });
+  assert.equal(
+    (await call('A', 'recap.get', { month: '2026-10' })).data.togetherDay,
+    31,
+  );
+  assert.equal((await call('A', 'recap.get', {})).data.togetherDay, 11);
+});
+
 test('导出包含吃啥、周末、纪念日', async () => {
   const { call } = await setup();
   await call('A', 'dish.add', { name: '拉面', tag: '外食' });

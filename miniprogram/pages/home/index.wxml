@@ -88,6 +88,14 @@
         <view class="small muted">倒数和已经多少天</view>
       </view>
     </view>
+
+    <view class="card recap" data-page="recap" bindtap="open" hover-class="card-active" aria-role="button">
+      <view class="row-main">
+        <view class="recap-title">我们的小报</view>
+        <view class="small muted">看看上个月一起花了、吃了、做了什么</view>
+      </view>
+      <text class="chevron">›</text>
+    </view>
   </block>
   <view class="page-end"></view>
 </view>
