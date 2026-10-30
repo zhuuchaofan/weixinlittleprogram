@@ -11,14 +11,20 @@ function remember(month: LedgerMonth): LedgerMonth {
   return month;
 }
 
-export async function listMonth(month: string): Promise<LedgerMonth> {
-  const result = remember(
-    await callApi<LedgerMonth>('expense.list', { month }),
-  );
+/** 读到一个月的账目：记住按 id 的缓存，本月的另存一份本机快照。 */
+export function seedMonth(month: string, result: LedgerMonth): LedgerMonth {
+  remember(result);
   // 只给本月存快照：打开小程序时看到的是本月。
   if (month === todayKey().slice(0, 7))
     saveSnapshot('ledger', { month, result });
   return result;
+}
+
+export async function listMonth(month: string): Promise<LedgerMonth> {
+  return seedMonth(
+    month,
+    await callApi<LedgerMonth>('expense.list', { month }),
+  );
 }
 
 /** 本月上次读到的账目（存在本机），没有时返回 undefined。 */

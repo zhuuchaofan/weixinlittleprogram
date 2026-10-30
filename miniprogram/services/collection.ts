@@ -10,14 +10,19 @@ export function createCollectionService<
   Input extends object,
 >(prefix: string) {
   const recent = new Map<string, T>();
+  /** 读到一份新列表：更新按 id 的缓存和本机快照。 */
+  function seed(items: T[]): T[] {
+    recent.clear();
+    for (const item of items) recent.set(item.id, item);
+    saveSnapshot(prefix, items);
+    return items;
+  }
   return {
     async list(): Promise<T[]> {
-      const items = await callApi<T[]>(`${prefix}.list`);
-      recent.clear();
-      for (const item of items) recent.set(item.id, item);
-      saveSnapshot(prefix, items);
-      return items;
+      return seed(await callApi<T[]>(`${prefix}.list`));
     },
+    /** 别的请求（如主页汇总）顺带读到的列表，当作刚读过。 */
+    seed,
     /** 上次读到的列表（存在本机），没有时返回 undefined。 */
     peek(): T[] | undefined {
       return readSnapshot<T[]>(prefix);

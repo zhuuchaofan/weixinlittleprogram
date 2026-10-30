@@ -71,7 +71,10 @@ function createActivityFeed({ repository, requireMembership, now }) {
       const household = await requireMembership(openid);
       if (!repository) return [];
       const since = addDays(todayKey(now()), -FEED_DAYS);
-      const records = await repository.listAll(household._id);
+      // 只读近两周的；没有按日期读的接口（测试里的假仓库）时读全部再筛。
+      const records = repository.listSince
+        ? await repository.listSince(household._id, since)
+        : await repository.listAll(household._id);
       return records
         .filter((record) => record.date >= since)
         .sort((a, b) => b.ts - a.ts)

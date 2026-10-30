@@ -9,11 +9,11 @@ import type {
   Todo,
 } from '../../models';
 import { inviteShare, peekHousehold } from '../../services/household';
-import { listMonth, peekMonth } from '../../services/ledger';
+import { peekMonth } from '../../services/ledger';
+import { loadHome } from '../../services/home';
 import {
   activityService,
   dateService,
-  footprintService,
   goalService,
   todoService,
 } from '../../services/collections';
@@ -193,18 +193,9 @@ Page({
       force,
       fetch: (household) => {
         this.setData({ household });
-        return Promise.all([
-          listMonth(todayKey().slice(0, 7)),
-          todoService.list(),
-          dateService.list(),
-          // 攒钱读不到（如 api 还没部署新版）时主页其他部分照常显示。
-          goalService.list().catch(() => null),
-          // 同理：「TA 最近」读不到时不影响主页。
-          activityService.recent().catch(() => null),
-          footprintService.list().catch(() => null),
-        ]);
+        return loadHome(todayKey().slice(0, 7));
       },
-      show: ([month, todos, dates, goals, recent, footprints]) => {
+      show: ({ month, todos, dates, goals, recent, footprints }) => {
         this.showMonth(month);
         this.showTodos(todos);
         this.showDates(dates);
