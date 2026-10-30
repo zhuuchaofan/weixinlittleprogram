@@ -93,6 +93,18 @@
       <view wx:else class="small muted">比如旅行、应急金：写下金额和期限，算出每月要存多少</view>
     </view>
 
+    <view class="card footprint" data-page="footprints" bindtap="open" hover-class="card-active" aria-role="button">
+      <view class="fp-thumbs" aria-hidden="true">
+        <image wx:for="{{footprint.thumbs}}" wx:key="*this" class="fp-thumb" src="{{item}}" mode="aspectFill" />
+        <image wx:if="{{!footprint.thumbs.length}}" class="fp-icon" src="/images/themes/{{themeId}}/home-footprints.svg" />
+      </view>
+      <view class="row-main">
+        <view class="recap-title">我们的足迹</view>
+        <view class="small muted">{{footprint.text}}</view>
+      </view>
+      <text class="chevron">›</text>
+    </view>
+
     <view class="actions">
       <button class="primary" bindtap="addExpense"><text class="plus">+</text>记一笔</button>
       <button class="secondary" bindtap="importBill">导入账单</button>
@@ -114,15 +126,10 @@
         <view class="grid-title">想去</view>
         <view class="small muted">想去的地方和想做的事</view>
       </view>
-      <view wx:if="{{household.inviteCode}}" class="grid-cell" data-page="dates" bindtap="open" hover-class="grid-cell-active" aria-role="button">
+      <view class="grid-cell" data-page="dates" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-dates.svg" /></view>
         <view class="grid-title">纪念日</view>
         <view class="small muted">倒数和已经多少天</view>
-      </view>
-      <view wx:else class="grid-cell" data-page="footprints" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-footprints.svg" /></view>
-        <view class="grid-title">足迹</view>
-        <view class="small muted">一起去过的地方</view>
       </view>
     </view>
 

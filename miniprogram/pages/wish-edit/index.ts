@@ -7,6 +7,7 @@ import { getHousehold } from '../../services/household';
 import {
   discardPhotos,
   photoUrls,
+  photoDate,
   pickPhotos,
   uploadWishPhoto,
 } from '../../services/photos';
@@ -17,12 +18,18 @@ import { applyTheme, themeData } from '../../services/theme';
 let uploaded: string[] = [];
 let saved = false;
 let householdId = '';
+/** 人自己选过日期、或已存的日期，就不再用照片的拍摄日期盖掉。 */
+let dateFixed = false;
 
 Page({
   data: {
     ...themeData(),
     limits: LENGTHS,
     id: '',
+    /** 补记一个以前去过的地方：新建就算去过，只填名字、日期、一句话和照片。 */
+    past: false,
+    /** 日期是照片的拍摄日期自动填的。 */
+    dateFromPhoto: false,
     title: '',
     // 旧数据的「为什么想去」和「怎么安排」合在一起显示，保存时都存进 plan。
     note: '',
@@ -51,6 +58,13 @@ Page({
   async onLoad(options: Record<string, string | undefined>) {
     uploaded = [];
     saved = false;
+    dateFixed = false;
+    if (options.past === '1' && !options.id) {
+      wx.setNavigationBarTitle({ title: '补记一个足迹' });
+      this.setData({ past: true, done: true, doneOn: todayKey() });
+      void this.loadMembership();
+      return;
+    }
     if (!options.id) return;
     let wish;
     try {
@@ -68,7 +82,11 @@ Page({
       memo: wish.memo || '',
       photos: wish.photos || [],
     });
+    dateFixed = Boolean(wish.doneOn);
     void this.loadPhotos();
+    void this.loadMembership();
+  },
+  async loadMembership() {
     try {
       const household = await getHousehold();
       if (household) {
@@ -101,7 +119,7 @@ Page({
       });
       return;
     }
-    const paths = await pickPhotos(room);
+    const paths = await pickPhotos(room, true);
     if (!paths.length) return;
     this.setData({ uploading: true, error: '' });
     try {
@@ -117,6 +135,10 @@ Page({
         photosChanged: true,
       });
       await this.loadPhotos();
+      if (this.data.done && !dateFixed) {
+        const date = await photoDate(paths);
+        if (date) this.setData({ doneOn: date, dateFromPhoto: true });
+      }
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -158,9 +180,17 @@ Page({
     this.setData({ done: event.detail.value });
   },
   pickDate(event: WechatMiniprogram.PickerChange) {
-    this.setData({ doneOn: String(event.detail.value) });
+    dateFixed = true;
+    this.setData({ doneOn: String(event.detail.value), dateFromPhoto: false });
   },
   async save() {
+    await this.submit(false);
+  },
+  /** 补记：存好这一个，清空表单接着补下一个。 */
+  async saveNext() {
+    await this.submit(true);
+  },
+  async submit(next: boolean) {
     if (this.data.busy) return;
     const { done } = this.data;
     const input: WishInput = {
@@ -173,13 +203,34 @@ Page({
     };
     if (this.data.photosChanged) input.photos = this.data.photos;
     if (!input.title) {
-      this.setData({ error: '写一个想去的地方或想做的事吧。' });
+      this.setData({
+        error: this.data.past
+          ? '先写下去了哪儿吧。'
+          : '写一个想去的地方或想做的事吧。',
+      });
       return;
     }
     this.setData({ busy: true, error: '' });
     try {
       if (this.data.id) await wishService.update(this.data.id, input);
       else await wishService.add(input);
+      if (next) {
+        // 这一个已经存好，传上去的照片不能再被「没保存」的清理删掉。
+        uploaded = [];
+        dateFixed = false;
+        this.setData({
+          title: '',
+          memo: '',
+          photos: [],
+          shown: [],
+          urls: {},
+          photosChanged: false,
+          doneOn: todayKey(),
+          dateFromPhoto: false,
+        });
+        wx.showToast({ title: '放进足迹啦', icon: 'success' });
+        return;
+      }
       saved = true;
       wx.navigateBack();
     } catch (error) {
