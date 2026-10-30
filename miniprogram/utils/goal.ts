@@ -9,7 +9,8 @@ function daysTaken(goal: Goal): number {
 
 /** 一个目标在列表和主页上显示的几行字；names 是两人的名字，只有两人都在时才传。 */
 export function goalView(goal: Goal, names?: { a: string; b: string }) {
-  const { a, b } = goal.savedBy;
+  // api 还没部署新版时没有 savedBy：先当作没人存过，别让主页报错。
+  const { a, b } = goal.savedBy || { a: 0, b: 0 };
   return {
     id: goal.id,
     title: goal.title,
