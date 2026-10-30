@@ -31,7 +31,7 @@ const { matchItems, rememberCategories } = require('./bill-match');
 const { parseWechatRows } = require('./bill-file');
 const { parseAlipayRows } = require('./bill-alipay');
 
-const BAD_SOURCE = '截图信息无效，请重新识别。';
+const BAD_SOURCE = '这张截图没读明白，重新识别一次吧。';
 
 /**
  * 前端送回来的原始字段（bill.parse / bill.file 给出的 src）：逐项校验后重新算 key，不相信前端的 key。
@@ -141,7 +141,7 @@ function createBillHandler({
         );
       const url = str(payload?.url);
       if (!/^https:\/\/\S{1,1000}$/.test(url))
-        throw new ApiError('VALIDATION', '截图上传失败，请重试。');
+        throw new ApiError('VALIDATION', '截图没传上去，再试一次吧。');
       const today = todayKey(now());
       await ai.ensure('billImage');
       // 会员的每日张数更多（整个小家共用）。
@@ -163,7 +163,10 @@ function createBillHandler({
     async 'bill.file'(openid, payload) {
       const household = await requireMembership(openid);
       if (payload?.app !== 'wechat' && payload?.app !== 'alipay')
-        throw new ApiError('VALIDATION', '不支持这种账单文件。');
+        throw new ApiError(
+          'VALIDATION',
+          '这个文件喵喵还看不懂，换成微信或支付宝导出的账单文件试试。',
+        );
       const { items, skipped } =
         payload.app === 'alipay'
           ? parseAlipayRows(payload.rows, payload.context ?? [], payload.enc)

@@ -10,7 +10,7 @@
 .draw-hint { position: relative; z-index: 1; font-size: 22rpx; opacity: 0.85; }
 .composer { margin-top: 24rpx; }
 
-.ask-card { margin-top: 16rpx; }
+.card.ask-card { margin-top: 16rpx; }
 .ask-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 8rpx; }
 .ask-title { font-size: 28rpx; font-weight: 700; }
 .ask-row { display: flex; align-items: center; gap: 16rpx; min-height: 88rpx; }

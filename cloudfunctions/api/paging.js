@@ -50,7 +50,7 @@ async function readComplete(collection, where = {}) {
   if (rows.length !== total)
     throw new ApiError(
       'INCOMPLETE',
-      '导出时数据有变动，没有读完整，请稍后重试。',
+      '导出时刚好有新记录，没读完整，稍后再试一次吧。',
     );
   return rows;
 }

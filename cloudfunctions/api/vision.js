@@ -117,10 +117,7 @@ function createVision(env = process.env, post = httpsPost) {
         timeout: TIMEOUT_MS,
       });
     } catch {
-      throw new ApiError(
-        'UNAVAILABLE',
-        '连不上识别服务（网络或超时），请稍后重试。',
-      );
+      throw new ApiError('UNAVAILABLE', '识别服务暂时连不上，稍后再试一次吧。');
     }
     // 不记录回复内容：里面是账单明细。
     if (response.status !== 200)

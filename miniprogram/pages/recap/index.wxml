@@ -7,7 +7,7 @@
     <view class="month-arrow {{isCurrentMonth ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeMonth" hover-class="{{isCurrentMonth ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="下个月">下月 ›</view>
   </view>
 
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
 
   <block wx:if="{{ready}}">
@@ -51,9 +51,10 @@
 
     <view class="card recap-card">
       <view class="small muted recap-head">这个月一起</view>
-      <view wx:for="{{together}}" wx:key="label" class="together-row">
+      <view wx:for="{{together}}" wx:key="label" class="together-row" data-page="{{item.page}}" bindtap="openTogether" hover-class="{{item.page ? 'list-row-active' : 'none'}}" aria-role="{{item.page ? 'link' : ''}}">
         <view class="together-label {{item.on ? 'together-on' : ''}}">{{item.label}}</view>
         <view class="together-text {{item.on ? '' : 'muted'}}">{{item.text}}</view>
+        <text wx:if="{{item.page}}" class="chevron-sm muted">›</text>
       </view>
     </view>
 

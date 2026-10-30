@@ -1,7 +1,7 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{loading && !household}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{message}}" class="notice">{{message}}</view>
 
   <block wx:if="{{household}}">
@@ -14,7 +14,7 @@
       </view>
       <view wx:if="{{household.inviteCode}}" class="list-row">
         <view class="row-main"><view class="row-title">邀请码 {{household.inviteCode}}</view><view class="row-sub">对方加入后自动失效</view></view>
-        <button class="text-button" open-type="share">发给 TA</button>
+        <button class="text-button" open-type="share">邀请 TA</button>
         <button class="text-button" bindtap="copyCode">复制</button>
       </view>
     </view>

@@ -17,7 +17,7 @@ const {
 } = require('./bill-file');
 
 const BAD_FILE =
-  '没能读懂这份账单，请选支付宝「开具交易流水证明 → 用于个人对账」发来的 CSV。';
+  '这份账单喵喵读不懂，要选支付宝「开具交易流水证明 → 用于个人对账」发来的 CSV。';
 const ENCODINGS = ['gbk', 'utf-8'];
 
 // 支付宝自己的分类 → 这里的分类；没写的（医疗、保险、教育…）按关键词猜，猜不到归「其他」。
@@ -120,7 +120,7 @@ function parseAlipayRows(rows, context = [], enc = 'gbk') {
   )
     throw new ApiError('VALIDATION', BAD_FILE);
   if (rows.length + context.length > MAX_ROWS)
-    throw new ApiError('VALIDATION', '一次发来的账目太多了，请重试。');
+    throw new ApiError('VALIDATION', '一次发来的账有点多，再试一次吧。');
   const skipped = { neutral: 0, closed: 0, refunded: 0, broken: 0 };
   const seen = new Set();
   const read = (list, count) => {

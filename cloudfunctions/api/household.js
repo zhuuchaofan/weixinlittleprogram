@@ -28,7 +28,7 @@ function cleanName(value) {
 /** 分类预算：{ 分类: 每月上限（分） }；0 或不填表示这一类不设预算。 */
 function cleanBudgets(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value))
-    throw new ApiError('VALIDATION', '预算格式不对，请重试。');
+    throw new ApiError('VALIDATION', '预算没存好，再试一次吧。');
   const budgets = {};
   for (const [cat, amount] of Object.entries(value)) {
     if (!CATEGORIES.includes(cat))
@@ -50,7 +50,7 @@ function cleanPayName(value) {
 
 function requireName(value) {
   const name = cleanName(value);
-  if (!name) throw new ApiError('VALIDATION', '请填写 1–12 字的称呼。');
+  if (!name) throw new ApiError('VALIDATION', '称呼写 1–12 个字就好。');
   return name;
 }
 
@@ -99,7 +99,10 @@ function createHouseholdHandler({
   async function requireMembership(openid) {
     const household = await repository.findByMember(openid);
     if (!household)
-      throw new ApiError('NO_HOUSEHOLD', '还没有加入小家，请先创建或加入。');
+      throw new ApiError(
+        'NO_HOUSEHOLD',
+        '还没有小家哦，先创建一个或加入 TA 的吧。',
+      );
     return household;
   }
 
@@ -108,7 +111,7 @@ function createHouseholdHandler({
       const code = makeCode();
       if (!(await repository.findByCode(code))) return code;
     }
-    throw new ApiError('UNAVAILABLE', '邀请码生成失败，请重试。');
+    throw new ApiError('UNAVAILABLE', '邀请码没生成出来，再点一次试试。');
   }
 
   const actions = {
@@ -141,17 +144,24 @@ function createHouseholdHandler({
           ? payload.code.trim().toUpperCase()
           : '';
       if (!CODE_PATTERN.test(code))
-        throw new ApiError('VALIDATION', '请输入 6 位邀请码。');
+        throw new ApiError('VALIDATION', '邀请码是 6 位哦，再看看 TA 发来的。');
       if (await repository.findByMember(openid))
         throw new ApiError('ALREADY_MEMBER', '你已经在一个小家里了。');
       const household = await repository.findByCode(code);
       if (!household || household.members.length >= MAX_MEMBERS)
-        throw new ApiError('INVALID_CODE', '邀请码无效或已被使用。');
+        throw new ApiError(
+          'INVALID_CODE',
+          '这个邀请码用不了啦，可能已经被用过，让 TA 再发一个新的吧。',
+        );
       // 原来的创建者退出过时，留下的人是 b，新加入的就是 a。
       const role = household.members[0]?.role === 'b' ? 'a' : 'b';
       const member = { openid, role, name };
       const joined = await repository.addMember(household._id, code, member);
-      if (!joined) throw new ApiError('INVALID_CODE', '邀请码无效或已被使用。');
+      if (!joined)
+        throw new ApiError(
+          'INVALID_CODE',
+          '这个邀请码用不了啦，可能已经被用过，让 TA 再发一个新的吧。',
+        );
       return publicHousehold(
         { ...household, members: [...household.members, member] },
         openid,
@@ -175,7 +185,7 @@ function createHouseholdHandler({
       }
       if (payload?.splitting !== undefined) {
         if (typeof payload.splitting !== 'boolean')
-          throw new ApiError('VALIDATION', '请选择是否开启两人分摊。');
+          throw new ApiError('VALIDATION', '选一下要不要开两人分摊吧。');
         fields.splitting = payload.splitting;
       }
       if (payload?.budgets !== undefined)

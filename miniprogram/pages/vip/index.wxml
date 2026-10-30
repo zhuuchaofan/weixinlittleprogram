@@ -1,7 +1,7 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
   <view wx:if="{{loading && !info}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
 
   <block wx:if="{{info}}">
     <view class="hero grad-card">

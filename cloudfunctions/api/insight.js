@@ -293,7 +293,10 @@ function createInsightHandler({
         await ai.write('summary', summaryPrompt(insight)),
       );
       if (!text)
-        throw new ApiError('UNAVAILABLE', '小结没写出来，请稍后重试。');
+        throw new ApiError(
+          'UNAVAILABLE',
+          '小结喵喵这次没想出来，过一会儿再试试吧。',
+        );
       const id = summaryId(household, month);
       const doc = {
         householdId: household._id,

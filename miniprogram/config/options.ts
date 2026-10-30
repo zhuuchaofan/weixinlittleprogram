@@ -72,10 +72,16 @@ export const SPLITS: Array<{ value: Split; label: string; hint: string }> =
 
 /** 对对方做的事可以点的回应。 */
 export const REACTIONS: Array<{ value: Reaction; label: string }> = [
-  { value: 'thanks', label: '辛苦了' },
-  { value: 'great', label: '真棒' },
-  { value: 'love', label: '喜欢' },
+  { value: 'thanks', label: '辛苦啦' },
+  { value: 'great', label: '好棒喵' },
+  { value: 'love', label: '贴贴' },
 ];
+/** 主页小气泡里，TA 回应你时说的话：「佳益夸你好棒喵」。 */
+export const REACTION_PHRASES: Record<Reaction, string> = {
+  thanks: '说你辛苦啦',
+  great: '夸你好棒喵',
+  love: '想和你贴贴',
+};
 export function reactionLabel(reaction: Reaction | undefined): string {
   return REACTIONS.find((item) => item.value === reaction)?.label || '';
 }

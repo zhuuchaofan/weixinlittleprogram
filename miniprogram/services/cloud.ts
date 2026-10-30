@@ -34,7 +34,7 @@ export class ApiError extends Error {
 export function initializeCloud(): void {
   if (!localConfig.cloudEnvId.trim())
     throw new ApiError('云环境尚未配置，请在 config/local.ts 填写环境 ID。');
-  if (!wx.cloud) throw new ApiError('当前微信版本不支持云开发，请升级后重试。');
+  if (!wx.cloud) throw new ApiError('微信版本有点旧，升级一下再来吧。');
   if (!initialized) {
     wx.cloud.init({ env: localConfig.cloudEnvId, traceUser: false });
     initialized = true;
@@ -57,7 +57,7 @@ export async function callApi<T>(
   } catch (error) {
     reportWarn('api', { action, code: 'NETWORK' });
     throw new ApiError(
-      '网络或云端暂时不可用，操作没有完成，请重试。',
+      '网络好像开小差了，刚才没完成，稍后再试一次吧。',
       'NETWORK',
       String((error as { errMsg?: string })?.errMsg || error || ''),
     );
@@ -71,12 +71,24 @@ export async function callApi<T>(
   if (!result || result.ok !== true) {
     const code = result?.code || 'UNKNOWN';
     if (!EXPECTED.includes(code)) reportWarn('api', { action, code });
-    throw new ApiError(result?.message || '云端返回异常，请重试。', code);
+    throw new ApiError(
+      result?.message || '喵喵没接住这一下，再试一次吧。',
+      code,
+    );
   }
   if (!READ_ONLY.test(action)) noteWrite();
   return result.data as T;
 }
 
+/**
+ * 给人看的提示：云端和我们自己写的提示（ApiError）原样显示；程序里的意外错误
+ * （例如「Cannot read properties of undefined」）不给人看原文，换成一句温和的话并上报。
+ */
 export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : '操作没有完成，请重试。';
+  if (error instanceof ApiError) return error.message;
+  reportWarn('ui', {
+    code: 'UNEXPECTED',
+    message: String((error as Error)?.message || error).slice(0, 80),
+  });
+  return '出了点小意外，下拉刷新或者再试一次吧。';
 }

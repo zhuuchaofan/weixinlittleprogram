@@ -132,6 +132,7 @@ function view(recap: MonthRecap, household: Household) {
           ? recap.wishes.join('、')
           : '这个月还没去哪儿',
         on: recap.wishes.length > 0,
+        page: recap.wishes.length > 0 ? 'footprints' : '',
       },
       {
         label: '一起攒',
@@ -173,7 +174,12 @@ Page({
     }>,
     weeks: [] as Array<{ label: string; amountText: string; percent: number }>,
     facts: [] as Array<{ label: string; value: string }>,
-    together: [] as Array<{ label: string; text: string; on: boolean }>,
+    together: [] as Array<{
+      label: string;
+      text: string;
+      on: boolean;
+      page?: string;
+    }>,
     quiet: false,
     noteText: '',
     noteTs: 0,
@@ -262,5 +268,9 @@ Page({
       title: `我们 ${Number(this.data.month.slice(5))} 月的小报`,
       path: '/pages/home/index',
     };
+  },
+  openTogether(event: WechatMiniprogram.TouchEvent) {
+    const page = event.currentTarget.dataset.page as string;
+    if (page) wx.navigateTo({ url: `/pages/${page}/index` });
   },
 });

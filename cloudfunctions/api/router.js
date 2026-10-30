@@ -138,13 +138,17 @@ function createRouter({
       if (typeof openid !== 'string' || !openid)
         throw new ApiError(
           'UNAUTHENTICATED',
-          '无法确认微信身份，请重新进入小程序。',
+          '没认出你是谁，退出小程序再进来一次就好。',
         );
       const handler =
         typeof action === 'string' && Object.hasOwn(actions, action)
           ? actions[action]
           : null;
-      if (!handler) throw new ApiError('NOT_FOUND', '不支持的操作。');
+      if (!handler)
+        throw new ApiError(
+          'NOT_FOUND',
+          '这个功能云端还没准备好，稍后再试试吧。',
+        );
       return { ok: true, data: await handler(openid, event?.payload || {}) };
     } catch (error) {
       // 意料之外的错误打一行日志（云开发控制台能看到）：只有 action 和错误说明，不含请求内容和 openid。

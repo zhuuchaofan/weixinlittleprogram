@@ -92,14 +92,14 @@ Page({
     if (this.data.busy) return;
     const name = this.data.name.trim();
     if (!name || name.length > 12) {
-      this.setData({ error: '请填写 1–12 字的称呼。' });
+      this.setData({ error: '称呼写 1–12 个字就好。' });
       return;
     }
     if (
       this.data.mode === 'join' &&
       !/^[A-Z0-9]{6}$/.test(this.data.code.trim())
     ) {
-      this.setData({ error: '请输入 6 位邀请码。' });
+      this.setData({ error: '邀请码是 6 位哦，再看看 TA 发来的。' });
       return;
     }
     this.setData({ busy: true, error: '' });

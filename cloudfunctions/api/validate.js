@@ -39,7 +39,7 @@ function month(value) {
 
 function id(value) {
   if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(value))
-    throw new ApiError('VALIDATION', '记录编号无效，请刷新后重试。');
+    throw new ApiError('VALIDATION', '这条记录找不到了，下拉刷新一下再试。');
   return value;
 }
 
@@ -64,7 +64,7 @@ function flow(payload) {
   const value = oneOf(
     payload.flow ?? 'out',
     CONTRACT.flows,
-    '请选择收入或支出。',
+    '选一下是收入还是支出吧。',
   );
   if (value === 'in' && payload.split !== 'self')
     throw new ApiError('VALIDATION', '收入只能记为「自己的」。');
@@ -75,16 +75,16 @@ function flow(payload) {
 function expense(payload) {
   const amount = payload?.amount;
   if (!Number.isInteger(amount) || amount < 1 || amount > MAX_AMOUNT)
-    throw new ApiError('VALIDATION', '请填写大于 0 的金额，最多两位小数。');
+    throw new ApiError('VALIDATION', '金额要大于 0，最多写到分哦。');
   if (!isDate(payload.date))
-    throw new ApiError('VALIDATION', '请选择有效的日期。');
+    throw new ApiError('VALIDATION', '这个日期好像不对，重新选一下吧。');
   return {
     amount,
     note: text(payload.note, { field: '备注', max: LENGTHS.expenseNote }),
-    cat: oneOf(normalizeCategory(payload.cat), CATEGORIES, '请选择分类。'),
+    cat: oneOf(normalizeCategory(payload.cat), CATEGORIES, '选一个分类吧。'),
     date: payload.date,
-    payer: oneOf(payload.payer, CONTRACT.payers, '请选择付款人。'),
-    split: oneOf(payload.split, CONTRACT.splits, '请选择分摊方式。'),
+    payer: oneOf(payload.payer, CONTRACT.payers, '选一下是谁付的吧。'),
+    split: oneOf(payload.split, CONTRACT.splits, '选一下怎么分吧。'),
     ratio: ratio(payload),
     flow: flow(payload),
   };
@@ -93,7 +93,7 @@ function expense(payload) {
 const TODO_KINDS = CONTRACT.todoKinds;
 
 function todoKind(value) {
-  return oneOf(value, TODO_KINDS, '请选择清单类型。');
+  return oneOf(value, TODO_KINDS, '选一下是待办还是购物吧。');
 }
 
 function todo(payload) {
@@ -101,7 +101,7 @@ function todo(payload) {
   const repeat =
     payload.repeat === undefined || payload.repeat === ''
       ? ''
-      : oneOf(payload.repeat, CONTRACT.todoRepeat, '请选择重复周期。');
+      : oneOf(payload.repeat, CONTRACT.todoRepeat, '选一下多久重复一次吧。');
   return {
     text: text(payload?.text, {
       field: '内容',
@@ -109,7 +109,7 @@ function todo(payload) {
       max: LENGTHS.todoText,
     }),
     kind,
-    who: oneOf(payload.who, CONTRACT.todoWho, '请选择负责人。'),
+    who: oneOf(payload.who, CONTRACT.todoWho, '选一下谁来做吧。'),
     done: payload.done === true,
     // 重复只给待办用；购物每次买完再点加回去。
     repeat: kind === 'shop' ? '' : repeat,
@@ -121,7 +121,8 @@ function todo(payload) {
 /** 可不填的日期：空字符串表示没有。 */
 function optionalDate(value) {
   if (value === undefined || value === null || value === '') return '';
-  if (!isDate(value)) throw new ApiError('VALIDATION', '请选择有效的日期。');
+  if (!isDate(value))
+    throw new ApiError('VALIDATION', '这个日期好像不对，重新选一下吧。');
   return value;
 }
 
@@ -133,7 +134,11 @@ const DISH_KINDS = CONTRACT.dishKinds;
  * 界面已不再区分菜品和店家，新记录都是 dish。ateOn：最近一次「就吃这个」的日期。
  */
 function dish(payload) {
-  const kind = oneOf(payload.kind ?? 'dish', DISH_KINDS, '请选择菜品或店家。');
+  const kind = oneOf(
+    payload.kind ?? 'dish',
+    DISH_KINDS,
+    '选一下是菜还是店吧。',
+  );
   const shop = kind === 'shop';
   return {
     name: text(payload?.name, {
@@ -145,7 +150,7 @@ function dish(payload) {
     tag: oneOf(
       payload.tag,
       shop ? CONTRACT.shopTags : DISH_TAGS,
-      shop ? '店家请选择外食或外卖。' : '请选择在家做、外食或外卖。',
+      shop ? '店家要选外食或外卖哦。' : '选一下在家做、外食还是外卖吧。',
     ),
     ateOn: optionalDate(payload.ateOn),
   };
@@ -158,7 +163,7 @@ function photos(value) {
     throw new ApiError('VALIDATION', '照片数量不对。');
   for (const id of value)
     if (typeof id !== 'string' || !id.startsWith('cloud://') || id.length > 300)
-      throw new ApiError('VALIDATION', '照片不对，请重新选择。');
+      throw new ApiError('VALIDATION', '这张照片没传好，重新选一张吧。');
   return [...new Set(value)];
 }
 
@@ -184,7 +189,7 @@ function wish(payload) {
 
 function anniversary(payload) {
   if (!isDate(payload?.date))
-    throw new ApiError('VALIDATION', '请选择有效的日期。');
+    throw new ApiError('VALIDATION', '这个日期好像不对，重新选一下吧。');
   return {
     title: text(payload.title, {
       field: '名称',
@@ -214,7 +219,7 @@ function goal(payload) {
       min: 1,
       max: LENGTHS.goalTitle,
     }),
-    target: amount(payload.target, '请填写目标金额，最多两位小数。'),
+    target: amount(payload.target, '写一下要攒多少吧，写到分就好。'),
     deadline: month(payload.deadline),
     saved,
   };

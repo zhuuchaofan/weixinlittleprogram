@@ -158,7 +158,7 @@ Page({
     if (this.data.busy || this.data.isSettlement) return;
     const amount = parseYuan(this.data.amountText);
     if (!amount) {
-      this.setData({ error: '请填写大于 0 的金额，最多两位小数。' });
+      this.setData({ error: '金额要大于 0，最多写到分哦。' });
       return;
     }
     const flow = this.data.flow;
@@ -176,7 +176,7 @@ Page({
       const ratio = parseRatio(this.data.ratioText);
       if (ratio === null) {
         this.setData({
-          error: `请填写 ${RATIO_RANGE.min}–${RATIO_RANGE.max} 的整数，表示付款人承担的百分比。`,
+          error: `填 ${RATIO_RANGE.min}–${RATIO_RANGE.max} 的整数就好，表示付款人出的百分比。`,
         });
         return;
       }

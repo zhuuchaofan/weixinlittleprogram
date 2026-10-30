@@ -58,7 +58,7 @@ view, button, input, textarea { box-sizing: border-box; }
 
 /* 卡片与列表 */
 .card { position: relative; background: var(--surface); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
-.card + .card { margin-top: var(--gap-card); }
+.card + .card, .grad-card + .card, .card + .grad-card { margin-top: var(--gap-card); }
 .list { position: relative; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
 /* 白卡片、列表（和主页入口 .grid-cell）右上角趴着一只小猫，6 种姿势按顺序轮流，图在下面 card-cats 段。
    列表不能 overflow: hidden（会把小猫剪掉），首尾行自己圆角 */
@@ -158,7 +158,9 @@ textarea { width: 100%; height: 200rpx; padding: 22rpx 24rpx; background: var(--
 /* 状态 */
 .tag { display: inline-block; font-size: 22rpx; color: var(--accent); background: var(--accent-soft); padding: 4rpx 16rpx; border-radius: 999rpx; }
 .notice { background: var(--accent-soft); border-radius: var(--radius-sm); padding: 20rpx 24rpx; font-size: 26rpx; line-height: 1.6; margin: 24rpx 0; }
-.error { background: var(--danger-soft); color: var(--danger); }
+/* 出错提示：不用红色吓人，浅灰底 + 一只小猫 + 正常字色，「重试」用主色文字按钮 */
+.error { background: var(--sunken); color: var(--ink); }
+.notice.error::before { content: ''; display: inline-block; width: 34rpx; height: 32rpx; margin-right: 12rpx; vertical-align: -4rpx; background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTEwIiBmaWxsPSIjMDAwMDAwIiBmaWxsLW9wYWNpdHk9IjAuMzIiPjxwYXRoIGQ9Ik0xNCA0NiBMMTAgNCBMNDIgMjQgUTYwIDE5IDc4IDI0IEwxMTAgNCBMMTA2IDQ2IEMxMTYgNjIgMTE2IDEwNiA2MCAxMDYgQzQgMTA2IDQgNjIgMTQgNDYgWiIvPjxjaXJjbGUgY3g9IjQyIiBjeT0iNjYiIHI9IjYiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMSIvPjxjaXJjbGUgY3g9Ijc4IiBjeT0iNjYiIHI9IjYiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMSIvPjwvc3ZnPg==') no-repeat center / contain; }
 .status { padding: 48rpx 20rpx; text-align: center; color: var(--muted); font-size: 26rpx; }
 .empty { padding: 56rpx 24rpx; text-align: center; color: var(--muted); font-size: 26rpx; border: 1rpx dashed var(--line); border-radius: var(--radius); }
 /* 空状态里睡觉的小猫、读取中走过的猫爪印（按主题换色，见 assets/theme-src） */

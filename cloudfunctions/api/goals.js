@@ -130,7 +130,7 @@ function createGoalHandler({ repository, expenses, requireMembership, now }) {
       const id = validate.id(payload.id);
       const amount = validate.amount(
         payload.amount,
-        '请填写存入的金额，最多两位小数。',
+        '写一下存了多少吧，写到分就好。',
       );
       await requireRecord(repository, household, id);
       const role =

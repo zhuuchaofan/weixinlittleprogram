@@ -273,7 +273,7 @@ function createLeaveHandler({
     if (household.copy && !household.copy.done)
       throw new ApiError(
         'BUSY',
-        '旧账还没复制完，请先在设置里点「继续复制」，复制完再操作。',
+        '旧账还没复制完，先去设置里点「继续复制」，复制完再来吧。',
       );
   }
 
@@ -304,7 +304,7 @@ function createLeaveHandler({
           requireAlone(household, '');
           if (await finishPartnerCopy(household)) return { waiting: true };
           if (!(await households.vacate(household._id, openid)))
-            throw new ApiError('BUSY', '小家刚有变动，请刷新后再试。');
+            throw new ApiError('BUSY', '小家刚有点变动，刷新一下再试试吧。');
           await removeAll(household._id);
           await households.update(household._id, { purge: false });
           return { left: true, household: null };
@@ -334,7 +334,7 @@ function createLeaveHandler({
               'PARTNER_LEFT',
               '对方已经退出了，现在小家里只有你一个人。',
             );
-          throw new ApiError('BUSY', '小家刚有变动，请刷新后再试。');
+          throw new ApiError('BUSY', '小家刚有点变动，刷新一下再试试吧。');
         }
         await openNewHome(household, entry);
         return { left: true, copy: entry.copy };
@@ -347,12 +347,12 @@ function createLeaveHandler({
        */
       async 'account.delete'(openid, payload) {
         if (payload?.confirm !== true)
-          throw new ApiError('VALIDATION', '请先确认注销。');
+          throw new ApiError('VALIDATION', '要先勾选确认注销哦。');
         const household = await households.findByMember(openid);
         if (household && household.members.length === 1) {
           if (await finishPartnerCopy(household)) return { waiting: true };
           if (!(await households.vacate(household._id, openid)))
-            throw new ApiError('BUSY', '小家刚有变动，请刷新后再试。');
+            throw new ApiError('BUSY', '小家刚有点变动，刷新一下再试试吧。');
           await removeAll(household._id);
           await households.update(household._id, { purge: false, by: '' });
         } else if (household) {
@@ -364,7 +364,8 @@ function createLeaveHandler({
             inviteCode: await uniqueCode(),
             by: household.by === openid ? '' : household.by,
           });
-          if (!left) throw new ApiError('BUSY', '小家刚有变动，请刷新后再试。');
+          if (!left)
+            throw new ApiError('BUSY', '小家刚有点变动，刷新一下再试试吧。');
           await anonymize(household._id, openid);
         }
         await scrubDeparted(openid);
@@ -390,7 +391,7 @@ function createLeaveHandler({
       async 'household.clear'(openid, payload) {
         const scope = payload?.scope;
         if (scope !== 'others' && scope !== 'all')
-          throw new ApiError('VALIDATION', '请选择清空哪些记录。');
+          throw new ApiError('VALIDATION', '选一下要清空哪些记录吧。');
         const household = await requireMembership(openid);
         requireAlone(household, '对方还在小家里，不能清空。');
         if (await finishPartnerCopy(household))

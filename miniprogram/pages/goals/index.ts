@@ -86,7 +86,7 @@ Page({
     if (!result.confirm) return;
     const amount = parseYuan(result.content || '');
     if (!amount) {
-      wx.showToast({ title: '金额不对，最多两位小数', icon: 'none' });
+      wx.showToast({ title: '金额写到分就好，再看看', icon: 'none' });
       return;
     }
     this.setData({ busy: true, error: '' });
@@ -111,5 +111,8 @@ Page({
     } finally {
       this.setData({ busy: false });
     }
+  },
+  openBudgets() {
+    wx.navigateTo({ url: '/pages/budgets/index' });
   },
 });

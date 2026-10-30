@@ -161,9 +161,10 @@ export async function pickBillFile(app: FileApp): Promise<void> {
 }
 
 const NOT_FILE: Record<FileApp, string> = {
-  wechat: '没能读懂这个文件，请选微信「下载账单 → 用于个人对账」发来的 Excel。',
+  wechat:
+    '这个文件喵喵读不懂，要选微信「下载账单 → 用于个人对账」发来的 Excel。',
   alipay:
-    '没能读懂这个文件，请选支付宝「开具交易流水证明 → 用于个人对账」发来的 CSV。',
+    '这个文件喵喵读不懂，要选支付宝「开具交易流水证明 → 用于个人对账」发来的 CSV。',
 };
 
 /** 支付宝账单 CSV：读成字节，在手机上按逗号切开，不解码。 */
@@ -306,7 +307,7 @@ export async function parseScreenshot(
       return result.items;
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      throw new ApiError('截图上传失败，请检查网络后重试。', 'NETWORK');
+      throw new ApiError('截图没传上去，网络好一点再试试。', 'NETWORK');
     }
   } finally {
     if (fileID)

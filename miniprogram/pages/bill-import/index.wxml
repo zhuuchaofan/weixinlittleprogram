@@ -23,7 +23,7 @@
     <view wx:for="{{failures}}" wx:key="*this" class="notice error">{{item}}</view>
     <button wx:if="{{limitHit}}" class="text-button" bindtap="openVip">看看会员</button>
     <view wx:if="{{mode === 'file'}}" class="small muted hint">账单文件（微信 Excel、支付宝 CSV）只在手机上读取，不会上传。读完在下面逐笔确认后才保存。</view>
-    <view wx:else class="small muted hint">请选微信「账单」或支付宝「账单」的列表页截图，文字清楚、不要裁掉日期。</view>
+    <view wx:else class="small muted hint">选微信「账单」或支付宝「账单」的列表页截图，文字清楚、不要裁掉日期。</view>
     <button class="secondary back-button" bindtap="back">返回记账</button>
   </block>
 

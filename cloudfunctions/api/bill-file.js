@@ -15,7 +15,7 @@ const { maxFileChunk: MAX_ROWS } = CONTRACT.billImport;
 // 生成的备注里商户名最多几个字；完整名字留在 src.merchant 里查重用。
 const NOTE_NAME_MAX = 12;
 const BAD_FILE =
-  '没能读懂这份账单，请选微信「下载账单 → 用于个人对账」发来的 Excel。';
+  '这份账单喵喵读不懂，要选微信「下载账单 → 用于个人对账」发来的 Excel。';
 
 /** 交易单号 → 指纹，同一笔账无论导几次都一样；也作为 src.key。 */
 function refKey(app, tx) {
@@ -207,7 +207,7 @@ function parseWechatRows(rows, context = []) {
   if (!Array.isArray(rows) || !rows.length || !Array.isArray(context))
     throw new ApiError('VALIDATION', BAD_FILE);
   if (rows.length + context.length > MAX_ROWS)
-    throw new ApiError('VALIDATION', '一次发来的账目太多了，请重试。');
+    throw new ApiError('VALIDATION', '一次发来的账有点多，再试一次吧。');
   const skipped = { neutral: 0, closed: 0, refunded: 0, broken: 0 };
   const seen = new Set();
   const own = readLines(rows, skipped, seen);

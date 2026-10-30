@@ -225,6 +225,6 @@ test('内部异常只返回通用提示', async () => {
   assert.deepEqual(result, {
     ok: false,
     code: 'INTERNAL',
-    message: '服务暂时不可用，请稍后重试。',
+    message: '喵喵这边出了点小状况，稍等一会儿再试试。',
   });
 });

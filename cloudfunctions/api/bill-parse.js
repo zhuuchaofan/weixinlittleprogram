@@ -160,7 +160,7 @@ function parseReply(reply, today) {
   if (!data || !Array.isArray(data.items))
     throw new ApiError(
       'VALIDATION',
-      '没能读懂这张截图，请换一张清楚的账单列表截图。',
+      '这张截图喵喵没看清，换一张清楚的账单列表截图试试吧。',
     );
   const app = CONTRACT.billApps.includes(data.app) ? data.app : '';
   return {

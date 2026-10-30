@@ -140,7 +140,7 @@ Page({
     const text = this.data.text.trim();
     if (this.data.busy) return;
     if (!text) {
-      this.setData({ error: '请先写下内容。' });
+      this.setData({ error: '先写点什么吧。' });
       return;
     }
     this.setData({ busy: true, error: '' });

@@ -147,7 +147,7 @@ function createCollectionHandlers({
       setOwn(
         openid,
         payload,
-        { input: 'vote', key: 'votes', message: '请选择想吃或不想吃。' },
+        { input: 'vote', key: 'votes', message: '选一下想吃还是不想吧。' },
         CONTRACT.dishVotes,
         (record) => {
           const today = todayKey(now());
@@ -165,7 +165,7 @@ function createCollectionHandlers({
         {
           input: 'rating',
           key: 'ratings',
-          message: '请选择好吃、一般或踩雷。',
+          message: '选一下好吃、一般还是踩雷吧。',
         },
         CONTRACT.dishRatings,
       ),
@@ -206,7 +206,7 @@ function createCollectionHandlers({
     if (!list.length) return;
     const folder = `/wish-photos/${household._id}/`;
     if (!list.every((id) => id.includes(folder)))
-      throw new ApiError('VALIDATION', '照片不对，请重新选择。');
+      throw new ApiError('VALIDATION', '这张照片没传好，重新选一张吧。');
     const limit = isVip(household, now()) ? PHOTOS.vip : PHOTOS.free;
     if (list.length > limit)
       throw new ApiError(
@@ -267,7 +267,7 @@ function createCollectionHandlers({
       const household = await requireMembership(openid);
       const id = validate.id(payload.id);
       if (typeof payload.want !== 'boolean')
-        throw new ApiError('VALIDATION', '请选择想去或不想去。');
+        throw new ApiError('VALIDATION', '选一下想去还是不想吧。');
       const record = await requireRecord(wishes, household, id);
       const role = household.members.find(
         (member) => member.openid === openid,

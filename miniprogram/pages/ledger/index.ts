@@ -20,6 +20,7 @@ import { formatYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
 import { budgetLine } from '../../utils/budget';
+import { ledgerCsv } from '../../utils/csv';
 
 type CategoryRow = {
   cat: string;
@@ -231,6 +232,33 @@ Page({
     wx.navigateTo({
       url: `/pages/expense-edit/index?id=${event.currentTarget.dataset.id}`,
     });
+  },
+  /** 导出本月：存成 CSV 文件发到微信聊天里（发给自己或文件传输助手），电脑上用 Excel 打开。 */
+  exportCsv() {
+    if (!allRows.length) return;
+    const csv = ledgerCsv(allRows, this.data.names, billAppLabel);
+    const fileName = `喵喵记一笔-${this.data.month}.csv`;
+    if (!wx.canIUse('shareFileMessage')) {
+      wx.setClipboardData({ data: csv });
+      return;
+    }
+    try {
+      const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
+      wx.getFileSystemManager().writeFileSync(filePath, csv, 'utf8');
+      wx.shareFileMessage({
+        filePath,
+        fileName,
+        fail: (error) => {
+          if (!/cancel/.test(error.errMsg)) {
+            this.setData({ error: '文件没发出去，再试一次吧。' });
+          }
+        },
+      });
+    } catch {
+      this.setData({
+        error: '文件没存下来，手机空间可能不够了，清一清再试试吧。',
+      });
+    }
   },
   async settle() {
     const summary = this.data.summary;

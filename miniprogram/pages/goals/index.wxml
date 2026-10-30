@@ -1,7 +1,7 @@
 <page-meta page-style="{{themeStyle}}" />
 <wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{loading && !goals.length && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:elif="{{!goals.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />还没有攒钱目标。定一个吧：比如旅行、换手机、应急金。</view>
 
@@ -24,7 +24,7 @@
   <button class="primary add" bindtap="add"><text class="plus">+</text>新目标</button>
 
   <block wx:if="{{tips.length}}">
-    <view class="section-head"><view class="section-title">从哪儿省</view></view>
+    <view class="section-head"><view class="section-title">从哪儿省</view><button class="text-button" bindtap="openBudgets">设分类预算 ›</button></view>
     <view class="card tips">
       <view class="small muted tips-lead">照前 3 个月的样子（不算房租、水电网），少花一点每月能多存：</view>
       <view wx:for="{{tips}}" wx:key="cat" class="tip-row">
