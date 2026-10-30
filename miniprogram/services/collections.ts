@@ -3,6 +3,7 @@ import type {
   Anniversary,
   AnniversaryInput,
   Dish,
+  FootprintPage,
   DishInput,
   DishRating,
   DishVote,
@@ -30,7 +31,18 @@ export const dishService = {
     return callApi<Dish>('dish.rate', { id, rating });
   },
 };
-export const wishService = createCollectionService<Wish, WishInput>('wish');
+export const wishService = {
+  ...createCollectionService<Wish, WishInput>('wish'),
+  /** 「我也想去」：只改自己那一个。 */
+  want(id: string, want: boolean): Promise<Wish> {
+    return callApi<Wish>('wish.want', { id, want });
+  },
+};
+export const footprintService = {
+  list(year?: string): Promise<FootprintPage> {
+    return callApi<FootprintPage>('footprint.list', year ? { year } : {});
+  },
+};
 export const dateService = createCollectionService<
   Anniversary,
   AnniversaryInput

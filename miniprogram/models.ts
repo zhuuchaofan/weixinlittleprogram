@@ -225,6 +225,10 @@ export interface WishInput {
   done?: boolean;
   /** 去过的日期，YYYY-MM-DD；没去过为空。 */
   doneOn?: string;
+  /** 去过之后留的一句话。 */
+  memo?: string;
+  /** 云存储 fileID；普通每条 1 张，会员 3 张。保存时不带这项就是不改照片。 */
+  photos?: string[];
 }
 
 export interface AnniversaryInput {
@@ -248,7 +252,31 @@ export type Dish = DishInput &
     /** 两人各自吃过之后的评价，长期保留。 */
     ratings: Partial<Record<MemberRole, DishRating>>;
   };
-export type Wish = WishInput & RecordMeta;
+export type Wish = WishInput &
+  RecordMeta & {
+    /** 谁点了「我也想去」。 */
+    wants?: Partial<Record<MemberRole, boolean>>;
+  };
+
+/** 「我们的足迹」一条：去过的地方、一句话、照片，和那天一起花了多少（分）。 */
+export interface Footprint {
+  id: string;
+  title: string;
+  doneOn: string;
+  memo: string;
+  photos: string[];
+  spent: number;
+  /** 两个人都点过「我想去」。 */
+  both: boolean;
+}
+
+/** footprint.list：一年的记录，加各年个数和全部年份的总数。 */
+export interface FootprintPage {
+  year: string;
+  years: Array<{ year: string; places: number }>;
+  total: { places: number; photos: number };
+  items: Footprint[];
+}
 
 export interface Anniversary extends AnniversaryInput, RecordMeta {
   /** 下一次（每年重复）或原日期（不重复），YYYY-MM-DD。 */

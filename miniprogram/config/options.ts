@@ -19,6 +19,7 @@ export const SETTLEMENT: string = CONTRACT.settlement;
 export const LENGTHS = CONTRACT.lengths;
 export const RATIO_RANGE = CONTRACT.ratio;
 export const BILL_IMPORT = CONTRACT.billImport;
+export const PHOTO_LIMITS = CONTRACT.photos;
 
 /** 每个分类的图标（images/cat-icons/*.svg）和颜色；契约里新增分类没配时用「其他」。 */
 const CATEGORY_LOOKS: Record<string, { icon: string; color: string }> = {

@@ -6,6 +6,7 @@ function memoryHouseholds() {
   const docs = new Map();
   let seq = 0;
   return {
+    docs,
     async findByMember(openid) {
       return (
         [...docs.values()].find((d) =>
@@ -129,8 +130,20 @@ async function setup({ vision = null } = {}) {
   const dishes = memoryRecords('d');
   const wishes = memoryRecords('w');
   const dates = memoryRecords('n');
+  const households = memoryHouseholds();
+  // 云存储：记下被删的文件，换地址时原样加个前缀
+  const storage = {
+    removed: [],
+    async remove(ids) {
+      storage.removed.push(...ids);
+    },
+    async tempUrls(ids) {
+      return Object.fromEntries(ids.map((id) => [id, `https://tmp/${id}`]));
+    },
+  };
   const route = createRouter({
-    households: memoryHouseholds(),
+    households,
+    storage,
     archive: {},
     expenses,
     todos,
@@ -160,6 +173,8 @@ async function setup({ vision = null } = {}) {
     insights,
     goals,
     activity,
+    households,
+    storage,
   };
 }
 
@@ -920,6 +935,166 @@ test('吃啥：两人各投各的票，隔天作废；评价长期保留，只�
   assert.deepEqual((await call('B', 'dish.list')).data[0].ratings, {
     b: 'good',
   });
+});
+
+test('想去的足迹：回忆和照片、普通 1 张会员 3 张、只能放自己小家的、删掉的照片从云存储删', async () => {
+  const { call, wishes, households, storage } = await setup();
+  const householdId = (await call('A', 'household.get')).data.id;
+  const photo = (name) =>
+    `cloud://env.x/wish-photos/${householdId}/${name}.jpg`;
+  const wish = await call('A', 'wish.add', { title: '镰仓' });
+  const id = wish.data.id;
+  assert.deepEqual(
+    [wish.data.photos, wish.data.memo, wish.data.wants],
+    [[], '', {}],
+  );
+
+  for (const bad of [
+    { photos: 'x' },
+    { photos: ['file://a'] },
+    { photos: [1] },
+    { photos: ['a', 'b', 'c', 'd'].map(photo) },
+    { memo: 'x'.repeat(101) },
+  ])
+    assert.equal(
+      (await call('A', 'wish.update', { id, ...bad })).code,
+      'VALIDATION',
+      JSON.stringify(bad),
+    );
+  // 别人家的文件夹不行
+  assert.equal(
+    (
+      await call('A', 'wish.update', {
+        id,
+        photos: ['cloud://env.x/wish-photos/other/a.jpg'],
+      })
+    ).code,
+    'VALIDATION',
+  );
+  // 普通用户 1 张
+  const over = await call('A', 'wish.update', {
+    id,
+    photos: [photo('a'), photo('b')],
+  });
+  assert.equal(over.code, 'VALIDATION');
+  assert.match(over.message, /开通会员/);
+  const one = await call('A', 'wish.update', {
+    id,
+    done: true,
+    doneOn: '2026-10-12',
+    memo: '看了海',
+    photos: [photo('a')],
+  });
+  assert.deepEqual([one.data.photos, one.data.memo], [[photo('a')], '看了海']);
+
+  // 会员 3 张；换掉的从云存储删
+  households.docs.get(householdId).vip = { until: NOW + 86400000 };
+  const three = await call('B', 'wish.update', {
+    id,
+    photos: [photo('b'), photo('c'), photo('d')],
+  });
+  assert.equal(three.data.photos.length, 3);
+  assert.deepEqual(storage.removed, [photo('a')]);
+  // 不传 photos 的修改不动照片
+  const renamed = await call('A', 'wish.update', { id, title: '去镰仓' });
+  assert.equal(renamed.data.photos.length, 3);
+  assert.deepEqual(storage.removed, [photo('a')]);
+
+  // 换临时地址：只给自己小家的
+  const urls = await call('B', 'photo.urls', { ids: [photo('b')] });
+  assert.deepEqual(urls.data, {
+    urls: { [photo('b')]: `https://tmp/${photo('b')}` },
+  });
+  assert.equal(
+    (
+      await call('B', 'photo.urls', {
+        ids: ['cloud://env.x/wish-photos/other/a.jpg'],
+      })
+    ).code,
+    'VALIDATION',
+  );
+
+  // 足迹：去过的，带那天一起花了多少
+  await call('A', 'expense.add', expense({ date: '2026-10-12', amount: 3000 }));
+  await call(
+    'B',
+    'expense.add',
+    expense({ date: '2026-10-12', amount: 2000, flow: 'in' }),
+  );
+  await call('B', 'expense.add', expense({ date: '2026-10-13', amount: 999 }));
+  await call('A', 'wish.add', { title: '还没去' });
+  const feed = await call('B', 'footprint.list');
+  assert.deepEqual(feed.data, {
+    year: '2026',
+    years: [{ year: '2026', places: 1 }],
+    total: { places: 1, photos: 3 },
+    items: [
+      {
+        id,
+        title: '去镰仓',
+        doneOn: '2026-10-12',
+        memo: '看了海',
+        photos: [photo('b'), photo('c'), photo('d')],
+        spent: 3000,
+        both: false,
+      },
+    ],
+  });
+  assert.equal((await call('X', 'footprint.list')).data.items.length, 0);
+
+  // 好几年：按年份取，默认最近一年；总数是全部年份的
+  const old = await call('A', 'wish.add', { title: '去京都' });
+  await call('A', 'wish.update', {
+    id: old.data.id,
+    title: '去京都',
+    done: true,
+    doneOn: '2024-04-02',
+  });
+  const both = await call('B', 'footprint.list');
+  assert.deepEqual(both.data.years, [
+    { year: '2026', places: 1 },
+    { year: '2024', places: 1 },
+  ]);
+  assert.equal(both.data.total.places, 2);
+  const past = await call('B', 'footprint.list', { year: '2024' });
+  assert.deepEqual(
+    past.data.items.map((item) => item.title),
+    ['去京都'],
+  );
+  assert.equal(
+    (await call('B', 'footprint.list', { year: '1999' })).data.year,
+    '2026',
+  );
+
+  // 我也想去：各点各的，再点收回
+  const open = await call('A', 'wish.add', { title: '北海道' });
+  assert.deepEqual(
+    (await call('B', 'wish.want', { id: open.data.id, want: true })).data.wants,
+    { b: true },
+  );
+  assert.deepEqual(
+    (await call('A', 'wish.want', { id: open.data.id, want: true })).data.wants,
+    { a: true, b: true },
+  );
+  assert.deepEqual(
+    (await call('B', 'wish.want', { id: open.data.id, want: false })).data
+      .wants,
+    { a: true },
+  );
+  assert.equal(
+    (await call('B', 'wish.want', { id: open.data.id })).code,
+    'VALIDATION',
+  );
+
+  // 删掉这一条，三张照片都从云存储删
+  storage.removed.length = 0;
+  await call('A', 'wish.remove', { id });
+  assert.deepEqual(storage.removed.sort(), [
+    photo('b'),
+    photo('c'),
+    photo('d'),
+  ]);
+  assert.equal(wishes.docs.has(id), false);
 });
 
 test('导出包含吃啥、周末、纪念日', async () => {
