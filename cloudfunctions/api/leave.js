@@ -364,7 +364,8 @@ function createLeaveHandler({
             inviteCode: await uniqueCode(),
             by: household.by === openid ? '' : household.by,
           });
-          if (!left) throw new ApiError('BUSY', '小家刚有点变动，刷新一下再试试吧。');
+          if (!left)
+            throw new ApiError('BUSY', '小家刚有点变动，刷新一下再试试吧。');
           await anonymize(household._id, openid);
         }
         await scrubDeparted(openid);

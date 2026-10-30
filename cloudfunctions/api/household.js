@@ -99,7 +99,10 @@ function createHouseholdHandler({
   async function requireMembership(openid) {
     const household = await repository.findByMember(openid);
     if (!household)
-      throw new ApiError('NO_HOUSEHOLD', '还没有小家哦，先创建一个或加入 TA 的吧。');
+      throw new ApiError(
+        'NO_HOUSEHOLD',
+        '还没有小家哦，先创建一个或加入 TA 的吧。',
+      );
     return household;
   }
 

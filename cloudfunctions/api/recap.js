@@ -273,7 +273,10 @@ function createRecapHandler({
         ),
       );
       if (!text)
-        throw new ApiError('UNAVAILABLE', '寄语喵喵这次没想出来，过一会儿再试试吧。');
+        throw new ApiError(
+          'UNAVAILABLE',
+          '寄语喵喵这次没想出来，过一会儿再试试吧。',
+        );
       const id = noteId(household, month);
       const doc = {
         householdId: household._id,

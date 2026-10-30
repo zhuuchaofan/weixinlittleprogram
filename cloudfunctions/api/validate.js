@@ -121,7 +121,8 @@ function todo(payload) {
 /** 可不填的日期：空字符串表示没有。 */
 function optionalDate(value) {
   if (value === undefined || value === null || value === '') return '';
-  if (!isDate(value)) throw new ApiError('VALIDATION', '这个日期好像不对，重新选一下吧。');
+  if (!isDate(value))
+    throw new ApiError('VALIDATION', '这个日期好像不对，重新选一下吧。');
   return value;
 }
 
@@ -133,7 +134,11 @@ const DISH_KINDS = CONTRACT.dishKinds;
  * 界面已不再区分菜品和店家，新记录都是 dish。ateOn：最近一次「就吃这个」的日期。
  */
 function dish(payload) {
-  const kind = oneOf(payload.kind ?? 'dish', DISH_KINDS, '选一下是菜还是店吧。');
+  const kind = oneOf(
+    payload.kind ?? 'dish',
+    DISH_KINDS,
+    '选一下是菜还是店吧。',
+  );
   const shop = kind === 'shop';
   return {
     name: text(payload?.name, {
