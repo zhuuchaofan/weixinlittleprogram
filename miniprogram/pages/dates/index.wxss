@@ -1,8 +1,9 @@
-.together { position: relative; margin-bottom: 24rpx; }
+.together { margin-bottom: 24rpx; }
 .together-day { margin: 4rpx 0 8rpx; }
 .together-number { font-size: 72rpx; font-weight: 800; line-height: 1.2; color: var(--accent); }
 .together-today { color: var(--accent); font-weight: 600; }
-.together-share { position: absolute; right: 28rpx; bottom: 28rpx; }
+.together-foot { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.together-text { flex: 1; min-width: 0; }
 .together-empty { display: flex; align-items: center; gap: 20rpx; margin-bottom: 24rpx; }
 .together-title { font-size: 30rpx; font-weight: 600; }
 .hero { padding: 36rpx 36rpx 32rpx; }

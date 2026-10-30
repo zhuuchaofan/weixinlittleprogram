@@ -9,8 +9,10 @@
     <view wx:if="{{together}}" class="card together" data-id="{{together.id}}" bindtap="openDate" hover-class="card-active" aria-role="button">
       <view class="small muted">我们在一起</view>
       <view class="together-day"><text class="small muted">第 </text><text class="serif together-number">{{together.day}}</text><text class="small muted"> 天</text></view>
-      <view class="small {{together.milestoneToday ? 'together-today' : 'muted'}}">{{together.milestoneText}}</view>
-      <button class="btn-small together-share" open-type="share" catchtap="">分享给 TA</button>
+      <view class="together-foot">
+        <view class="small together-text {{together.milestoneToday ? 'together-today' : 'muted'}}">{{together.milestoneText}}</view>
+        <button class="btn-small" open-type="share" catchtap="">分享给 TA</button>
+      </view>
     </view>
     <view wx:elif="{{datesReady}}" class="card together-empty" bindtap="setTogether" hover-class="card-active" aria-role="button">
       <view class="row-main"><view class="together-title">设置「在一起的那天」</view><view class="small muted">主页会显示在一起第几天，100、520、1000 天提醒你</view></view>
