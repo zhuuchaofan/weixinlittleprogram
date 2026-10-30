@@ -1,1 +1,2 @@
 .went { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 28rpx; margin-bottom: 32rpx; }
+.save-for { margin-bottom: 24rpx; }

@@ -170,6 +170,7 @@ function anniversary(payload) {
     }),
     date: payload.date,
     yearly: payload.yearly === true,
+    together: payload.together === true,
   };
 }
 

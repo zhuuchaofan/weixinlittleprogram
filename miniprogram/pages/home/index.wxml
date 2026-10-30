@@ -32,8 +32,14 @@
           <view class="avatar-sm avatar-b">{{household.members[1].name[0]}}</view>
         </view>
         <view class="couple-text">{{household.members[0].name}} & {{household.members[1].name}}</view>
+        <view wx:if="{{together.milestoneText}}" class="couple-milestone">{{together.milestoneText}}</view>
+        <view wx:if="{{together && nextHint}}" class="couple-milestone">{{nextHint}}</view>
       </view>
-      <view wx:if="{{next}}" class="couple-next">
+      <view wx:if="{{together}}" class="couple-next">
+        <view class="couple-next-label">在一起第</view>
+        <view class="couple-next-days">{{together.day}}<text class="couple-next-unit">天</text></view>
+      </view>
+      <view wx:elif="{{next}}" class="couple-next">
         <view class="couple-next-label">{{next.title}}{{next.yearly && next.years > 0 ? ' ' + next.years + ' 周年' : ''}}{{next.days === 0 ? '' : ' 还有'}}</view>
         <view wx:if="{{next.days === 0}}" class="couple-next-today">就是今天</view>
         <view wx:else class="couple-next-days">{{next.days}}<text class="couple-next-unit">天</text></view>

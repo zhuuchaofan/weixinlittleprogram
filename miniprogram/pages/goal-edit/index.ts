@@ -28,6 +28,11 @@ Page({
     applyTheme(this);
   },
   async onLoad(options: Record<string, string | undefined>) {
+    // 从「想去」点「为它攒钱」进来：名称先填好，只要写金额。
+    if (options.title)
+      this.setData({
+        title: decodeURIComponent(options.title).slice(0, LENGTHS.goalTitle),
+      });
     if (!options.id) return;
     let goal;
     try {

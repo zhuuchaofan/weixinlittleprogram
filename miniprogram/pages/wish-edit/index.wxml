@@ -10,6 +10,7 @@
     <text class="field-label">哪天去的</text>
     <picker mode="date" value="{{doneOn}}" end="{{today}}" bindchange="pickDate"><view class="picker-value">{{doneOn}}</view></picker>
   </view>
+  <button wx:if="{{id && !done}}" class="secondary save-for" bindtap="saveFor">为它攒钱</button>
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
   <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
   <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">删除这条</button>

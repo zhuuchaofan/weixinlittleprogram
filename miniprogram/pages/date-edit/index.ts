@@ -25,6 +25,8 @@ Page({
     title: '',
     date: todayKey(),
     yearly: true,
+    together: false,
+    nextDate: '',
     budgets: BUDGETS,
     budget: 'mid' as WishBudget,
     wish: '',
@@ -37,6 +39,9 @@ Page({
     applyTheme(this);
   },
   async onLoad(options: Record<string, string | undefined>) {
+    // 从纪念日页「设置在一起的日子」进来：名称和开关先填好，只要选日期。
+    if (options.together === '1')
+      this.setData({ title: '在一起', together: true, yearly: true });
     if (!options.id) return;
     let item;
     try {
@@ -50,6 +55,8 @@ Page({
       title: item.title,
       date: item.date,
       yearly: item.yearly,
+      together: item.together,
+      nextDate: item.nextDate,
     });
   },
   inputTitle(event: WechatMiniprogram.Input) {
@@ -60,6 +67,33 @@ Page({
   },
   toggleYearly(event: WechatMiniprogram.SwitchChange) {
     this.setData({ yearly: event.detail.value });
+  },
+  toggleTogether(event: WechatMiniprogram.SwitchChange) {
+    this.setData({ together: event.detail.value });
+  },
+  /** 写进手机日历：每年重复的按年重复，当天 9 点提醒。 */
+  addToCalendar() {
+    const { title, nextDate, yearly } = this.data;
+    if (!nextDate) return;
+    const startTime = Math.floor(
+      Date.parse(`${nextDate}T09:00:00+08:00`) / 1000,
+    );
+    const done = () =>
+      wx.showToast({ title: '已写进手机日历', icon: 'success' });
+    const fail = (result: { errMsg?: string }) => {
+      // 用户点了取消不算出错。
+      if (!/cancel|deny/i.test(result.errMsg || ''))
+        wx.showToast({ title: '没能写进日历，请在设置里允许', icon: 'none' });
+    };
+    const event = { title, startTime, allDay: true, alarm: true };
+    if (yearly)
+      wx.addPhoneRepeatCalendar({
+        ...event,
+        repeatInterval: 'year',
+        success: done,
+        fail,
+      });
+    else wx.addPhoneCalendar({ ...event, success: done, fail });
   },
   chooseBudget(event: WechatMiniprogram.TouchEvent) {
     this.setData({ budget: event.currentTarget.dataset.value as WishBudget });
@@ -84,6 +118,7 @@ Page({
       title: this.data.title.trim(),
       date: this.data.date,
       yearly: this.data.yearly,
+      together: this.data.together,
     };
     if (!input.title) {
       this.setData({ error: '请填写名称。' });

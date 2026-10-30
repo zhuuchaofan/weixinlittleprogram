@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { countdown } = require('../cloudfunctions/api/anniversary');
+const { countdown, together } = require('../cloudfunctions/api/anniversary');
 
 test('每年重复：今天当天为 0 天，已过则顺延到明年', () => {
   assert.deepEqual(countdown('2020-10-20', true, '2026-10-20'), {
@@ -54,5 +54,25 @@ test('不重复：未到为倒数，已过为已经过去的天数', () => {
     days: 22,
     passed: true,
     years: 0,
+  });
+});
+
+test('在一起：起点当天算第 1 天，里程碑含今天，起点未到没有第几天', () => {
+  assert.deepEqual(together('2026-10-20', '2026-10-20'), {
+    day: 1,
+    milestone: { day: 100, date: '2027-01-27', days: 99 },
+  });
+  // 第 100 天正好是今天
+  assert.deepEqual(together('2026-10-20', '2027-01-27'), {
+    day: 100,
+    milestone: { day: 100, date: '2027-01-27', days: 0 },
+  });
+  assert.equal(together('2026-10-20', '2027-01-28').milestone.day, 200);
+  assert.equal(together('2026-10-20', '2027-04-01').milestone.day, 200);
+  // 5000 天之后每 1000 天一个
+  assert.equal(together('2000-01-01', '2026-10-20').milestone.day, 10000);
+  assert.deepEqual(together('2026-11-01', '2026-10-20'), {
+    day: 0,
+    milestone: null,
   });
 });

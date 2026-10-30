@@ -44,6 +44,13 @@ Page({
       [String(event.currentTarget.dataset.field)]: event.detail.value,
     });
   },
+  /** 去攒钱页新建目标，名称带上这个想去的地方。 */
+  saveFor() {
+    const title = this.data.title.trim();
+    wx.navigateTo({
+      url: `/pages/goal-edit/index?title=${encodeURIComponent(title)}`,
+    });
+  },
   toggleDone(event: WechatMiniprogram.SwitchChange) {
     this.setData({ done: event.detail.value });
   },

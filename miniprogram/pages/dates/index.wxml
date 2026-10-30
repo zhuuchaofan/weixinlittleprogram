@@ -6,6 +6,17 @@
   <block wx:if="{{household}}">
     <view wx:if="{{datesError}}" class="notice error">{{datesError}}<button class="text-button" bindtap="loadDates">重试</button></view>
 
+    <view wx:if="{{together}}" class="card together" data-id="{{together.id}}" bindtap="openDate" hover-class="card-active" aria-role="button">
+      <view class="small muted">我们在一起</view>
+      <view class="together-day"><text class="small muted">第 </text><text class="serif together-number">{{together.day}}</text><text class="small muted"> 天</text></view>
+      <view class="small {{together.milestoneToday ? 'together-today' : 'muted'}}">{{together.milestoneText}}</view>
+      <button class="btn-small together-share" open-type="share" catchtap="">分享给 TA</button>
+    </view>
+    <view wx:elif="{{datesReady}}" class="card together-empty" bindtap="setTogether" hover-class="card-active" aria-role="button">
+      <view class="row-main"><view class="together-title">设置「在一起的那天」</view><view class="small muted">主页会显示在一起第几天，100、520、1000 天提醒你</view></view>
+      <text class="chevron">›</text>
+    </view>
+
     <view wx:if="{{next}}" class="hero grad-card" data-id="{{next.id}}" bindtap="openDate" aria-role="button">
       <view class="hero-label">{{next.title}}{{next.yearText ? ' · ' + next.yearText : ''}}</view>
       <view wx:if="{{next.days === 0}}" class="hero-days">就是今天</view>

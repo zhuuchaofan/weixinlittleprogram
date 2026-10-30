@@ -7,6 +7,7 @@ import { categoryLook } from '../../config/options';
 import { formatYuan, parseYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
 import { goalView, type GoalRow } from '../../utils/goal';
+import { memberNames, peekHousehold } from '../../services/household';
 
 function tipRows(tips: SavingTip[]) {
   return tips.map((tip) => ({
@@ -19,6 +20,14 @@ function tipRows(tips: SavingTip[]) {
 }
 
 const loader = createLoader();
+
+/** 两人都在时才分开写各存了多少。 */
+function pairNames() {
+  const household = peekHousehold();
+  return household && household.members.length > 1
+    ? memberNames(household)
+    : undefined;
+}
 
 Page({
   data: {
@@ -54,7 +63,8 @@ Page({
     });
   },
   showGoals(goals: Goal[]) {
-    this.setData({ goals: goals.map(goalView) });
+    const names = pairNames();
+    this.setData({ goals: goals.map((goal) => goalView(goal, names)) });
   },
   add() {
     wx.navigateTo({ url: '/pages/goal-edit/index' });
@@ -84,13 +94,18 @@ Page({
       const goal = await goalService.deposit(id, amount);
       this.setData({
         goals: this.data.goals.map((row) =>
-          row.id === id ? goalView(goal) : row,
+          row.id === id ? goalView(goal, pairNames()) : row,
         ),
       });
-      wx.showToast({
-        title: goal.done ? '攒够啦！' : `存了 ${formatYuan(amount)}`,
-        icon: 'success',
-      });
+      if (goal.done)
+        await wx.showModal({
+          title: '攒够啦！',
+          content: `「${goal.title}」攒够了，你们一起做到了。`,
+          showCancel: false,
+          confirmText: '太好了',
+        });
+      else
+        wx.showToast({ title: `存了 ${formatYuan(amount)}`, icon: 'success' });
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

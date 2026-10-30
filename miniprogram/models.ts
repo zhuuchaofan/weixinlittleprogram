@@ -207,6 +207,8 @@ export interface AnniversaryInput {
   title: string;
   date: string;
   yearly: boolean;
+  /** 是不是「在一起」的起点；全家最多一个。 */
+  together: boolean;
 }
 
 interface RecordMeta {
@@ -226,6 +228,10 @@ export interface Anniversary extends AnniversaryInput, RecordMeta {
   passed: boolean;
   /** 每年重复时，下一次是第几周年。 */
   years: number;
+  /** 只有 together 的才有：今天是在一起第几天（起点还没到为 0）。 */
+  togetherDay?: number;
+  /** 只有 together 的才有：下一个里程碑（第几天、是哪天、还有几天）。 */
+  milestone?: { day: number; date: string; days: number } | null;
 }
 
 /** 花销分析（insight.get）：口径同 LedgerSummary.spending。 */
@@ -298,6 +304,10 @@ export interface GoalDeposit {
 export interface Goal extends GoalInput, RecordMeta {
   /** 最近 10 笔「存了一笔」，最近的在前。 */
   log: GoalDeposit[];
+  /** 两人各通过「存了一笔」存了多少（分）。 */
+  savedBy: { a: number; b: number };
+  /** 哪天攒够的；没攒够或直接改正已存金额攒够的为空。 */
+  doneOn: string;
   done: boolean;
   percent: number;
   remaining: number;

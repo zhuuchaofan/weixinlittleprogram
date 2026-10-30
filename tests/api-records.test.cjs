@@ -582,6 +582,52 @@ test('纪念日：列表带倒数，按剩余天数排序，已过的不重复�
   assert.equal(list[1].years, 1);
 });
 
+test('纪念日：「在一起」起点全家只留一个，带第几天和下一个里程碑', async () => {
+  const { call } = await setup();
+  const first = await call('A', 'date.add', {
+    title: '在一起',
+    date: '2026-07-12',
+    yearly: true,
+    together: true,
+  });
+  assert.equal(first.data.together, true);
+  // 2026-07-12 是第 1 天，到 2026-10-20 是第 101 天。
+  assert.equal(first.data.togetherDay, 101);
+  assert.deepEqual(first.data.milestone, {
+    day: 200,
+    date: '2027-01-27',
+    days: 99,
+  });
+  const plain = await call('B', 'date.add', {
+    title: '生日',
+    date: '1995-10-20',
+    yearly: true,
+  });
+  assert.equal(plain.data.together, false);
+  assert.equal(plain.data.togetherDay, undefined);
+
+  // 另一条设为起点后，原来的取消。
+  const second = await call('B', 'date.add', {
+    title: '领证',
+    date: '2025-11-03',
+    yearly: true,
+    together: true,
+  });
+  assert.equal(second.data.together, true);
+  let list = (await call('A', 'date.list')).data;
+  assert.deepEqual(
+    list.filter((item) => item.together).map((item) => item.title),
+    ['领证'],
+  );
+  // 改成起点同样会取消别的；旧记录没有 together 字段时当作否。
+  await call('A', 'date.update', { id: first.data.id, together: true });
+  list = (await call('A', 'date.list')).data;
+  assert.deepEqual(
+    list.filter((item) => item.together).map((item) => item.title),
+    ['在一起'],
+  );
+});
+
 test('导出包含吃啥、周末、纪念日', async () => {
   const { call } = await setup();
   await call('A', 'dish.add', { name: '拉面', tag: '外食' });
@@ -603,6 +649,7 @@ test('导出包含吃啥、周末、纪念日', async () => {
     'date',
     'id',
     'title',
+    'together',
     'ts',
     'yearly',
   ]);
@@ -1290,6 +1337,23 @@ test('攒钱目标：每月要存、存了一笔、本月还差、改正已存�
     { amount: 50000, date: '2026-10-20', role: 'b', ts: NOW },
   ]);
   assert.equal(JSON.stringify(goals.docs.get(id)).includes('"B"'), false);
+  assert.deepEqual(deposited.data.savedBy, { a: 0, b: 50000 });
+  assert.equal(deposited.data.doneOn, '');
+  // 刚好攒够那一笔的日期；初始已存的 40 万也算在内。
+  const nearly = await call('A', 'goal.add', {
+    title: '小目标',
+    target: 30000,
+    deadline: '2027-05',
+    saved: 10000,
+  });
+  await call('B', 'goal.deposit', { id: nearly.data.id, amount: 10000 });
+  const reached = await call('A', 'goal.deposit', {
+    id: nearly.data.id,
+    amount: 20000,
+  });
+  assert.equal(reached.data.done, true);
+  assert.equal(reached.data.doneOn, '2026-10-20');
+  assert.deepEqual(reached.data.savedBy, { a: 20000, b: 10000 });
 
   // 只改名字不会动已存金额；改正已存金额要显式传。
   const renamed = await call('A', 'goal.update', { id, title: '大阪旅行' });
@@ -1310,6 +1374,7 @@ test('攒钱目标：每月要存、存了一笔、本月还差、改正已存�
     [
       ['过期的', 0, 1000],
       ['大阪旅行', 8, 0],
+      ['小目标', 8, 0],
     ],
   );
   assert.equal((await call('X', 'goal.list')).data.length, 0);

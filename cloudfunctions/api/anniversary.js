@@ -49,4 +49,29 @@ function countdown(date, yearly, today) {
   };
 }
 
-module.exports = { countdown };
+/** 「在一起第 N 天」的里程碑（第 365 天起的周年由纪念日自己的倒数负责）。 */
+const MILESTONES = [100, 200, 300, 500, 520, 1000, 1314, 2000, 3000, 5000];
+
+/**
+ * 在一起的第几天：起点那天算第 1 天。起点还没到时 day 为 0、没有里程碑。
+ * milestone：下一个（含今天）里程碑——第几天、是哪天、还有几天；5000 天之后每 1000 天一个。
+ */
+function together(date, today) {
+  const [y, m, d] = parts(date);
+  const [ty, tm, td] = parts(today);
+  const start = utc(y, m, d);
+  const day = Math.round((utc(ty, tm, td) - start) / DAY_MS) + 1;
+  if (day < 1) return { day: 0, milestone: null };
+  const target =
+    MILESTONES.find((n) => n >= day) || Math.ceil(day / 1000) * 1000;
+  return {
+    day,
+    milestone: {
+      day: target,
+      date: key(start + (target - 1) * DAY_MS),
+      days: target - day,
+    },
+  };
+}
+
+module.exports = { countdown, together, MILESTONES };

@@ -19,6 +19,7 @@ import { createLoader } from '../../services/page-load';
 import { todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
+import { togetherView, type TogetherRow } from '../../utils/together';
 
 const loader = createLoader();
 
@@ -30,6 +31,8 @@ Page({
     error: '',
     household: null as Household | null,
     next: null as Anniversary | null,
+    nextHint: '',
+    together: null as TogetherRow | null,
     monthText: `${Number(todayKey().slice(5, 7))}月`,
     spentText: '',
     countText: '',
@@ -99,7 +102,18 @@ Page({
   },
   showDates(dates: Anniversary[]) {
     // 云端已按「未过的在前、天数从近到远」排好，第一个就是下一个纪念日。
-    this.setData({ next: dates[0] && !dates[0].passed ? dates[0] : null });
+    const next = dates[0] && !dates[0].passed ? dates[0] : null;
+    this.setData({
+      next,
+      // 在一起第 N 天占了右边大数字后，近一个月内的纪念日改成一行小字。
+      nextHint:
+        next && next.days <= 30
+          ? next.days === 0
+            ? `今天是${next.title}`
+            : `${next.title}还有 ${next.days} 天`
+          : '',
+      together: togetherView(dates.find((item) => item.together)),
+    });
   },
   showGoals(goals: Goal[]) {
     // 云端已按「没攒完的在前、截止早的在前」排好。
@@ -120,6 +134,10 @@ Page({
   /** 微信卡片邀请：对方点开直接进加入页，邀请码已填好。 */
   onShareAppMessage() {
     const code = this.data.household?.inviteCode;
+    const day = this.data.together?.day;
+    // 已经两个人了，分享出去的是「在一起第 N 天」，不再是邀请。
+    if (!code && day)
+      return { title: `我们在一起第 ${day} 天`, path: '/pages/home/index' };
     return inviteShare(code);
   },
   copyCode() {

@@ -5,6 +5,7 @@
 .couple { display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; min-height: 220rpx; padding: 36rpx; }
 .couple-names { min-width: 0; }
 .couple-text { margin-top: 16rpx; font-size: 34rpx; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.couple-milestone { margin-top: 8rpx; font-size: 24rpx; opacity: 0.92; max-width: 340rpx; }
 .avatars { display: flex; }
 .avatar-sm { width: 64rpx; height: 64rpx; border-radius: 50%; border: 4rpx solid #fff; display: flex; align-items: center; justify-content: center; font-size: 26rpx; font-weight: 700; color: #fff; }
 .avatar-sm + .avatar-sm { margin-left: -16rpx; }
