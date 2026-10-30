@@ -234,6 +234,16 @@ export interface Footprint {
   memo: string;
   photos: string[];
   spent: number;
+  /** 两个人都点过「我想去」。 */
+  both: boolean;
+}
+
+/** footprint.list：一年的记录，加各年个数和全部年份的总数。 */
+export interface FootprintPage {
+  year: string;
+  years: Array<{ year: string; places: number }>;
+  total: { places: number; photos: number };
+  items: Footprint[];
 }
 
 export interface Anniversary extends AnniversaryInput, RecordMeta {

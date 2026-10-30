@@ -2,7 +2,7 @@ import type {
   Anniversary,
   AnniversaryInput,
   Dish,
-  Footprint,
+  FootprintPage,
   DishInput,
   Goal,
   GoalInput,
@@ -25,8 +25,8 @@ export const wishService = {
   },
 };
 export const footprintService = {
-  list(): Promise<Footprint[]> {
-    return callApi<Footprint[]>('footprint.list');
+  list(year?: string): Promise<FootprintPage> {
+    return callApi<FootprintPage>('footprint.list', year ? { year } : {});
   },
 };
 export const dateService = createCollectionService<

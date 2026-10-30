@@ -684,17 +684,47 @@ test('想去的足迹：回忆和照片、普通 1 张会员 3 张、只能放�
   await call('B', 'expense.add', expense({ date: '2026-10-13', amount: 999 }));
   await call('A', 'wish.add', { title: '还没去' });
   const feed = await call('B', 'footprint.list');
-  assert.deepEqual(feed.data, [
-    {
-      id,
-      title: '去镰仓',
-      doneOn: '2026-10-12',
-      memo: '看了海',
-      photos: [photo('b'), photo('c'), photo('d')],
-      spent: 3000,
-    },
+  assert.deepEqual(feed.data, {
+    year: '2026',
+    years: [{ year: '2026', places: 1 }],
+    total: { places: 1, photos: 3 },
+    items: [
+      {
+        id,
+        title: '去镰仓',
+        doneOn: '2026-10-12',
+        memo: '看了海',
+        photos: [photo('b'), photo('c'), photo('d')],
+        spent: 3000,
+        both: false,
+      },
+    ],
+  });
+  assert.equal((await call('X', 'footprint.list')).data.items.length, 0);
+
+  // 好几年：按年份取，默认最近一年；总数是全部年份的
+  const old = await call('A', 'wish.add', { title: '去京都' });
+  await call('A', 'wish.update', {
+    id: old.data.id,
+    title: '去京都',
+    done: true,
+    doneOn: '2024-04-02',
+  });
+  const both = await call('B', 'footprint.list');
+  assert.deepEqual(both.data.years, [
+    { year: '2026', places: 1 },
+    { year: '2024', places: 1 },
   ]);
-  assert.equal((await call('X', 'footprint.list')).data.length, 0);
+  assert.equal(both.data.total.places, 2);
+  const past = await call('B', 'footprint.list', { year: '2024' });
+  assert.deepEqual(
+    past.data.items.map((item) => item.title),
+    ['去京都'],
+  );
+  assert.equal(
+    (await call('B', 'footprint.list', { year: '1999' })).data.year,
+    '2026',
+  );
 
   // 我也想去：各点各的，再点收回
   const open = await call('A', 'wish.add', { title: '北海道' });

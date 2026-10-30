@@ -1,18 +1,48 @@
 <page-meta page-style="{{themeStyle}}" />
+<template name="fp">
+  <view class="polaroid {{cover ? '' : 'polaroid-plain'}}" data-id="{{id}}" bindtap="open" aria-role="button" aria-label="{{title}}">
+    <view class="tape"></view>
+    <view wx:if="{{cover}}" class="photo-frame" data-id="{{id}}" catchtap="preview">
+      <image class="photo" src="{{cover}}" mode="widthFix" lazy-load />
+      <view wx:if="{{photos.length > 1}}" class="badge">{{photos.length}} 张</view>
+    </view>
+    <view class="cap">
+      <view class="cap-title">{{title}}</view>
+      <view wx:if="{{memo}}" class="cap-memo">{{memo}}</view>
+      <view class="cap-foot"><text>{{dateText}}</text><text wx:if="{{both}}" class="heart">♥ 都想去</text><text wx:elif="{{spentText}}">{{spentText}}</text></view>
+    </view>
+  </view>
+</template>
+
 <view class="page">
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
-  <view wx:if="{{loading && !rows.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:elif="{{!rows.length && !error}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />去过的地方会留在这里。在「想去」里打勾，再加一句话和照片。</view>
-  <view wx:for="{{rows}}" wx:key="id" class="card foot">
-    <view class="foot-head" data-id="{{item.id}}" bindtap="open" aria-role="button">
-      <view class="row-title">{{item.title}}</view>
-      <view class="row-sub">{{item.dateText}}</view>
+  <view wx:if="{{loading && !groups.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!total.places && !error}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />去过的地方会留在这里。在「想去」里打勾，再加一句话和照片。</view>
+
+  <block wx:if="{{total.places}}">
+    <view class="hero grad-card">
+      <view class="hero-kicker">一起走过</view>
+      <view class="hero-big">{{total.places}}<text class="hero-unit">个地方</text></view>
+      <view class="hero-sub">{{total.photos}} 张照片{{since ? ' · ' + since : ''}}</view>
     </view>
-    <view wx:if="{{item.memo}}" class="foot-memo">{{item.memo}}</view>
-    <view wx:if="{{item.photos.length}}" class="foot-photos">
-      <image wx:for="{{item.photos}}" wx:for-item="url" wx:key="*this" class="foot-photo" src="{{url}}" mode="aspectFill" data-row="{{item.id}}" data-url="{{url}}" bindtap="preview" />
+
+    <scroll-view wx:if="{{years.length > 1}}" class="years" scroll-x enable-flex>
+      <view wx:for="{{years}}" wx:key="year" class="chip year {{item.year === year ? 'chip-on' : ''}}" data-year="{{item.year}}" bindtap="pickYear" aria-role="button">{{item.year === '0' ? '未记日期' : item.year}} · {{item.places}}</view>
+    </scroll-view>
+
+    <view wx:for="{{groups}}" wx:key="month" wx:for-item="group" class="group">
+      <view class="month">{{group.month}}<text class="month-count">{{group.count}} 个地方</text></view>
+      <view class="wall">
+        <view class="col">
+          <block wx:for="{{group.left}}" wx:key="id"><template is="fp" data="{{...item}}" /></block>
+        </view>
+        <view class="col col-right">
+          <block wx:for="{{group.right}}" wx:key="id"><template is="fp" data="{{...item}}" /></block>
+        </view>
+      </view>
     </view>
-    <view wx:if="{{item.spentText}}" class="row-sub foot-spent">{{item.spentText}}</view>
-  </view>
+    <view wx:if="{{more}}" class="status">往下滑看更多…</view>
+    <view wx:elif="{{groups.length}}" class="end-note">— 一起去过的地方，都在这里 —</view>
+  </block>
   <view class="page-end"></view>
 </view>

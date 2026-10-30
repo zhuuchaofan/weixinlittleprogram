@@ -21,7 +21,8 @@ const WISH_FIELDS = [
   'photos',
   'wants',
 ];
-const FOOTPRINT_SHOWN = 100;
+// 一年里最多取这么多条；再多的年份里，最早的几条先不显示。
+const FOOTPRINT_SHOWN = 200;
 const DATE_FIELDS = ['title', 'date', 'yearly'];
 
 /**
@@ -158,37 +159,66 @@ function createCollectionHandlers({
         ? { urls: await storage.tempUrls(ids) }
         : { urls: {} };
     },
-    /** 「我们的足迹」：去过的地方，最近的在前，带回忆、照片和那天一起花了多少。 */
-    async 'footprint.list'(openid) {
+    /**
+     * 「我们的足迹」：按年份取。years 是各年的个数（新的在前），items 是 year 那一年的记录
+     * （默认最近一年，新的在前，带那天一起花了多少），total 是全部年份的总数。
+     */
+    async 'footprint.list'(openid, payload = {}) {
       const household = await requireMembership(openid);
-      const done = (await wishes.listAll(household._id))
+      const all = (await wishes.listAll(household._id))
         .filter((wish) => wish.done)
         .sort(
           (a, b) =>
             String(b.doneOn || '').localeCompare(String(a.doneOn || '')) ||
             b.ts - a.ts,
+        );
+      const counts = new Map();
+      for (const wish of all) {
+        const key = String(wish.doneOn || '').slice(0, 4) || '0';
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+      const years = [...counts].map(([year, places]) => ({ year, places }));
+      const year =
+        typeof payload.year === 'string' && counts.has(payload.year)
+          ? payload.year
+          : years[0]?.year || '';
+      const inYear = all
+        .filter(
+          (wish) => (String(wish.doneOn || '').slice(0, 4) || '0') === year,
         )
         .slice(0, FOOTPRINT_SHOWN);
       const spentByDay = new Map();
       if (expenses)
         for (const month of new Set(
-          done.map((wish) => String(wish.doneOn || '').slice(0, 7)),
+          inYear.map((wish) => String(wish.doneOn || '').slice(0, 7)),
         ))
-          if (month)
+          if (month.length === 7)
             for (const record of await expenses.listMonth(household._id, month))
               if (isSpending(record))
                 spentByDay.set(
                   record.date,
                   (spentByDay.get(record.date) || 0) + record.amount,
                 );
-      return done.map((wish) => ({
-        id: wish._id,
-        title: wish.title,
-        doneOn: wish.doneOn || '',
-        memo: wish.memo || '',
-        photos: wish.photos || [],
-        spent: spentByDay.get(wish.doneOn) || 0,
-      }));
+      return {
+        year,
+        years,
+        total: {
+          places: all.length,
+          photos: all.reduce(
+            (sum, wish) => sum + (wish.photos || []).length,
+            0,
+          ),
+        },
+        items: inYear.map((wish) => ({
+          id: wish._id,
+          title: wish.title,
+          doneOn: wish.doneOn || '',
+          memo: wish.memo || '',
+          photos: wish.photos || [],
+          spent: spentByDay.get(wish.doneOn) || 0,
+          both: Boolean(wish.wants?.a && wish.wants?.b),
+        })),
+      };
     },
   };
   return {
