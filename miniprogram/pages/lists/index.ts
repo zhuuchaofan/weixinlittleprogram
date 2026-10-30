@@ -4,7 +4,13 @@ import { todoService } from '../../services/collections';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
 import { errorMessage } from '../../services/cloud';
-import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
+import {
+  LENGTHS,
+  TODO_KINDS,
+  repeatLabel,
+  todoTab,
+} from '../../config/options';
+import { todayKey } from '../../utils/date';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
 import {
@@ -13,15 +19,28 @@ import {
   type SplitItem,
 } from '../../services/assist';
 
-type Row = Todo & { whoName: string };
+type Row = Todo & {
+  whoName: string;
+  /** 重复任务：每天 / 每周 / 每月，不重复为空。 */
+  repeatText: string;
+  /** 还没到时间的重复任务：几月几日再做。 */
+  dueText: string;
+};
 
 const loader = createLoader();
 let household: Household | null = null;
 
 /** 默认「一起」不显示；指定了某个人才在行尾显示名字。 */
 function toRow(todo: Todo): Row {
-  if (!household || todo.who === 'both') return { ...todo, whoName: '' };
-  return { ...todo, whoName: memberNames(household)[todo.who] };
+  const extra = {
+    repeatText: repeatLabel(todo.repeat),
+    dueText: todo.dueOn
+      ? `${Number(todo.dueOn.slice(5, 7))}月${Number(todo.dueOn.slice(8))}日再做`
+      : '',
+  };
+  if (!household || todo.who === 'both')
+    return { ...todo, ...extra, whoName: '' };
+  return { ...todo, ...extra, whoName: memberNames(household)[todo.who] };
 }
 
 Page({
@@ -32,6 +51,9 @@ Page({
     kind: 'shop' as TodoKind,
     all: [] as Row[],
     open: [] as Row[],
+    // 重复任务生成的下一条，到了日子才进「要做的」。
+    later: [] as Row[],
+    showLater: false,
     done: [] as Row[],
     // 购物：买过的（去重、清单里已有的不再显示），点一下重新加入。
     bought: [] as Row[],
@@ -78,7 +100,12 @@ Page({
     const items = this.data.all.filter(
       (todo) => todoTab(todo.kind) === this.data.kind,
     );
-    const open = items.filter((todo) => !todo.done);
+    const today = todayKey();
+    const pending = items.filter((todo) => !todo.done);
+    const open = pending.filter((todo) => !todo.dueOn || todo.dueOn <= today);
+    const later = pending
+      .filter((todo) => todo.dueOn && todo.dueOn > today)
+      .sort((a, b) => String(a.dueOn).localeCompare(String(b.dueOn)));
     const done = items.filter((todo) => todo.done);
     const seen = new Set(open.map((todo) => todo.text));
     const bought = done.filter((todo) => {
@@ -86,7 +113,7 @@ Page({
       seen.add(todo.text);
       return true;
     });
-    this.setData({ open, done, bought });
+    this.setData({ open, later, done, bought });
   },
   replace(id: string, row: Row | null) {
     this.setData({
@@ -99,6 +126,9 @@ Page({
   chooseKind(event: WechatMiniprogram.TouchEvent) {
     this.setData({ kind: event.currentTarget.dataset.value as TodoKind });
     this.filter();
+  },
+  toggleLater() {
+    this.setData({ showLater: !this.data.showLater });
   },
   toggleDone() {
     this.setData({ showDone: !this.data.showDone });
@@ -190,6 +220,8 @@ Page({
     try {
       const todo = await todoService.update(id, { done: !current.done });
       this.replace(id, toRow(todo));
+      // 重复任务勾完会生成下一条（取消勾选会收回），重新读一遍。
+      if (current.repeat) void this.load(true);
     } catch (error) {
       this.replace(id, current);
       this.setData({

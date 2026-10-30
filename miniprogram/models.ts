@@ -164,12 +164,15 @@ export interface BillItem {
 
 export type TodoKind = 'shop' | 'todo' | 'chore';
 export type TodoWho = 'a' | 'b' | 'both';
+export type TodoRepeat = '' | 'daily' | 'weekly' | 'monthly';
 
 export interface TodoInput {
   text: string;
   kind: TodoKind;
   who: TodoWho;
   done?: boolean;
+  /** 重复周期，只有待办用；勾完自动生成下一条。 */
+  repeat?: TodoRepeat;
 }
 
 export interface Todo extends TodoInput {
@@ -178,7 +181,23 @@ export interface Todo extends TodoInput {
   done: boolean;
   /** 勾完那天，YYYY-MM-DD；没勾为空（旧记录没有）。 */
   doneOn?: string;
+  repeat?: TodoRepeat;
+  /** 重复任务生成的下一条要做的那天；没到之前清单里先折起来。 */
+  dueOn?: string;
   byRole: MemberRole | '';
+}
+
+export type Reaction = 'thanks' | 'great' | 'love';
+
+/** 主页「TA 最近」里的一条：两人做过的事，和两人各自的回应。 */
+export interface ActivityItem {
+  id: string;
+  ts: number;
+  byRole: MemberRole | '';
+  type: 'dish' | 'todo' | 'wish';
+  title: string;
+  date: string;
+  reactions: Partial<Record<MemberRole, Reaction>>;
 }
 
 export type DishTag = '在家做' | '外食' | '外卖';

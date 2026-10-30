@@ -1,10 +1,12 @@
 import type {
+  ActivityItem,
   Anniversary,
   AnniversaryInput,
   Dish,
   DishInput,
   Goal,
   GoalInput,
+  Reaction,
   SavingTip,
   Todo,
   TodoInput,
@@ -41,5 +43,16 @@ export const goalService = {
   },
   tips(): Promise<SavingTip[]> {
     return callApi<SavingTip[]>('goal.tips');
+  },
+};
+
+/** 主页「TA 最近」：近两周两人做过的事，和对它的回应。 */
+export const activityService = {
+  recent(): Promise<ActivityItem[]> {
+    return callApi<ActivityItem[]>('activity.recent');
+  },
+  /** reaction 为空表示收回。 */
+  react(id: string, reaction: Reaction | ''): Promise<ActivityItem> {
+    return callApi<ActivityItem>('activity.react', { id, reaction });
   },
 };

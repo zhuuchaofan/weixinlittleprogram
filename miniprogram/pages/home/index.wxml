@@ -40,6 +40,20 @@
       </view>
     </view>
 
+    <view wx:if="{{household.members.length > 1 && (feed.length || partnerSpent)}}" class="card recent">
+      <view class="small muted recent-head">TA 最近</view>
+      <view wx:if="{{partnerSpent}}" class="recent-row"><view class="recent-text">{{partnerSpent}}</view></view>
+      <view wx:for="{{feed}}" wx:key="id" class="recent-row">
+        <view class="recent-line">
+          <view class="recent-text">{{item.text}}</view>
+          <view class="small muted">{{item.when}}</view>
+        </view>
+        <view wx:if="{{item.canReact}}" class="recent-reacts">
+          <view wx:for="{{reactions}}" wx:for-item="reaction" wx:key="value" class="recent-chip {{item.mine === reaction.value ? 'recent-chip-on' : ''}}" data-id="{{item.id}}" data-reaction="{{reaction.value}}" bindtap="react" aria-role="button" aria-label="{{reaction.label}}">{{reaction.label}}</view>
+        </view>
+      </view>
+    </view>
+
     <view class="card month" data-page="ledger" bindtap="open" hover-class="card-active" aria-role="button">
       <view class="month-head">
         <view class="small muted">{{monthText}}{{household.splitting ? '共同支出' : '支出'}}</view>

@@ -78,6 +78,8 @@
   "ratio": { "min": 0, "max": 100 },
   "todoKinds": ["shop", "todo", "chore"],
   "todoWho": ["a", "b", "both"],
+  "todoRepeat": ["", "daily", "weekly", "monthly"],
+  "reactions": ["thanks", "great", "love"],
   "dishKinds": ["dish", "shop"],
   "dishTags": ["在家做", "外食", "外卖"],
   "shopTags": ["外食", "外卖"],

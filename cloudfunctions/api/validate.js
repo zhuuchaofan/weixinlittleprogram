@@ -97,15 +97,24 @@ function todoKind(value) {
 }
 
 function todo(payload) {
+  const kind = todoKind(payload.kind);
+  const repeat =
+    payload.repeat === undefined || payload.repeat === ''
+      ? ''
+      : oneOf(payload.repeat, CONTRACT.todoRepeat, '请选择重复周期。');
   return {
     text: text(payload?.text, {
       field: '内容',
       min: 1,
       max: LENGTHS.todoText,
     }),
-    kind: todoKind(payload.kind),
+    kind,
     who: oneOf(payload.who, CONTRACT.todoWho, '请选择负责人。'),
     done: payload.done === true,
+    // 重复只给待办用；购物每次买完再点加回去。
+    repeat: kind === 'shop' ? '' : repeat,
+    // 重复任务下一次要做的那天：还没到时清单里先折起来。
+    dueOn: optionalDate(payload.dueOn),
   };
 }
 

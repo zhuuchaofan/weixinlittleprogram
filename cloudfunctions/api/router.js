@@ -10,7 +10,7 @@ const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
 const { createAssistHandler } = require('./assist');
-const { createActivityLog } = require('./activity');
+const { createActivityLog, createActivityFeed } = require('./activity');
 const { createLeaveHandler } = require('./leave');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
@@ -98,6 +98,7 @@ function createRouter({
       requireMembership,
       now,
     }),
+    ...createActivityFeed({ repository: activity, requireMembership, now }),
     ...createTodoHandler({
       repository: todos,
       activity: activityLog,

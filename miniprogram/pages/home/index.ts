@@ -1,13 +1,16 @@
 import type {
+  ActivityItem,
   Anniversary,
   Goal,
   Household,
   LedgerMonth,
+  Reaction,
   Todo,
 } from '../../models';
 import { inviteShare, peekHousehold } from '../../services/household';
 import { listMonth, peekMonth } from '../../services/ledger';
 import {
+  activityService,
   dateService,
   goalService,
   todoService,
@@ -19,8 +22,72 @@ import { createLoader } from '../../services/page-load';
 import { todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
+import { REACTIONS, reactionLabel } from '../../config/options';
+import { errorMessage } from '../../services/cloud';
+import { daysBetween } from '../../utils/date';
 
 const loader = createLoader();
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function partnerName(household: Household): string {
+  return (
+    household.members.find((member) => member.role !== household.myRole)
+      ?.name || 'TA'
+  );
+}
+
+const DONE_TEXT = { todo: '完成了', dish: '吃了', wish: '去过了' };
+
+/** 主页「TA 最近」里的一行。 */
+interface FeedRow {
+  id: string;
+  /** 一句话：谁做了什么，或 TA 怎么回应了你。 */
+  text: string;
+  when: string;
+  /** 对方做的事才能点回应。 */
+  canReact: boolean;
+  mine: Reaction | '';
+}
+
+function whenText(date: string): string {
+  const days = daysBetween(date, todayKey());
+  if (days <= 0) return '今天';
+  if (days === 1) return '昨天';
+  return `${Number(date.slice(5, 7))}月${Number(date.slice(8))}日`;
+}
+
+/** 最近的动态里挑出要给 TA 看的：对方做的（可回应）、对方回应了我做的。 */
+function feedRows(
+  items: ActivityItem[],
+  myRole: string,
+  partner: string,
+): FeedRow[] {
+  const rows: FeedRow[] = [];
+  for (const item of items) {
+    const verb = DONE_TEXT[item.type];
+    const when = whenText(item.date);
+    if (item.byRole && item.byRole !== myRole) {
+      rows.push({
+        id: item.id,
+        text: `${partner}${verb}「${item.title}」`,
+        when,
+        canReact: true,
+        mine: item.reactions[myRole as 'a' | 'b'] || '',
+      });
+      continue;
+    }
+    const theirs = item.reactions[myRole === 'a' ? 'b' : 'a'];
+    if (theirs)
+      rows.push({
+        id: item.id,
+        text: `${partner}回应了你${verb}「${item.title}」：${reactionLabel(theirs)}`,
+        when,
+        canReact: false,
+        mine: '',
+      });
+  }
+  return rows.slice(0, 4);
+}
 
 /** 主页：一进来就是本月花了多少、下一个纪念日，各功能从这里点进去。 */
 Page({
@@ -34,6 +101,10 @@ Page({
     spentText: '',
     countText: '',
     todoText: '',
+    feed: [] as FeedRow[],
+    reactions: REACTIONS,
+    /** TA 近一天记了几笔账。 */
+    partnerSpent: '',
     /** 最要紧的一个攒钱目标（没攒完、截止最早），没有时为 null。 */
     goal: null as GoalRow | null,
     goalsReady: false,
@@ -74,13 +145,16 @@ Page({
           dateService.list(),
           // 攒钱读不到（如 api 还没部署新版）时主页其他部分照常显示。
           goalService.list().catch(() => null),
+          // 同理：「TA 最近」读不到时不影响主页。
+          activityService.recent().catch(() => null),
         ]);
       },
-      show: ([month, todos, dates, goals]) => {
+      show: ([month, todos, dates, goals, recent]) => {
         this.showMonth(month);
         this.showTodos(todos);
         this.showDates(dates);
         if (goals) this.showGoals(goals);
+        if (recent) this.showFeed(recent);
       },
     });
   },
@@ -88,14 +162,65 @@ Page({
     // 和记账页一致：开了两人分摊看共同支出，没开看全部支出。
     const splitting = this.data.household?.splitting === true;
     const total = splitting ? summary.sharedTotal : summary.spending.total;
+    const household = this.data.household;
+    const partnerRecords = household
+      ? records.filter(
+          (record) =>
+            record.byRole &&
+            record.byRole !== household.myRole &&
+            Date.now() - record.ts < DAY_MS,
+        ).length
+      : 0;
     this.setData({
       spentText: formatYuan(total),
       countText: records.length ? `记了 ${records.length} 笔` : '还没有记账',
+      partnerSpent:
+        partnerRecords && household
+          ? `${partnerName(household)}最近记了 ${partnerRecords} 笔账`
+          : '',
     });
   },
+  showFeed(items: ActivityItem[]) {
+    const household = this.data.household;
+    if (!household || household.members.length < 2) return;
+    this.setData({
+      feed: feedRows(items, household.myRole, partnerName(household)),
+    });
+  },
+  /** 点一个回应；再点同一个收回。 */
+  async react(event: WechatMiniprogram.TouchEvent) {
+    const { id, reaction } = event.currentTarget.dataset as {
+      id: string;
+      reaction: Reaction;
+    };
+    const row = this.data.feed.find((item) => item.id === id);
+    if (!row) return;
+    const next = row.mine === reaction ? '' : reaction;
+    const index = this.data.feed.indexOf(row);
+    this.setData({ [`feed[${index}].mine`]: next });
+    try {
+      await activityService.react(id, next);
+    } catch (error) {
+      this.setData({ [`feed[${index}].mine`]: row.mine });
+      wx.showToast({ title: errorMessage(error), icon: 'none' });
+    }
+  },
   showTodos(todos: Todo[]) {
-    const open = todos.filter((todo) => !todo.done).length;
-    this.setData({ todoText: open ? `${open} 件没做完` : '都做完了' });
+    const today = todayKey();
+    // 重复任务还没到日子的先不算。
+    const open = todos.filter(
+      (todo) => !todo.done && (!todo.dueOn || todo.dueOn <= today),
+    );
+    const mine = this.data.household?.myRole;
+    // TA 指定给我的（不含「一起」和我自己加的）。
+    const assigned = open.filter(
+      (todo) => todo.who === mine && todo.byRole && todo.byRole !== mine,
+    ).length;
+    this.setData({
+      todoText: open.length
+        ? `${open.length} 件没做完${assigned ? `，${assigned} 件是 TA 派的` : ''}`
+        : '都做完了',
+    });
   },
   showDates(dates: Anniversary[]) {
     // 云端已按「未过的在前、天数从近到远」排好，第一个就是下一个纪念日。
