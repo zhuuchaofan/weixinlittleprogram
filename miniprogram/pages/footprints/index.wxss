@@ -1,0 +1,4 @@
+.foot-memo { margin-top: 16rpx; font-size: 28rpx; line-height: 1.6; }
+.foot-photos { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 16rpx; }
+.foot-photo { width: 192rpx; height: 192rpx; border-radius: var(--radius-sm); background: var(--accent-soft); }
+.foot-spent { margin-top: 16rpx; }

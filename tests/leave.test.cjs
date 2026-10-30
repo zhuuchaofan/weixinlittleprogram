@@ -237,6 +237,18 @@ async function fill(call) {
   await call('A', 'dish.update', { id: dish.data.id, ateOn: '2026-10-19' });
 }
 
+/** 想去：A 记了一条带回忆和照片、A 点了「我也想去」。 */
+async function fillWish(call) {
+  const householdId = (await call('A', 'household.get')).data.id;
+  const wish = await call('A', 'wish.add', { title: '镰仓' });
+  await call('A', 'wish.update', {
+    id: wish.data.id,
+    memo: '看了海',
+    photos: [`cloud://env.x/wish-photos/${householdId}/a.jpg`],
+  });
+  await call('A', 'wish.want', { id: wish.data.id, want: true });
+}
+
 /** 清空、只剩自己时退出：先替对方复制完（waiting），再真正执行。 */
 async function untilDone(call, openid, action, payload) {
   for (let i = 0; i < 50; i++) {
@@ -258,6 +270,7 @@ async function copyAll(call, openid) {
 test('B 退出并带走副本：新小家里 B 是创建者，付款人、负责人、存入人跟着换', async () => {
   const { households, repos, call, oldId } = await setup();
   await fill(call);
+  await fillWish(call);
   const left = await call('B', 'household.leave', {});
   assert.equal(left.ok, true);
 
@@ -306,6 +319,12 @@ test('B 退出并带走副本：新小家里 B 是创建者，付款人、负责
   );
   // 「就吃这个」的回顾记录指向副本里的菜。
   const dish = (await call('B', 'dish.list')).data[0];
+  // 想去：回忆一句话带走，照片留在旧小家（文件在旧小家的文件夹里）；「我也想去」跟着换角色。
+  const wish = (await call('B', 'wish.list')).data[0];
+  assert.deepEqual(
+    [wish.memo, wish.photos, wish.wants],
+    ['看了海', [], { b: true }],
+  );
   const act = [...repos.activity.docs.values()].find(
     (d) => d.householdId === mine.data.id,
   );

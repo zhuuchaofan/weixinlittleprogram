@@ -8,6 +8,7 @@ const { listAll, readComplete } = require('./paging');
 const { createVision } = require('./vision');
 const { createAi } = require('./ai');
 const { createXpay, DELIVER_EVENT, REFUND_EVENT } = require('./xpay');
+const { createStorage } = require('./photos');
 
 function createHouseholdRepository(db) {
   const collection = db.collection('households');
@@ -315,7 +316,8 @@ exports.main = async (event, context) => {
   );
   if (!envId)
     return { ok: false, code: 'UNAVAILABLE', message: '云环境信息缺失' };
-  const db = cloudbase.init(cloudConfigForInvocation(envId)).database();
+  const app = cloudbase.init(cloudConfigForInvocation(envId));
+  const db = app.database();
   const route = createRouter({
     households: createHouseholdRepository(db),
     archive: {
@@ -330,6 +332,7 @@ exports.main = async (event, context) => {
     insights: createRecordRepository(db, 'insights'),
     goals: createGoalRepository(db),
     activity: createRecordRepository(db, 'activity'),
+    storage: createStorage(app),
     ai: createAi({
       client: createVision(),
       usage: createAiUsageRepository(db),

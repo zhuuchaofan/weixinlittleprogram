@@ -129,6 +129,10 @@ export const CONTRACT = {
     "外食",
     "外卖"
   ],
+  "photos": {
+    "free": 1,
+    "vip": 3
+  },
   "maxAmount": 1000000000,
   "lengths": {
     "expenseNote": 40,
@@ -137,6 +141,7 @@ export const CONTRACT = {
     "wishTitle": 30,
     "wishWhy": 100,
     "wishPlan": 300,
+    "wishMemo": 100,
     "dateTitle": 20,
     "todoSplitText": 120,
     "dishWant": 30,

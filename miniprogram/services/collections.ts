@@ -2,6 +2,7 @@ import type {
   Anniversary,
   AnniversaryInput,
   Dish,
+  Footprint,
   DishInput,
   Goal,
   GoalInput,
@@ -16,7 +17,18 @@ import { callApi } from './cloud';
 import { createCollectionService } from './collection';
 
 export const dishService = createCollectionService<Dish, DishInput>('dish');
-export const wishService = createCollectionService<Wish, WishInput>('wish');
+export const wishService = {
+  ...createCollectionService<Wish, WishInput>('wish'),
+  /** 「我也想去」：只改自己那一个。 */
+  want(id: string, want: boolean): Promise<Wish> {
+    return callApi<Wish>('wish.want', { id, want });
+  },
+};
+export const footprintService = {
+  list(): Promise<Footprint[]> {
+    return callApi<Footprint[]>('footprint.list');
+  },
+};
 export const dateService = createCollectionService<
   Anniversary,
   AnniversaryInput

@@ -1,3 +1,8 @@
 .wish-row { padding: 0 20rpx 0 0; align-items: stretch; gap: 0; }
 .wish-main { display: flex; flex-direction: column; justify-content: center; padding: 16rpx 0; }
 .wish-main .row-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wish-main { flex: 1; min-width: 0; }
+.want-chip { align-self: center; margin-left: 16rpx; }
+.wish-thumb { width: 96rpx; height: 96rpx; align-self: center; margin-left: 16rpx; border-radius: var(--radius-sm); flex-shrink: 0; }
+.foot-entry { margin-bottom: 24rpx; padding: 24rpx 28rpx; background: var(--accent-soft); border-radius: var(--radius-sm); color: var(--accent); font-size: 28rpx; font-weight: 600; }

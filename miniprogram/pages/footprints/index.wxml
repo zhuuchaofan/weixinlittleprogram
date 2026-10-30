@@ -1,0 +1,18 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
+  <view wx:if="{{loading && !rows.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <view wx:elif="{{!rows.length && !error}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />去过的地方会留在这里。在「想去」里打勾，再加一句话和照片。</view>
+  <view wx:for="{{rows}}" wx:key="id" class="card foot">
+    <view class="foot-head" data-id="{{item.id}}" bindtap="open" aria-role="button">
+      <view class="row-title">{{item.title}}</view>
+      <view class="row-sub">{{item.dateText}}</view>
+    </view>
+    <view wx:if="{{item.memo}}" class="foot-memo">{{item.memo}}</view>
+    <view wx:if="{{item.photos.length}}" class="foot-photos">
+      <image wx:for="{{item.photos}}" wx:for-item="url" wx:key="*this" class="foot-photo" src="{{url}}" mode="aspectFill" data-row="{{item.id}}" data-url="{{url}}" bindtap="preview" />
+    </view>
+    <view wx:if="{{item.spentText}}" class="row-sub foot-spent">{{item.spentText}}</view>
+  </view>
+  <view class="page-end"></view>
+</view>

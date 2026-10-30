@@ -10,6 +10,19 @@
     <text class="field-label">哪天去的</text>
     <picker mode="date" value="{{doneOn}}" end="{{today}}" bindchange="pickDate"><view class="picker-value">{{doneOn}}</view></picker>
   </view>
+  <block wx:if="{{done}}">
+    <view class="field"><text class="field-label">留一句话</text><textarea value="{{memo}}" maxlength="{{limits.wishMemo}}" data-field="memo" bindinput="input" placeholder="例如：风很大，但海很蓝" /></view>
+    <view class="field">
+      <text class="field-label">照片 {{photos.length}}/{{limit}}{{isVip ? '' : '（会员每条 3 张）'}}</text>
+      <view class="photos">
+        <view wx:for="{{shown}}" wx:key="id" class="photo">
+          <image class="photo-img" src="{{item.url}}" mode="aspectFill" data-url="{{item.url}}" bindtap="previewPhoto" />
+          <view class="photo-x" data-id="{{item.id}}" bindtap="removePhoto" aria-role="button" aria-label="删除这张照片">×</view>
+        </view>
+        <view wx:if="{{photos.length < limit}}" class="photo photo-add" bindtap="addPhotos" aria-role="button" aria-label="添加照片">{{uploading ? '…' : '+'}}</view>
+      </view>
+    </view>
+  </block>
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
   <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
   <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">删除这条</button>
