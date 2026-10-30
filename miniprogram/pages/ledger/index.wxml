@@ -42,7 +42,10 @@
 
   <view class="section-head">
     <view class="section-title">明细</view>
-    <text wx:if="{{total}}" class="small muted">{{total}} 笔</text>
+    <view wx:if="{{total}}" class="detail-side">
+      <text class="small muted">{{total}} 笔</text>
+      <button class="text-button" bindtap="exportCsv">导出</button>
+    </view>
   </view>
   <view wx:if="{{loading && !summary}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:elif="{{!records.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月还没有记账。</view>
