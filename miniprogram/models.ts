@@ -395,6 +395,14 @@ export interface MonthRecap {
     prevTotal: number | null;
     byRole: { a: number; b: number };
     top: Array<{ cat: string; amount: number }>;
+    /** 每 7 天一段的支出：from 是这段从几号开始。 */
+    weeks: Array<{ from: number; amount: number }>;
+    biggest: { amount: number; cat: string; note: string; date: string } | null;
+    peakDay: { day: number; amount: number } | null;
+    /** 日均支出（分）；当月数到今天为止。 */
+    perDay: number;
+    /** 没花钱的天数。 */
+    freeDays: number;
   };
   meals: { count: number; top: { title: string; count: number } | null };
   todos: { count: number; byRole: { a: number; b: number } };

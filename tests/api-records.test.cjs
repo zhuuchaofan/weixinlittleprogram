@@ -628,6 +628,23 @@ test('每月小报：支出对比上月、两人各记几笔、吃了什么、�
   assert.equal(sept.spend.total, 8000);
   assert.equal(sept.spend.count, 2);
   assert.equal(sept.spend.prevTotal, 4000);
+  assert.deepEqual(
+    sept.spend.weeks.map((w) => [w.from, w.amount]),
+    [
+      [1, 8000],
+      [8, 0],
+      [15, 0],
+      [22, 0],
+      [29, 0],
+    ],
+  );
+  assert.deepEqual(
+    [sept.spend.biggest.amount, sept.spend.biggest.date],
+    [5000, '2026-09-03'],
+  );
+  assert.deepEqual(sept.spend.peakDay, { day: 3, amount: 5000 });
+  assert.equal(sept.spend.perDay, 267);
+  assert.equal(sept.spend.freeDays, 28);
   assert.deepEqual(sept.spend.byRole, { a: 1, b: 1 });
   assert.deepEqual(
     sept.spend.top.map((row) => [row.cat, row.amount]),

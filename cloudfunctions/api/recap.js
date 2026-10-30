@@ -2,6 +2,8 @@
  * 每月「我们的小报」：一个月里两人一起做了什么，全部从已有数据数出来，不用 AI。金额单位为「分」：
  * - spend：支出口径同花销分析（不含结算和收入）；prevTotal 是上个月的支出，上个月一笔都没记过为 null；
  *   count 是笔数，byRole 是两人各记了几笔；top 是金额最大的 3 类。
+ *   weeks 是按每 7 天一段的支出（第 1 到 7 天、8 到 14 天…），biggest 是最大的一笔，peakDay 是花得最多的一天，
+ *   perDay 是日均（本月数到今天为止），freeDays 是没花钱的天数。
  * - meals：这个月「就吃这个」的次数，和吃得最多的一个（并列取先吃到的）。
  * - todos：这个月勾完的待办条数，两人各勾了几条。
  * - wishes：这个月标成「去过了」的地方。
@@ -56,8 +58,43 @@ function createRecapHandler({ repositories, requireMembership, now }) {
         const cat = normalizeCategory(record.cat);
         cats.set(cat, (cats.get(cat) || 0) + record.amount);
       }
+      const last = lastDayOfMonth(month);
+      // 当月只数到今天；过去的月数满整月。
+      const elapsed = Number((last < today ? last : today).slice(8));
+      const weeks = [];
+      for (let from = 1; from <= Number(last.slice(8)); from += 7)
+        weeks.push({ from, amount: 0 });
+      const byDay = new Map();
+      for (const record of spent) {
+        const day = Number(String(record.date).slice(8));
+        byDay.set(day, (byDay.get(day) || 0) + record.amount);
+        const week = weeks[Math.floor((day - 1) / 7)];
+        if (week) week.amount += record.amount;
+      }
+      const biggest = spent.reduce(
+        (best, record) =>
+          !best || record.amount > best.amount ? record : best,
+        null,
+      );
+      const peak = [...byDay].sort((x, y) => y[1] - x[1])[0];
+      const total = spent.reduce((sum, record) => sum + record.amount, 0);
       const spend = {
-        total: spent.reduce((sum, record) => sum + record.amount, 0),
+        total,
+        weeks,
+        biggest: biggest
+          ? {
+              amount: biggest.amount,
+              cat: normalizeCategory(biggest.cat),
+              note: String(biggest.note || ''),
+              date: biggest.date,
+            }
+          : null,
+        peakDay: peak ? { day: peak[0], amount: peak[1] } : null,
+        perDay: elapsed ? Math.round(total / elapsed) : 0,
+        freeDays: Math.max(
+          0,
+          elapsed - [...byDay.keys()].filter((day) => day <= elapsed).length,
+        ),
         count: spent.length,
         prevTotal: prevRecords.length
           ? prevRecords
@@ -100,7 +137,6 @@ function createRecapHandler({ repositories, requireMembership, now }) {
       const start = (dates ? await dates.listAll(household._id) : []).find(
         (record) => record.together,
       );
-      const last = lastDayOfMonth(month);
       // 起点那天算第 1 天；起点还在这个月之后就是 0。
       const togetherDay = start
         ? Math.max(

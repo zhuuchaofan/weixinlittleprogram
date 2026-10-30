@@ -43,20 +43,82 @@ function view(recap: MonthRecap, household: Household) {
       cat: row.cat,
       color: categoryLook(row.cat).color,
       amountText: formatYuan(row.amount),
+      percent: Math.max(4, Math.round((row.amount * 100) / spend.total)),
     })),
-    mealsText: meals.count ? `一起吃了 ${meals.count} 顿「就吃这个」` : '',
-    mealsTop: meals.top
-      ? `吃得最多的是${meals.top.title}，${meals.top.count} 次`
-      : '',
-    todosText: todos.count ? `做完了 ${todos.count} 件待办` : '',
-    todosSplit: todos.count
-      ? split(todos.byRole, names, pair, (n) => `${n} 件`)
-      : '',
-    wishes: recap.wishes,
-    savedText: saved.total ? `一起攒了 ${formatYuan(saved.total)}` : '',
-    savedSplit: saved.total
-      ? split(saved.byRole, names, pair, (n) => formatYuan(n))
-      : '',
+    weeks: spend.total
+      ? spend.weeks.map((week, index) => {
+          const max = Math.max(...spend.weeks.map((item) => item.amount));
+          const end = spend.weeks[index + 1]
+            ? spend.weeks[index + 1].from - 1
+            : 31;
+          return {
+            label:
+              week.from === end
+                ? `${week.from} 日`
+                : `${week.from}–${index === spend.weeks.length - 1 ? '月底' : end + ' 日'}`,
+            amountText: week.amount ? formatYuan(week.amount) : '—',
+            percent: week.amount
+              ? Math.max(4, Math.round((week.amount * 100) / max))
+              : 0,
+          };
+        })
+      : [],
+    facts: spend.count
+      ? [
+          { label: '平均每天', value: formatYuan(spend.perDay) },
+          {
+            label: '没花钱的日子',
+            value: spend.freeDays ? `${spend.freeDays} 天` : '天天都有花销',
+          },
+          ...(spend.peakDay
+            ? [
+                {
+                  label: '花得最多的一天',
+                  value: `${Number(recap.month.slice(5))} 月 ${spend.peakDay.day} 日 · ${formatYuan(spend.peakDay.amount)}`,
+                },
+              ]
+            : []),
+          ...(spend.biggest
+            ? [
+                {
+                  label: '最大的一笔',
+                  value: `${spend.biggest.note || spend.biggest.cat} · ${formatYuan(spend.biggest.amount)}`,
+                },
+              ]
+            : []),
+        ]
+      : [],
+    // 一起做的事：四行都在，没有的写一句轻轻的提示。
+    together: [
+      {
+        label: '一起吃',
+        text: meals.count
+          ? `${meals.count} 顿「就吃这个」${meals.top ? `，最多的是${meals.top.title}` : ''}`
+          : '这个月还没有「就吃这个」',
+        on: meals.count > 0,
+      },
+      {
+        label: '一起做',
+        text: todos.count
+          ? `做完 ${todos.count} 件待办${split(todos.byRole, names, pair, (n) => `${n} 件`) ? '：' + split(todos.byRole, names, pair, (n) => `${n} 件`) : ''}`
+          : '这个月还没有做完的待办',
+        on: todos.count > 0,
+      },
+      {
+        label: '去过',
+        text: recap.wishes.length
+          ? recap.wishes.join('、')
+          : '这个月还没去哪儿',
+        on: recap.wishes.length > 0,
+      },
+      {
+        label: '一起攒',
+        text: saved.total
+          ? `攒了 ${formatYuan(saved.total)}${split(saved.byRole, names, pair, (n) => formatYuan(n)) ? '：' + split(saved.byRole, names, pair, (n) => formatYuan(n)) : ''}`
+          : '这个月还没存钱',
+        on: saved.total > 0,
+      },
+    ],
     quiet:
       !spend.count &&
       !meals.count &&
@@ -80,14 +142,15 @@ Page({
     changeText: '',
     countText: '',
     togetherText: '',
-    top: [] as Array<{ cat: string; color: string; amountText: string }>,
-    mealsText: '',
-    mealsTop: '',
-    todosText: '',
-    todosSplit: '',
-    wishes: [] as string[],
-    savedText: '',
-    savedSplit: '',
+    top: [] as Array<{
+      cat: string;
+      color: string;
+      amountText: string;
+      percent: number;
+    }>,
+    weeks: [] as Array<{ label: string; amountText: string; percent: number }>,
+    facts: [] as Array<{ label: string; value: string }>,
+    together: [] as Array<{ label: string; text: string; on: boolean }>,
     quiet: false,
   },
   onShow() {

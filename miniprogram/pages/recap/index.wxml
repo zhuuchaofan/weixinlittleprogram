@@ -20,36 +20,41 @@
 
     <view wx:if="{{quiet}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月还没有留下什么，一起记几笔、吃几顿吧。</view>
 
-    <view wx:if="{{top.length}}" class="card recap-card">
-      <view class="small muted recap-head">花得最多的</view>
-      <view wx:for="{{top}}" wx:key="cat" class="recap-row">
-        <view class="cat-dot" style="background: {{item.color}}"></view>
-        <view class="recap-name">{{item.cat}}</view>
-        <view class="recap-value">{{item.amountText}}</view>
+    <view wx:if="{{weeks.length}}" class="card recap-card">
+      <view class="small muted recap-head">每周花了多少</view>
+      <view wx:for="{{weeks}}" wx:key="label" class="bar-row">
+        <view class="bar-label">{{item.label}}</view>
+        <view class="bar-track"><view class="bar-fill" style="width: {{item.percent}}%"></view></view>
+        <view class="bar-value">{{item.amountText}}</view>
       </view>
     </view>
 
-    <view wx:if="{{mealsText}}" class="card recap-card">
-      <view class="small muted recap-head">一起吃</view>
-      <view class="recap-line">{{mealsText}}</view>
-      <view wx:if="{{mealsTop}}" class="small muted">{{mealsTop}}</view>
+    <view wx:if="{{top.length}}" class="card recap-card">
+      <view class="small muted recap-head">花得最多的</view>
+      <view wx:for="{{top}}" wx:key="cat" class="top-row">
+        <view class="recap-row">
+          <view class="cat-dot" style="background: {{item.color}}"></view>
+          <view class="recap-name">{{item.cat}}</view>
+          <view class="recap-value">{{item.amountText}}</view>
+        </view>
+        <view class="bar-track top-bar"><view class="bar-fill" style="width: {{item.percent}}%; background: {{item.color}}"></view></view>
+      </view>
     </view>
 
-    <view wx:if="{{todosText}}" class="card recap-card">
-      <view class="small muted recap-head">一起做</view>
-      <view class="recap-line">{{todosText}}</view>
-      <view wx:if="{{todosSplit}}" class="small muted">{{todosSplit}}</view>
+    <view wx:if="{{facts.length}}" class="card recap-card">
+      <view class="small muted recap-head">这个月之最</view>
+      <view wx:for="{{facts}}" wx:key="label" class="recap-row">
+        <view class="recap-name muted">{{item.label}}</view>
+        <view class="recap-value">{{item.value}}</view>
+      </view>
     </view>
 
-    <view wx:if="{{wishes.length}}" class="card recap-card">
-      <view class="small muted recap-head">去过的地方</view>
-      <view wx:for="{{wishes}}" wx:key="*this" class="recap-line">{{item}}</view>
-    </view>
-
-    <view wx:if="{{savedText}}" class="card recap-card">
-      <view class="small muted recap-head">一起攒</view>
-      <view class="recap-line">{{savedText}}</view>
-      <view wx:if="{{savedSplit}}" class="small muted">{{savedSplit}}</view>
+    <view class="card recap-card">
+      <view class="small muted recap-head">这个月一起</view>
+      <view wx:for="{{together}}" wx:key="label" class="together-row">
+        <view class="together-label {{item.on ? 'together-on' : ''}}">{{item.label}}</view>
+        <view class="together-text {{item.on ? '' : 'muted'}}">{{item.text}}</view>
+      </view>
     </view>
 
     <button wx:if="{{!quiet}}" class="secondary recap-share" open-type="share">分享给 TA</button>
