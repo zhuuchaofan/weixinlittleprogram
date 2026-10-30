@@ -58,7 +58,7 @@ view, button, input, textarea { box-sizing: border-box; }
 
 /* 卡片与列表 */
 .card { position: relative; background: var(--surface); border-radius: var(--radius); padding: 32rpx; box-shadow: var(--shadow); }
-.card + .card { margin-top: var(--gap-card); }
+.card + .card, .grad-card + .card, .card + .grad-card { margin-top: var(--gap-card); }
 .list { position: relative; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
 /* 白卡片、列表（和主页入口 .grid-cell）右上角趴着一只小猫，6 种姿势按顺序轮流，图在下面 card-cats 段。
    列表不能 overflow: hidden（会把小猫剪掉），首尾行自己圆角 */
