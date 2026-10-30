@@ -1,5 +1,5 @@
 .went { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 28rpx; margin-bottom: 32rpx; }
-.save-for { margin-bottom: 24rpx; }
+button.save-for:not([size='mini']) { margin-bottom: 24rpx; }
 
 .photos { display: flex; flex-wrap: wrap; gap: 16rpx; }
 .photo { position: relative; width: 200rpx; height: 200rpx; border-radius: var(--radius-sm); background: var(--accent-soft); }
