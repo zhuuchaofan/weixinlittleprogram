@@ -356,3 +356,22 @@ export interface SavingTip {
   save10: number;
   save20: number;
 }
+
+/** 每月小报（recap.get）：一个月里两人一起做了什么。金额单位为「分」。 */
+export interface MonthRecap {
+  month: string;
+  spend: {
+    total: number;
+    count: number;
+    /** 上个月的支出；上个月一笔都没记过为 null。 */
+    prevTotal: number | null;
+    byRole: { a: number; b: number };
+    top: Array<{ cat: string; amount: number }>;
+  };
+  meals: { count: number; top: { title: string; count: number } | null };
+  todos: { count: number; byRole: { a: number; b: number } };
+  wishes: string[];
+  saved: { total: number; byRole: { a: number; b: number } };
+  /** 在一起第几天（数到这个月最后一天或今天）；没设起点为 0。 */
+  togetherDay: number;
+}

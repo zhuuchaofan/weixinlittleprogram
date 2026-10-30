@@ -1,0 +1,14 @@
+/* 本页用的公共类：.hero 这套和花销分析一致 */
+.hero { padding: 36rpx 36rpx 32rpx; }
+.hero-label { font-size: 24rpx; opacity: 0.92; }
+.hero-total { font-size: 80rpx; font-weight: 800; line-height: 1.2; margin: 8rpx 0 12rpx; letter-spacing: -1rpx; }
+.hero-change { font-size: 28rpx; font-weight: 600; }
+.hero-count { margin-top: 8rpx; font-size: 24rpx; opacity: 0.92; }
+
+.recap-card { margin-top: var(--gap-card); }
+.recap-head { margin-bottom: 8rpx; }
+.recap-line { font-size: 30rpx; line-height: 1.6; }
+.recap-row { display: flex; align-items: center; gap: 16rpx; min-height: 72rpx; }
+.recap-name { flex: 1; font-size: 28rpx; }
+.recap-value { font-size: 28rpx; font-variant-numeric: tabular-nums; }
+.recap-share { margin-top: var(--gap-lg); }

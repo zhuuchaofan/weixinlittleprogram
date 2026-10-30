@@ -61,3 +61,6 @@
 .recent-line { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
 .recent-text { font-size: 28rpx; line-height: 1.5; min-width: 0; }
 .recent-reacts { margin-top: 16rpx; }
+/* 每月小报入口 */
+.recap { display: flex; align-items: center; gap: 20rpx; margin-top: var(--gap-card); }
+.recap-title { font-size: 30rpx; font-weight: 600; }
