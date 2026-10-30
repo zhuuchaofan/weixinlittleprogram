@@ -611,7 +611,7 @@ test('限时免费：到日期那天的最后一刻所有小家都算会员，�
   const saved = process.env.VIP_FREE_UNTIL;
   try {
     delete process.env.VIP_FREE_UNTIL;
-    const end = Date.parse('2026-12-31T23:59:59.999+08:00');
+    const end = Date.parse('2026-11-30T23:59:59.999+08:00');
     assert.equal(freeUntilOf(), end);
     assert.equal(isVip({}, end - 1), true);
     assert.equal(isVip({}, end + 1), false);
