@@ -47,6 +47,13 @@ const FEATURES = {
     temperature: 0.5,
     maxTokens: 300,
   },
+  // 每月小报的寄语：只给汇总数字，生成式文字，界面标「AI 生成」。
+  recapNote: {
+    tier: 'write',
+    model: assistModel,
+    temperature: 0.6,
+    maxTokens: 400,
+  },
   // 纪念日祝福和点子：生成式文字，界面标「AI 生成」。
   dateWish: {
     tier: 'write',

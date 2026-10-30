@@ -1,13 +1,35 @@
-import type { Household, MonthRecap } from '../../models';
-import { getRecap } from '../../services/recap';
+import type { Household, MonthRecap, RecapNote } from '../../models';
+import { getRecap, writeRecapNote } from '../../services/recap';
+import { ApiError, errorMessage } from '../../services/cloud';
 import { memberNames } from '../../services/household';
 import { createLoader } from '../../services/page-load';
 import { categoryLook } from '../../config/options';
-import { monthLabel, shiftMonth, todayKey } from '../../utils/date';
+import {
+  formatTimestamp,
+  monthLabel,
+  shiftMonth,
+  todayKey,
+} from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
 
 const loader = createLoader();
+// 模型慢，小程序可能先断开而云端照常写完：断开后每隔几秒取一次，最多这么多次。
+const RECOVER_TRIES = 6;
+const RECOVER_GAP_MS = 4000;
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function noteView(note: RecapNote | null) {
+  return {
+    noteText: note?.text || '',
+    noteTs: note?.ts || 0,
+    noteHint: note
+      ? note.stale
+        ? '写完之后这个月有新的变化，可以重新写'
+        : `${formatTimestamp(note.ts)} 写的`
+      : '',
+  };
+}
 const thisMonth = () => todayKey().slice(0, 7);
 
 /** 「A 3 · B 2」：只有一个人在做时不拆。 */
@@ -119,6 +141,7 @@ function view(recap: MonthRecap, household: Household) {
         on: saved.total > 0,
       },
     ],
+    ...noteView(recap.note),
     quiet:
       !spend.count &&
       !meals.count &&
@@ -152,6 +175,12 @@ Page({
     facts: [] as Array<{ label: string; value: string }>,
     together: [] as Array<{ label: string; text: string; on: boolean }>,
     quiet: false,
+    noteText: '',
+    noteTs: 0,
+    noteHint: '',
+    noteError: '',
+    noteLimit: false,
+    writing: false,
   },
   onShow() {
     applyTheme(this);
@@ -180,8 +209,53 @@ Page({
       monthText: monthLabel(month),
       isCurrentMonth: month === thisMonth(),
       ready: false,
+      noteText: '',
+      noteError: '',
+      noteLimit: false,
     });
     void this.load();
+  },
+  openVip() {
+    wx.navigateTo({ url: '/pages/vip/index' });
+  },
+  async writeNote() {
+    if (this.data.writing) return;
+    const month = this.data.month;
+    const before = this.data.noteTs;
+    this.setData({ writing: true, noteError: '', noteLimit: false });
+    try {
+      this.setData(noteView(await writeRecapNote(month)));
+    } catch (error) {
+      const note =
+        error instanceof ApiError && error.code === 'NETWORK'
+          ? await this.recoverNote(month, before)
+          : null;
+      if (this.data.month !== month) return;
+      this.setData(
+        note
+          ? noteView(note)
+          : {
+              noteError: errorMessage(error),
+              noteLimit: error instanceof ApiError && error.code === 'LIMIT',
+            },
+      );
+    } finally {
+      this.setData({ writing: false });
+    }
+  },
+  /** 断开之后看云端有没有写完：有比 before 新的寄语就返回它。 */
+  async recoverNote(month: string, before: number) {
+    for (let i = 0; i < RECOVER_TRIES; i++) {
+      if (this.data.month !== month) return null;
+      try {
+        const { note } = await getRecap(month);
+        if (note && note.ts !== before) return note;
+      } catch {
+        // 这次也没连上，等一会再取
+      }
+      await wait(RECOVER_GAP_MS);
+    }
+    return null;
   },
   onShareAppMessage() {
     return {

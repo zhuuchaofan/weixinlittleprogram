@@ -97,6 +97,9 @@ function createRouter({
     }),
     ...createRecapHandler({
       repositories: { expenses, goals, dates, activity },
+      households,
+      insights,
+      ai,
       requireMembership,
       now,
     }),

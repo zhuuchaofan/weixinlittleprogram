@@ -1633,6 +1633,61 @@ test('花销分析：大额单笔最多 5 笔，没有备注时用截图商户�
   assert.equal(result.prevTotal, 0);
 });
 
+test('小报寄语：只发汇总数字，存下来，数字变了提示重新写，每天最多 2 次', async () => {
+  assert.equal(
+    (await (await setup()).call('A', 'recap.write', {})).code,
+    'UNAVAILABLE',
+  );
+  const prompts = [];
+  const vision = {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'recapNote');
+      prompts.push(prompt);
+      return '**你们**这个月很棒。\n\n\n下个月继续。';
+    },
+  };
+  const { call, insights } = await setup({ vision });
+  assert.equal(
+    (await call('A', 'recap.write', { month: '2026-11' })).code,
+    'VALIDATION',
+  );
+  await call(
+    'A',
+    'expense.add',
+    expense({ date: '2026-09-02', amount: 300000 }),
+  );
+  const dish = await call('B', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-09-10' });
+
+  assert.equal((await call('A', 'recap.get', {})).data.note, null);
+  const written = await call('A', 'recap.write', {});
+  assert.deepEqual(written.data, {
+    text: '你们这个月很棒。\n下个月继续。',
+    ts: NOW,
+    stale: false,
+  });
+  const prompt = prompts[0];
+  assert.match(prompt, /支出合计 3000 元，共 1 笔/);
+  assert.match(prompt, /吃得最多的是「拉面」/);
+  for (const secret of ['超凡', '佳益', '"A"', 'householdId'])
+    assert.equal(prompt.includes(secret), false, secret);
+  assert.equal(insights.docs.size, 1);
+  assert.equal(
+    [...insights.docs.keys()][0].includes('-recap-2026-09'),
+    true,
+    '和喵喵小结分开存',
+  );
+
+  assert.equal((await call('B', 'recap.get', {})).data.note.stale, false);
+  await call('A', 'expense.add', expense({ date: '2026-09-05', amount: 500 }));
+  assert.equal((await call('B', 'recap.get', {})).data.note.stale, true);
+  assert.equal((await call('B', 'recap.write', {})).ok, true);
+  assert.equal(insights.docs.size, 1, '每月只存一份');
+  assert.equal((await call('B', 'recap.write', {})).code, 'LIMIT');
+  assert.equal((await call('X', 'recap.get', {})).data.note, null);
+});
+
 test('AI 小结：只发汇总、存下来、账目变了提示重新生成、每天最多 5 次', async () => {
   assert.equal(
     (await (await setup()).call('A', 'insight.write', { month: '2026-10' }))

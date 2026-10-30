@@ -410,4 +410,12 @@ export interface MonthRecap {
   saved: { total: number; byRole: { a: number; b: number } };
   /** 在一起第几天（数到这个月最后一天或今天）；没设起点为 0。 */
   togetherDay: number;
+  /** AI 写的寄语；还没写过为 null，stale 表示写完之后数字变了。 */
+  note: RecapNote | null;
+}
+
+export interface RecapNote {
+  text: string;
+  ts: number;
+  stale: boolean;
 }

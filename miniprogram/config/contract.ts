@@ -76,6 +76,15 @@ export const CONTRACT = {
       "free": 3,
       "vip": 30
     },
+    "recapNote": {
+      "name": "小报寄语",
+      "verb": "写",
+      "unit": "次",
+      "what": "寄语",
+      "per": "day",
+      "free": 2,
+      "vip": 20
+    },
     "dateWish": {
       "name": "纪念日祝福和点子",
       "verb": "写",

@@ -1,5 +1,5 @@
 .yearly { display: flex; align-items: center; gap: 20rpx; padding: 24rpx 28rpx; }
-.save { margin-top: 40rpx; }
+button.save:not([size='mini']) { margin-top: 40rpx; }
 
 .wish-card { margin-top: 24rpx; }
 .wish-head { display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
@@ -8,5 +8,5 @@
 .wish-text { margin-top: 20rpx; font-size: 28rpx; line-height: 1.8; }
 .wish-idea { margin-top: 8rpx; font-size: 28rpx; line-height: 1.6; }
 .wish-note { margin-top: 12rpx; }
-.wish-button { margin-top: 20rpx; }
-.calendar { margin-top: 24rpx; }
+button.wish-button:not([size='mini']) { margin-top: 20rpx; }
+button.calendar:not([size='mini']) { margin-top: 24rpx; }

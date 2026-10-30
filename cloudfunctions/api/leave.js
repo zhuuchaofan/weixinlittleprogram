@@ -70,7 +70,12 @@ function copyRecord(name, record, job, householdId, openid) {
   }
   if (name === 'goals' && Array.isArray(doc.log))
     doc.log = doc.log.map((entry) => ({ ...entry, role: swap(entry.role) }));
-  if (name === 'insights') return { id: `${householdId}-${doc.month}`, doc };
+  if (name === 'insights')
+    return {
+      // 小报寄语和喵喵小结同一个集合，按种类分开，同一个月不会撞 id。
+      id: `${householdId}-${doc.kind === 'recap' ? 'recap-' : ''}${doc.month}`,
+      doc,
+    };
   if (name === 'activity') {
     doc.refId = copyId(householdId, doc.refId);
     return { id: `${doc.type}_${doc.refId}_${doc.date}`, doc };

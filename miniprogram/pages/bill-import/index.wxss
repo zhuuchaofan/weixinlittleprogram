@@ -1,5 +1,5 @@
 .hint { margin: 24rpx 4rpx; }
-.back-button { margin-top: 24rpx; }
+button.back-button:not([size='mini']) { margin-top: 24rpx; }
 .months { white-space: nowrap; margin: 8rpx 0 4rpx; }
 .months .chip { display: inline-flex; margin-right: 12rpx; }
 .month-actions { display: flex; gap: 32rpx; justify-content: flex-end; margin: 8rpx 4rpx 16rpx; }
