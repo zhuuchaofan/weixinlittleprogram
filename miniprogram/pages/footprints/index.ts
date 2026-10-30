@@ -30,7 +30,7 @@ function toRow(item: Footprint): Row {
     dateText: item.doneOn ? item.doneOn.slice(5).replace('-', '.') : '',
     memo: item.memo,
     spent: item.spent,
-    spentText: item.spent > 0 ? `花了 ¥${formatYuan(item.spent)}` : '',
+    spentText: item.spent > 0 ? `花了 ${formatYuan(item.spent)}` : '',
     both: item.both,
     photoIds: item.photos,
     photos: [],
