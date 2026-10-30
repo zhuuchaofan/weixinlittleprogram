@@ -48,8 +48,8 @@
           <view class="recent-text">{{item.text}}</view>
           <view class="small muted">{{item.when}}</view>
         </view>
-        <view wx:if="{{item.canReact}}" class="recent-reacts">
-          <view wx:for="{{reactions}}" wx:for-item="reaction" wx:key="value" class="recent-chip {{item.mine === reaction.value ? 'recent-chip-on' : ''}}" data-id="{{item.id}}" data-reaction="{{reaction.value}}" bindtap="react" aria-role="button" aria-label="{{reaction.label}}">{{reaction.label}}</view>
+        <view wx:if="{{item.canReact}}" class="chips recent-reacts">
+          <view wx:for="{{reactions}}" wx:for-item="reaction" wx:key="value" class="chip {{item.mine === reaction.value ? 'chip-on' : ''}}" data-id="{{item.id}}" data-reaction="{{reaction.value}}" bindtap="react" aria-role="button" aria-label="{{reaction.label}}">{{reaction.label}}</view>
         </view>
       </view>
     </view>

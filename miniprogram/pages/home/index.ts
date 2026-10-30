@@ -218,7 +218,9 @@ Page({
     ).length;
     this.setData({
       todoText: open.length
-        ? `${open.length} 件没做完${assigned ? `，${assigned} 件是 TA 派的` : ''}`
+        ? assigned
+          ? `TA 派了 ${assigned} 件给你`
+          : `${open.length} 件没做完`
         : '都做完了',
     });
   },
