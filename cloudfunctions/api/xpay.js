@@ -75,7 +75,7 @@ function createXpay(env = process.env, request = httpsRequest) {
     try {
       reply = JSON.parse((await request(url, body)).text);
     } catch {
-      throw new ApiError('UNAVAILABLE', '连不上微信服务，请稍后重试。');
+      throw new ApiError('UNAVAILABLE', '微信那边暂时连不上，稍后再试一次吧。');
     }
     return reply;
   }
@@ -118,7 +118,7 @@ function createXpay(env = process.env, request = httpsRequest) {
       });
       const reply = await callJson(`${API}/sns/jscode2session?${query}`);
       if (!reply.session_key || reply.openid !== openid)
-        throw new ApiError('UNAUTHENTICATED', '登录状态过期，请重试。');
+        throw new ApiError('UNAUTHENTICATED', '登录有点过期了，再试一次吧。');
       return reply.session_key;
     },
     /** 双签名：paySig 用 AppKey 签「uri&signData」，signature 用 session_key 签 signData。 */

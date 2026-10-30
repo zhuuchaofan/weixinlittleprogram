@@ -27,7 +27,7 @@
       </view>
       <view class="field">
         <text class="field-label">日期</text>
-        <picker mode="date" value="{{item.date || today}}" end="{{today}}" data-index="{{index}}" bindchange="pickDate"><view class="picker-value">{{item.date || '请选择'}}</view></picker>
+        <picker mode="date" value="{{item.date || today}}" end="{{today}}" data-index="{{index}}" bindchange="pickDate"><view class="picker-value">{{item.date || '选个日期'}}</view></picker>
       </view>
       <view class="field">
         <text class="field-label">分类</text>

@@ -596,7 +596,7 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
     throw new Error('ECONNRESET');
   });
   await assert.rejects(read(offline), {
-    message: /连不上识别服务/,
+    message: /识别服务暂时连不上/,
   });
 });
 

@@ -90,7 +90,7 @@ function createVipHandler({
       if (await households.setVip(householdId, household.vip?.until, vip))
         return;
     }
-    throw new ApiError('UNAVAILABLE', '会员开通冲突，请稍后重试。');
+    throw new ApiError('UNAVAILABLE', '会员刚好在更新，稍等一下再试试吧。');
   }
 
   /**
@@ -121,7 +121,7 @@ function createVipHandler({
       if (await households.setVip(householdId, household.vip?.until, vip))
         return;
     }
-    throw new ApiError('UNAVAILABLE', '会员扣减冲突，请稍后重试。');
+    throw new ApiError('UNAVAILABLE', '会员刚好在更新，稍等一下再试试吧。');
   }
 
   /**
@@ -185,7 +185,7 @@ function createVipHandler({
         const plan = VIP.plans.find((item) => item.id === payload?.plan);
         if (!plan) throw new ApiError('VALIDATION', '没有这个会员套餐。');
         const code = typeof payload?.code === 'string' ? payload.code : '';
-        if (!code) throw new ApiError('VALIDATION', '登录状态过期，请重试。');
+        if (!code) throw new ApiError('VALIDATION', '登录有点过期了，再试一次吧。');
         const sessionKey = await xpay.sessionKey(code, openid);
         const outTradeNo = newOutTradeNo(now());
         // 价格、商品 ID 都以云端为准，客户端传来的只有套餐 ID。

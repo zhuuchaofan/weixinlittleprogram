@@ -176,7 +176,7 @@ Page({
       const ratio = parseRatio(this.data.ratioText);
       if (ratio === null) {
         this.setData({
-          error: `请填写 ${RATIO_RANGE.min}–${RATIO_RANGE.max} 的整数，表示付款人承担的百分比。`,
+          error: `填 ${RATIO_RANGE.min}–${RATIO_RANGE.max} 的整数就好，表示付款人出的百分比。`,
         });
         return;
       }

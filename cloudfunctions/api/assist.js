@@ -149,7 +149,7 @@ function createAssistHandler({
         ? validate.oneOf(
             payload.tag,
             CONTRACT.dishTags,
-            '请选择在家做、外食或外卖。',
+            '选一下在家做、外食还是外卖吧。',
           )
         : '';
       const today = todayKey(now());
@@ -223,7 +223,7 @@ function createAssistHandler({
           }),
         ),
       );
-      if (!result) throw failed('没写出来，请稍后重试。');
+      if (!result) throw failed('喵喵这次没想出来，过一会儿再试试吧。');
       return result;
     },
   };
