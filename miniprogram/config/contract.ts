@@ -116,6 +116,17 @@ export const CONTRACT = {
     "b",
     "both"
   ],
+  "todoRepeat": [
+    "",
+    "daily",
+    "weekly",
+    "monthly"
+  ],
+  "reactions": [
+    "thanks",
+    "great",
+    "love"
+  ],
   "dishKinds": [
     "dish",
     "shop"

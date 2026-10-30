@@ -11,6 +11,13 @@
         <view wx:for="{{kinds}}" wx:key="value" class="segment {{kind === item.value ? 'segment-on' : ''}}" data-field="kind" data-value="{{item.value}}" bindtap="choose">{{item.label}}</view>
       </view>
     </view>
+    <view wx:if="{{kind === 'todo'}}" class="field">
+      <text class="field-label">重复</text>
+      <view class="segmented">
+        <view wx:for="{{repeats}}" wx:key="value" class="segment {{repeat === item.value ? 'segment-on' : ''}}" data-field="repeat" data-value="{{item.value}}" bindtap="choose">{{item.label}}</view>
+      </view>
+      <view wx:if="{{repeat}}" class="small muted">勾完后自动生成下一条，到了日子才会出现在「要做的」里。</view>
+    </view>
     <view class="field">
       <text class="field-label">谁来做</text>
       <view class="chips chips-fill">

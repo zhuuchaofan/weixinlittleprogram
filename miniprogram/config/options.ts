@@ -4,8 +4,10 @@ import type {
   Flow,
   DishTag,
   Payer,
+  Reaction,
   Split,
   TodoKind,
+  TodoRepeat,
   TodoWho,
 } from '../models';
 import { CONTRACT } from './contract';
@@ -66,6 +68,29 @@ const SPLIT_TEXT: Record<Split, { label: string; hint: string }> = {
 };
 export const SPLITS: Array<{ value: Split; label: string; hint: string }> =
   CONTRACT.splits.map((value: Split) => ({ value, ...SPLIT_TEXT[value] }));
+
+/** 对对方做的事可以点的回应。 */
+export const REACTIONS: Array<{ value: Reaction; label: string }> = [
+  { value: 'thanks', label: '辛苦了' },
+  { value: 'great', label: '真棒' },
+  { value: 'love', label: '喜欢' },
+];
+export function reactionLabel(reaction: Reaction | undefined): string {
+  return REACTIONS.find((item) => item.value === reaction)?.label || '';
+}
+
+/** 待办的重复周期。 */
+export const TODO_REPEATS: Array<{ value: TodoRepeat; label: string }> = [
+  { value: '', label: '不重复' },
+  { value: 'daily', label: '每天' },
+  { value: 'weekly', label: '每周' },
+  { value: 'monthly', label: '每月' },
+];
+export function repeatLabel(repeat: TodoRepeat | undefined): string {
+  return (
+    TODO_REPEATS.find((item) => item.value === (repeat || ''))?.label || ''
+  );
+}
 
 /** 界面上只分购物和待办；旧的「家务」条目归到待办里显示。 */
 export const TODO_KINDS: Array<{ value: TodoKind; label: string }> = [

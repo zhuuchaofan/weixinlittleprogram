@@ -29,17 +29,31 @@
 
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">重试</button></view>
   <view wx:if="{{loading && !all.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:elif="{{!open.length && !done.length}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />{{kind === 'shop' ? '还没有要买的，在上面写一样。' : '还没有待办，在上面写一件。'}}</view>
+  <view wx:elif="{{!open.length && !done.length && !later.length}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />{{kind === 'shop' ? '还没有要买的，在上面写一样。' : '还没有待办，在上面写一件。'}}</view>
 
   <view wx:if="{{open.length}}" class="list list-gap">
     <view wx:for="{{open}}" wx:key="id" class="list-row todo-row">
       <view class="tick" data-id="{{item.id}}" bindtap="toggle" aria-role="checkbox" aria-checked="false" aria-label="完成 {{item.text}}"><view class="tick-box"></view></view>
       <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
         <view class="row-title">{{item.text}}</view>
+        <text wx:if="{{item.repeatText}}" class="tag">{{item.repeatText}}</text>
         <text wx:if="{{item.whoName}}" class="tag">{{item.whoName}}</text>
       </view>
     </view>
   </view>
+
+  <block wx:if="{{kind === 'todo' && later.length}}">
+    <view class="fold-head" bindtap="toggleLater" aria-role="button">之后要做 {{later.length}} {{showLater ? '▾' : '▸'}}</view>
+    <view wx:if="{{showLater}}" class="list">
+      <view wx:for="{{later}}" wx:key="id" class="list-row todo-row">
+        <view class="row-main todo-main" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
+          <view class="row-title">{{item.text}}</view>
+          <view class="row-sub">{{item.dueText}}</view>
+        </view>
+        <text wx:if="{{item.repeatText}}" class="tag">{{item.repeatText}}</text>
+      </view>
+    </view>
+  </block>
 
   <block wx:if="{{kind === 'shop' && bought.length}}">
     <view class="fold-head">

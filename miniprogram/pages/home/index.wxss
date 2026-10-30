@@ -53,3 +53,11 @@
 /* 顶上一行当页面标题：比说明文字重一档 */
 .top-bar .top-greeting { font-size: 30rpx; font-weight: 600; color: var(--ink); gap: 12rpx; }
 .top-bar .greet-paw { width: 32rpx; height: 32rpx; }
+
+/* TA 最近：对方做的事，下面一排回应 */
+.recent-head { margin-bottom: 8rpx; }
+.recent-row { padding: 12rpx 0; }
+.recent-row + .recent-row { border-top: 1rpx solid var(--line); }
+.recent-line { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
+.recent-text { font-size: 28rpx; line-height: 1.5; min-width: 0; }
+.recent-reacts { margin-top: 16rpx; }

@@ -1,8 +1,13 @@
-import type { TodoKind, TodoWho } from '../../models';
+import type { TodoKind, TodoRepeat, TodoWho } from '../../models';
 import { getHousehold, memberNames } from '../../services/household';
 import { todoService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
-import { LENGTHS, TODO_KINDS, todoTab } from '../../config/options';
+import {
+  LENGTHS,
+  TODO_KINDS,
+  TODO_REPEATS,
+  todoTab,
+} from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
 
@@ -12,6 +17,8 @@ Page({
     limits: LENGTHS,
     id: '',
     kinds: TODO_KINDS,
+    repeats: TODO_REPEATS,
+    repeat: '' as TodoRepeat,
     names: { a: '', b: '' },
     text: '',
     kind: 'shop' as TodoKind,
@@ -34,6 +41,7 @@ Page({
         text: todo.text,
         kind: todoTab(todo.kind),
         who: todo.who,
+        repeat: todo.repeat || '',
       });
       const household = await getHousehold();
       if (household) this.setData({ names: memberNames(household) });
@@ -46,7 +54,7 @@ Page({
   },
   choose(event: WechatMiniprogram.TouchEvent) {
     const { field, value } = event.currentTarget.dataset as {
-      field: 'kind' | 'who';
+      field: 'kind' | 'who' | 'repeat';
       value: string;
     };
     this.setData({ [field]: value });
@@ -64,6 +72,8 @@ Page({
         text,
         kind: this.data.kind,
         who: this.data.who,
+        // 购物不重复。
+        repeat: this.data.kind === 'todo' ? this.data.repeat : '',
       });
       wx.navigateBack();
     } catch (error) {

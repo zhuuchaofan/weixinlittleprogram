@@ -626,6 +626,138 @@ test('纪念日：「在一起」起点全家只留一个，带第几天和下�
     list.filter((item) => item.together).map((item) => item.title),
     ['在一起'],
   );
+test('重复待办：勾完生成下一条（还没到时间），取消勾选收回；购物不重复', async () => {
+  const { call, todos } = await setup();
+  const bad = await call('A', 'todo.add', {
+    text: '倒垃圾',
+    kind: 'todo',
+    who: 'both',
+    repeat: 'yearly',
+  });
+  assert.equal(bad.code, 'VALIDATION');
+  const shop = await call('A', 'todo.add', {
+    text: '牛奶',
+    kind: 'shop',
+    who: 'both',
+    repeat: 'daily',
+  });
+  assert.equal(shop.data.repeat, '');
+  const added = await call('A', 'todo.add', {
+    text: '倒垃圾',
+    kind: 'todo',
+    who: 'b',
+    repeat: 'weekly',
+    dueOn: '2020-01-01',
+  });
+  assert.equal(added.data.repeat, 'weekly');
+  assert.equal(added.data.dueOn, '', 'dueOn 不接受传入');
+  const id = added.data.id;
+
+  // 今天 2026-10-20，每周重复：下一条是 10-27，做事的人和重复周期照旧。
+  await call('B', 'todo.update', { id, done: true });
+  let list = (await call('A', 'todo.list')).data.filter(
+    (t) => t.text === '倒垃圾',
+  );
+  assert.equal(list.length, 2);
+  const next = list.find((t) => !t.done);
+  assert.deepEqual(
+    [next.who, next.repeat, next.dueOn, next.done],
+    ['b', 'weekly', '2026-10-27', false],
+  );
+
+  // 取消勾选：生成的下一条没动过就收回。
+  await call('B', 'todo.update', { id, done: false });
+  list = (await call('A', 'todo.list')).data.filter((t) => t.text === '倒垃圾');
+  assert.equal(list.length, 1);
+  assert.equal(list[0].dueOn, '');
+
+  // 下一条已经做过就不删。
+  await call('B', 'todo.update', { id, done: true });
+  const spawned = (await call('A', 'todo.list')).data.find(
+    (t) => t.text === '倒垃圾' && !t.done,
+  );
+  await call('A', 'todo.update', { id: spawned.id, done: true });
+  await call('B', 'todo.update', { id, done: false });
+  assert.equal(
+    (await call('A', 'todo.list')).data.filter((t) => t.text === '倒垃圾')
+      .length,
+    3,
+  );
+  assert.equal(todos.docs.size >= 4, true);
+});
+
+test('下一次日期：每天 +1，每周 +7，每月同一天（没有就月底）', () => {
+  const { nextOccurrence } = require('../cloudfunctions/api/dates');
+  assert.equal(nextOccurrence('2026-10-31', 'daily'), '2026-11-01');
+  assert.equal(nextOccurrence('2026-12-28', 'weekly'), '2027-01-04');
+  assert.equal(nextOccurrence('2026-10-15', 'monthly'), '2026-11-15');
+  assert.equal(nextOccurrence('2026-01-31', 'monthly'), '2026-02-28');
+  assert.equal(nextOccurrence('2026-12-31', 'monthly'), '2027-01-31');
+});
+
+test('TA 最近：近 14 天的动态，只能回应对方做的，每人一个回应可改可收回', async () => {
+  const { call, activity } = await setup();
+  const todo = await call('A', 'todo.add', {
+    text: '洗碗',
+    kind: 'todo',
+    who: 'both',
+  });
+  await call('A', 'todo.update', { id: todo.data.id, done: true });
+  const dish = await call('B', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-10-20' });
+  // 一个月前的不显示
+  activity.docs.set('old', {
+    _id: 'old',
+    householdId: [...activity.docs.values()][0].householdId,
+    type: 'dish',
+    title: '很久以前',
+    date: '2026-08-01',
+    ts: NOW - 1000,
+    by: 'A',
+  });
+
+  const feed = (await call('B', 'activity.recent')).data;
+  assert.deepEqual(
+    feed
+      .map((item) => [item.title, item.byRole, item.reactions])
+      .sort((x, y) => x[0].localeCompare(y[0], 'zh')),
+    [
+      ['拉面', 'b', {}],
+      ['洗碗', 'a', {}],
+    ],
+  );
+  const wash = feed.find((item) => item.title === '洗碗');
+  assert.equal(
+    (await call('A', 'activity.react', { id: wash.id, reaction: 'great' }))
+      .code,
+    'VALIDATION',
+    '不能回应自己',
+  );
+  assert.equal(
+    (await call('B', 'activity.react', { id: wash.id, reaction: 'lol' })).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('X', 'activity.react', { id: wash.id, reaction: 'great' }))
+      .code,
+    'NOT_FOUND',
+  );
+  const reacted = await call('B', 'activity.react', {
+    id: wash.id,
+    reaction: 'thanks',
+  });
+  assert.deepEqual(reacted.data.reactions, { b: 'thanks' });
+  await call('B', 'activity.react', { id: wash.id, reaction: 'great' });
+  const seen = (await call('A', 'activity.recent')).data.find(
+    (item) => item.id === wash.id,
+  );
+  assert.deepEqual(seen.reactions, { b: 'great' });
+  const cleared = await call('B', 'activity.react', {
+    id: wash.id,
+    reaction: '',
+  });
+  assert.deepEqual(cleared.data.reactions, {});
+  assert.equal((await call('X', 'activity.recent')).data.length, 0);
 });
 
 test('导出包含吃啥、周末、纪念日', async () => {
