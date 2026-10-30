@@ -120,6 +120,15 @@ export const CONTRACT = {
     "dish",
     "shop"
   ],
+  "dishVotes": [
+    "want",
+    "no"
+  ],
+  "dishRatings": [
+    "good",
+    "ok",
+    "bad"
+  ],
   "dishTags": [
     "在家做",
     "外食",

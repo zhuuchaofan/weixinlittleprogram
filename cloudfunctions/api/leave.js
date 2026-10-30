@@ -51,6 +51,15 @@ function copyRecord(name, record, job, householdId, openid) {
   if (doc.editedBy && doc.editedBy !== openid) doc.editedBy = '';
   if (name === 'expenses' && doc.payer) doc.payer = swap(doc.payer);
   if (name === 'todos' && doc.who) doc.who = swap(doc.who);
+  if (name === 'dishes') {
+    // 今天的投票不带走；评价按角色存，要跟着换。
+    delete doc.votes;
+    delete doc.votesOn;
+    if (doc.ratings)
+      doc.ratings = Object.fromEntries(
+        Object.entries(doc.ratings).map(([role, value]) => [swap(role), value]),
+      );
+  }
   if (name === 'goals' && Array.isArray(doc.log))
     doc.log = doc.log.map((entry) => ({ ...entry, role: swap(entry.role) }));
   if (name === 'insights') return { id: `${householdId}-${doc.month}`, doc };

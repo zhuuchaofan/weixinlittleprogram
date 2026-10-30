@@ -582,6 +582,59 @@ test('纪念日：列表带倒数，按剩余天数排序，已过的不重复�
   assert.equal(list[1].years, 1);
 });
 
+test('吃啥：两人各投各的票，隔天作废；评价长期保留，只能改自己的', async () => {
+  const { call, dishes } = await setup();
+  const added = await call('A', 'dish.add', { name: '拉面', tag: '外食' });
+  const id = added.data.id;
+  assert.deepEqual([added.data.votes, added.data.ratings], [{}, {}]);
+
+  for (const bad of [{ vote: 'maybe' }, {}, { vote: null }])
+    assert.equal(
+      (await call('A', 'dish.vote', { id, ...bad })).code,
+      'VALIDATION',
+      JSON.stringify(bad),
+    );
+  assert.equal(
+    (await call('X', 'dish.vote', { id, vote: 'want' })).code,
+    'NOT_FOUND',
+  );
+
+  await call('A', 'dish.vote', { id, vote: 'want' });
+  const both = await call('B', 'dish.vote', { id, vote: 'no' });
+  assert.deepEqual(both.data.votes, { a: 'want', b: 'no' });
+  // 再选同一个不会收回（收回传空），改选就是覆盖自己的
+  const changed = await call('B', 'dish.vote', { id, vote: 'want' });
+  assert.deepEqual(changed.data.votes, { a: 'want', b: 'want' });
+  const cleared = await call('A', 'dish.vote', { id, vote: '' });
+  assert.deepEqual(cleared.data.votes, { b: 'want' });
+
+  // 改名等普通修改不动票和评价
+  await call('A', 'dish.update', { id, name: '豚骨拉面' });
+  assert.deepEqual((await call('B', 'dish.get', { id })).data.votes, {
+    b: 'want',
+  });
+
+  // 投票那天过了，票就不算了
+  dishes.docs.set(id, { ...dishes.docs.get(id), votesOn: '2026-10-19' });
+  assert.deepEqual((await call('A', 'dish.get', { id })).data.votes, {});
+  // 隔天第一次投票先清掉昨天的
+  const fresh = await call('A', 'dish.vote', { id, vote: 'no' });
+  assert.deepEqual(fresh.data.votes, { a: 'no' });
+
+  assert.equal(
+    (await call('A', 'dish.rate', { id, rating: 'great' })).code,
+    'VALIDATION',
+  );
+  await call('A', 'dish.rate', { id, rating: 'bad' });
+  const rated = await call('B', 'dish.rate', { id, rating: 'good' });
+  assert.deepEqual(rated.data.ratings, { a: 'bad', b: 'good' });
+  const reset = await call('A', 'dish.rate', { id, rating: '' });
+  assert.deepEqual(reset.data.ratings, { b: 'good' });
+  assert.deepEqual((await call('B', 'dish.list')).data[0].ratings, {
+    b: 'good',
+  });
+});
+
 test('导出包含吃啥、周末、纪念日', async () => {
   const { call } = await setup();
   await call('A', 'dish.add', { name: '拉面', tag: '外食' });

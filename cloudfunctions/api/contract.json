@@ -79,6 +79,8 @@
   "todoKinds": ["shop", "todo", "chore"],
   "todoWho": ["a", "b", "both"],
   "dishKinds": ["dish", "shop"],
+  "dishVotes": ["want", "no"],
+  "dishRatings": ["good", "ok", "bad"],
   "dishTags": ["在家做", "外食", "外卖"],
   "shopTags": ["外食", "外卖"],
   "maxAmount": 1000000000,

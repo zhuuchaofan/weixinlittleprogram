@@ -193,6 +193,11 @@ export interface DishInput {
   ateOn?: string;
 }
 
+/** 今天想吃 / 不想吃。 */
+export type DishVote = 'want' | 'no';
+/** 吃过之后：好吃 / 一般 / 踩雷。 */
+export type DishRating = 'good' | 'ok' | 'bad';
+
 export interface WishInput {
   title: string;
   /** 旧版的「为什么想去」；现在只用 plan（界面上叫备注），编辑保存时合并进去。 */
@@ -215,7 +220,13 @@ interface RecordMeta {
   byRole: MemberRole | '';
 }
 
-export type Dish = DishInput & RecordMeta;
+export type Dish = DishInput &
+  RecordMeta & {
+    /** 两人今天各自的投票；过了今天就清空。 */
+    votes: Partial<Record<MemberRole, DishVote>>;
+    /** 两人各自吃过之后的评价，长期保留。 */
+    ratings: Partial<Record<MemberRole, DishRating>>;
+  };
 export type Wish = WishInput & RecordMeta;
 
 export interface Anniversary extends AnniversaryInput, RecordMeta {
