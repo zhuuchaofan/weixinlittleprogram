@@ -1,7 +1,7 @@
 <page-meta page-style="{{themeStyle}}" />
 <view class="page">
-  <view class="field"><text class="field-label">想去哪儿 / 想做什么</text><input value="{{title}}" maxlength="{{limits.wishTitle}}" data-field="title" bindinput="input" placeholder="例如：镰仓看海" /></view>
-  <view class="field"><text class="field-label">备注</text><textarea value="{{note}}" maxlength="{{limits.wishPlan}}" data-field="note" bindinput="input" placeholder="可不填，例如为什么想去、交通、预算" /></view>
+  <view class="field"><text class="field-label">{{past ? '去了哪儿' : '想去哪儿 / 想做什么'}}</text><input value="{{title}}" maxlength="{{limits.wishTitle}}" data-field="title" bindinput="input" placeholder="{{past ? '例如：第一次去大理' : '例如：镰仓看海'}}" /></view>
+  <view wx:if="{{!past}}" class="field"><text class="field-label">备注</text><textarea value="{{note}}" maxlength="{{limits.wishPlan}}" data-field="note" bindinput="input" placeholder="可不填，例如为什么想去、交通、预算" /></view>
   <view wx:if="{{id}}" class="card went">
     <view class="row-main"><view>去过了</view><view class="row-sub">打开后记下去的日期</view></view>
     <switch checked="{{done}}" bindchange="toggleDone" color="{{accent}}" aria-label="去过了" />
@@ -9,6 +9,8 @@
   <view wx:if="{{done}}" class="field">
     <text class="field-label">哪天去的</text>
     <picker mode="date" value="{{doneOn}}" end="{{today}}" bindchange="pickDate"><view class="picker-value">{{doneOn}}</view></picker>
+    <view wx:if="{{dateFromPhoto}}" class="small muted field-hint">按照片的拍摄日期填好了，不对可以改。</view>
+    <view wx:elif="{{past}}" class="small muted field-hint">记不清哪天就选个大概的日子，加了照片会自动按拍摄日期填。</view>
   </view>
   <block wx:if="{{done}}">
     <view class="field"><text class="field-label">留一句话</text><textarea value="{{memo}}" maxlength="{{limits.wishMemo}}" data-field="memo" bindinput="input" placeholder="例如：风很大，但海很蓝" /></view>
@@ -25,7 +27,8 @@
   </block>
   <button wx:if="{{id && !done}}" class="secondary save-for" bindtap="saveFor">为它攒钱</button>
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
-  <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>
+  <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy}}">{{past ? '放进足迹' : '保存'}}</button>
+  <button wx:if="{{past}}" class="secondary save-next" bindtap="saveNext" disabled="{{busy}}">保存并再补一个</button>
   <button wx:if="{{id}}" class="danger-button" bindtap="remove" disabled="{{busy}}">删除这条</button>
   <view class="page-end"></view>
 </view>

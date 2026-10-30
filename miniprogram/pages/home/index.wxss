@@ -72,3 +72,8 @@
 .nudge-cat { width: 64rpx; height: 64rpx; flex-shrink: 0; }
 .nudge-main { flex: 1; min-width: 0; }
 .nudge-text { font-size: 30rpx; font-weight: 600; color: var(--accent); }
+
+.footprint { display: flex; align-items: center; gap: 20rpx; margin-top: var(--gap-card); }
+.fp-thumbs { display: flex; align-items: center; flex-shrink: 0; min-width: 76rpx; padding-left: 16rpx; }
+.fp-thumb { width: 76rpx; height: 76rpx; margin-left: -16rpx; border-radius: 16rpx; border: 4rpx solid var(--surface); box-sizing: border-box; background: var(--accent-soft); }
+.fp-icon { width: 76rpx; height: 76rpx; margin-left: -16rpx; padding: 18rpx; border-radius: 22rpx; background: var(--accent-soft); box-sizing: border-box; }

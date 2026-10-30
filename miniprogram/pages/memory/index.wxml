@@ -1,0 +1,23 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
+  <view wx:if="{{loading && !title}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+
+  <block wx:if="{{title}}">
+    <swiper wx:if="{{photos.length}}" class="shots" indicator-dots indicator-active-color="#ffffff" indicator-color="rgba(255,255,255,0.5)">
+      <swiper-item wx:for="{{photos}}" wx:key="*this"><image class="shot" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="preview" aria-role="button" aria-label="看大图" /></swiper-item>
+    </swiper>
+    <view class="card story">
+      <view class="story-title">{{title}}</view>
+      <view class="story-date">{{dateText}}</view>
+      <view wx:if="{{subText}}" class="small muted">{{subText}}</view>
+      <view wx:if="{{memo}}" class="story-memo">{{memo}}</view>
+      <view wx:if="{{chips.length}}" class="chips story-chips">
+        <view wx:for="{{chips}}" wx:key="*this" class="chip">{{item}}</view>
+      </view>
+      <view wx:if="{{note}}" class="small muted story-note">{{note}}</view>
+    </view>
+    <button class="secondary" bindtap="edit">编辑这一条</button>
+  </block>
+  <view class="page-end"></view>
+</view>

@@ -13,6 +13,7 @@ interface Row {
   title: string;
   dateText: string;
   memo: string;
+  spent: number;
   spentText: string;
   both: boolean;
   photoIds: string[];
@@ -28,7 +29,8 @@ function toRow(item: Footprint): Row {
     title: item.title,
     dateText: item.doneOn ? item.doneOn.slice(5).replace('-', '.') : '',
     memo: item.memo,
-    spentText: item.spent > 0 ? `花了 ¥${formatYuan(item.spent)}` : '',
+    spent: item.spent,
+    spentText: item.spent > 0 ? `花了 ${formatYuan(item.spent)}` : '',
     both: item.both,
     photoIds: item.photos,
     photos: [],
@@ -125,9 +127,15 @@ Page({
     if (row?.photos.length)
       void wx.previewImage({ current: row.photos[0], urls: row.photos });
   },
+  /** 点相纸：看这一条的回忆页，要改再从那里点「编辑」。 */
   open(event: WechatMiniprogram.TouchEvent) {
+    const row = all.find((item) => item.id === event.currentTarget.dataset.id);
     wx.navigateTo({
-      url: `/pages/wish-edit/index?id=${event.currentTarget.dataset.id}`,
+      url: `/pages/memory/index?id=${event.currentTarget.dataset.id}&spent=${row?.spent || 0}`,
     });
+  },
+  /** 补记以前去过的地方。 */
+  addPast() {
+    wx.navigateTo({ url: '/pages/wish-edit/index?past=1' });
   },
 });

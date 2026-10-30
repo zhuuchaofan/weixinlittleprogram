@@ -1,6 +1,7 @@
 import type {
   ActivityItem,
   Anniversary,
+  FootprintPage,
   Goal,
   Household,
   LedgerMonth,
@@ -12,11 +13,13 @@ import { listMonth, peekMonth } from '../../services/ledger';
 import {
   activityService,
   dateService,
+  footprintService,
   goalService,
   todoService,
 } from '../../services/collections';
 import { goalView, type GoalRow } from '../../utils/goal';
 import { chooseBillImport } from '../../services/bills';
+import { photoUrls } from '../../services/photos';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
 import { todayKey } from '../../utils/date';
@@ -157,6 +160,8 @@ Page({
     /** 最要紧的一个攒钱目标（没攒完、截止最早），没有时为 null。 */
     goal: null as GoalRow | null,
     goalsReady: false,
+    /** 足迹卡片：最近几张照片的缩略图和一句话。 */
+    footprint: { thumbs: [] as string[], text: '去过的地方，点这里补记' },
   },
   onShow() {
     applyTheme(this);
@@ -196,14 +201,16 @@ Page({
           goalService.list().catch(() => null),
           // 同理：「TA 最近」读不到时不影响主页。
           activityService.recent().catch(() => null),
+          footprintService.list().catch(() => null),
         ]);
       },
-      show: ([month, todos, dates, goals, recent]) => {
+      show: ([month, todos, dates, goals, recent, footprints]) => {
         this.showMonth(month);
         this.showTodos(todos);
         this.showDates(dates);
         if (goals) this.showGoals(goals);
         if (recent) this.showFeed(recent);
+        if (footprints) void this.showFootprints(footprints);
       },
     });
   },
@@ -297,6 +304,26 @@ Page({
             : `${next.title}还有 ${next.days} 天`
           : '',
       together: togetherView(dates.find((item) => item.together)),
+    });
+  },
+  /** 足迹卡片：总个数、最近一个地方，和最近三条里有照片的缩略图。 */
+  async showFootprints(page: FootprintPage) {
+    const household = this.data.household;
+    const places = page.total.places;
+    const latest = page.items[0];
+    const together = (household?.members.length || 0) > 1;
+    this.setData({
+      'footprint.text': places
+        ? `${together ? '一起去过' : '去过'} ${places} 个地方${latest ? ' · 最近：' + latest.title : ''}`
+        : '去过的地方，点这里补记',
+    });
+    const ids = page.items
+      .filter((item) => item.photos.length)
+      .slice(0, 3)
+      .map((item) => item.photos[0]);
+    const urls = ids.length ? await photoUrls(ids) : {};
+    this.setData({
+      'footprint.thumbs': ids.map((id) => urls[id]).filter(Boolean),
     });
   },
   showGoals(goals: Goal[]) {

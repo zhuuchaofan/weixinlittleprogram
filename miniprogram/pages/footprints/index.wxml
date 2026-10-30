@@ -17,7 +17,8 @@
 <view class="page">
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{loading && !groups.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:elif="{{!total.places && !error}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />去过的地方会留在这里。在「想去」里打勾，再加一句话和照片。</view>
+  <view wx:elif="{{!total.places && !error}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />去过的地方会留在这里。点下面的「补记」加一个，或者在「想去」里打勾。</view>
+  <button wx:if="{{!loading && !total.places && !error}}" class="primary" bindtap="addPast"><text class="plus">+</text>补记一个去过的地方</button>
 
   <block wx:if="{{total.places}}">
     <view class="hero grad-card">
@@ -25,6 +26,7 @@
       <view class="hero-big">{{total.places}}<text class="hero-unit">个地方</text></view>
       <view class="hero-sub">{{total.photos}} 张照片{{since ? ' · ' + since : ''}}</view>
     </view>
+    <button class="secondary add-past" bindtap="addPast"><text class="plus">+</text>补记一个去过的地方</button>
 
     <scroll-view wx:if="{{years.length > 1}}" class="years" scroll-x enable-flex>
       <view wx:for="{{years}}" wx:key="year" class="chip year {{item.year === year ? 'chip-on' : ''}}" data-year="{{item.year}}" bindtap="pickYear" aria-role="button">{{item.year === '0' ? '未记日期' : item.year}} · {{item.places}}</view>

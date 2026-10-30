@@ -27,3 +27,4 @@
 .heart { color: var(--accent); }
 .end-note { text-align: center; color: var(--muted); font-size: 24rpx; margin-top: 24rpx; }
 .polaroid-plain { background: var(--accent-soft); }
+button.add-past:not([size='mini']) { margin-top: 24rpx; }
