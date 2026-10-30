@@ -81,6 +81,8 @@
   "todoRepeat": ["", "daily", "weekly", "monthly"],
   "reactions": ["thanks", "great", "love"],
   "dishKinds": ["dish", "shop"],
+  "dishVotes": ["want", "no"],
+  "dishRatings": ["good", "ok", "bad"],
   "dishTags": ["在家做", "外食", "外卖"],
   "shopTags": ["外食", "外卖"],
   "maxAmount": 1000000000,

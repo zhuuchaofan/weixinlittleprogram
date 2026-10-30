@@ -235,6 +235,9 @@ async function fill(call) {
   await call('B', 'goal.deposit', { id: goal.data.id, amount: 500 });
   const dish = await call('B', 'dish.add', { name: '咖喱', tag: '在家做' });
   await call('A', 'dish.update', { id: dish.data.id, ateOn: '2026-10-19' });
+  await call('B', 'dish.vote', { id: dish.data.id, vote: 'want' });
+  await call('B', 'dish.rate', { id: dish.data.id, rating: 'good' });
+  await call('A', 'dish.rate', { id: dish.data.id, rating: 'bad' });
 }
 
 /** 清空、只剩自己时退出：先替对方复制完（waiting），再真正执行。 */
@@ -306,6 +309,9 @@ test('B 退出并带走副本：新小家里 B 是创建者，付款人、负责
   );
   // 「就吃这个」的回顾记录指向副本里的菜。
   const dish = (await call('B', 'dish.list')).data[0];
+  // 评价跟着换角色，今天的投票不带走。
+  assert.deepEqual(dish.ratings, { a: 'good', b: 'bad' });
+  assert.deepEqual(dish.votes, {});
   const act = [...repos.activity.docs.values()].find(
     (d) => d.householdId === mine.data.id,
   );

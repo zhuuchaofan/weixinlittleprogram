@@ -4,6 +4,8 @@ import type {
   AnniversaryInput,
   Dish,
   DishInput,
+  DishRating,
+  DishVote,
   Goal,
   GoalInput,
   Reaction,
@@ -17,7 +19,17 @@ import type {
 import { callApi } from './cloud';
 import { createCollectionService } from './collection';
 
-export const dishService = createCollectionService<Dish, DishInput>('dish');
+export const dishService = {
+  ...createCollectionService<Dish, DishInput>('dish'),
+  /** 今天想吃 / 不想吃；vote 为空表示收回自己的那一票。 */
+  vote(id: string, vote: DishVote | ''): Promise<Dish> {
+    return callApi<Dish>('dish.vote', { id, vote });
+  },
+  /** 吃过之后的评价；rating 为空表示收回。 */
+  rate(id: string, rating: DishRating | ''): Promise<Dish> {
+    return callApi<Dish>('dish.rate', { id, rating });
+  },
+};
 export const wishService = createCollectionService<Wish, WishInput>('wish');
 export const dateService = createCollectionService<
   Anniversary,
