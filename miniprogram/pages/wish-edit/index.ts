@@ -30,6 +30,8 @@ Page({
     past: false,
     /** 日期是照片的拍摄日期自动填的。 */
     dateFromPhoto: false,
+    /** 读不到照片的拍摄日期时，告诉人为什么、让 TA 自己选。 */
+    dateNote: '',
     title: '',
     // 旧数据的「为什么想去」和「怎么安排」合在一起显示，保存时都存进 plan。
     note: '',
@@ -136,8 +138,12 @@ Page({
       });
       await this.loadPhotos();
       if (this.data.done && !dateFixed) {
-        const date = await photoDate(paths);
-        if (date) this.setData({ doneOn: date, dateFromPhoto: true });
+        const { date, note } = await photoDate(paths);
+        this.setData(
+          date
+            ? { doneOn: date, dateFromPhoto: true, dateNote: '' }
+            : { dateNote: note },
+        );
       }
     } catch (error) {
       this.setData({ error: errorMessage(error) });
@@ -181,7 +187,11 @@ Page({
   },
   pickDate(event: WechatMiniprogram.PickerChange) {
     dateFixed = true;
-    this.setData({ doneOn: String(event.detail.value), dateFromPhoto: false });
+    this.setData({
+      doneOn: String(event.detail.value),
+      dateFromPhoto: false,
+      dateNote: '',
+    });
   },
   async save() {
     await this.submit(false);
@@ -227,6 +237,7 @@ Page({
           photosChanged: false,
           doneOn: todayKey(),
           dateFromPhoto: false,
+          dateNote: '',
         });
         wx.showToast({ title: '放进足迹啦', icon: 'success' });
         return;
