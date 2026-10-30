@@ -626,6 +626,8 @@ test('纪念日：「在一起」起点全家只留一个，带第几天和下�
     list.filter((item) => item.together).map((item) => item.title),
     ['在一起'],
   );
+});
+
 test('重复待办：勾完生成下一条（还没到时间），取消勾选收回；购物不重复', async () => {
   const { call, todos } = await setup();
   const bad = await call('A', 'todo.add', {
