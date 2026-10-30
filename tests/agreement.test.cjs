@@ -7,6 +7,9 @@ const root = join(__dirname, '..');
 const doc = readFileSync(join(root, 'docs/VIP-AGREEMENT.md'), 'utf8');
 const { vip } = require('../shared/contract.json');
 
+// 限时免费期间所有小家都算会员；这里测的是免费 / 会员各自的行为，所以先关掉。
+process.env.VIP_FREE_UNTIL = 'off';
+
 test('协议页数据与 docs/VIP-AGREEMENT.md 一致（漏跑 npm run agreement 会失败）', async () => {
   const { render, TARGET } = await import('../scripts/agreement.mjs');
   assert.equal(

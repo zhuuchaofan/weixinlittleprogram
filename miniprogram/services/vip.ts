@@ -13,6 +13,8 @@ export interface VipInfo {
   active: boolean;
   /** 到期时间戳；没开通过为 0 */
   until: number;
+  /** 限时免费的截止时间戳；没有限免为 0 */
+  free: number;
   /** 云端是否配置好了虚拟支付 */
   available: boolean;
   plans: VipPlan[];

@@ -10,6 +10,9 @@ const { similar, matchItems } = require('../cloudfunctions/api/bill-match');
 const { createVision } = require('../cloudfunctions/api/vision');
 const { createAi } = require('../cloudfunctions/api/ai');
 
+// 限时免费期间所有小家都算会员；这里测的是免费 / 会员各自的行为，所以先关掉。
+process.env.VIP_FREE_UNTIL = 'off';
+
 // 2026-10-25（周日）12:00 UTC+8
 const NOW = Date.parse('2026-10-25T04:00:00Z');
 const TODAY = '2026-10-25';

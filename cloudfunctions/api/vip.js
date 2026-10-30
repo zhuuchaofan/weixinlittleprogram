@@ -17,15 +17,30 @@ const PAID_STATUSES = [2, 3, 4];
 // 5 已退款、8 用户退款完成：查单没给剩余金额时，按全额退款算。
 const REFUNDED_STATUSES = [5, 8];
 
-/** 会员属于整个小家：一人开通，两人都享受。 */
-function isVip(household, at) {
-  return Number(household?.vip?.until) > at;
+/**
+ * 限时免费：到 freeUntil 这一天（北京时间）的最后一刻，所有小家都按会员算。
+ * 日期来自 contract.json 的 vip.freeUntil；云函数环境变量 VIP_FREE_UNTIL 可以覆盖
+ * （填 YYYY-MM-DD 改日期，填 off 立刻结束），不用发版。返回时间戳，没有限免为 0。
+ */
+function freeUntilOf(env = process.env) {
+  const value = String(env.VIP_FREE_UNTIL ?? VIP.freeUntil ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 0;
+  return Date.parse(`${value}T23:59:59.999+08:00`) || 0;
 }
 
-/** 返回给小程序的会员状态。 */
+/** 会员属于整个小家：一人开通，两人都享受；限免期间所有人都算。 */
+function isVip(household, at) {
+  return Number(household?.vip?.until) > at || freeUntilOf() > at;
+}
+
+/**
+ * 返回给小程序的会员状态：active / until 只说真正开通的会员（退出、注销按它算天数），
+ * free 是限免截止时间戳（限免中才有，否则 0），member 是现在能不能用会员功能。
+ */
 function vipView(household, at) {
   const until = Number(household?.vip?.until) || 0;
-  return { active: until > at, until };
+  const free = freeUntilOf() > at ? freeUntilOf() : 0;
+  return { active: until > at, until, free, member: until > at || free > 0 };
 }
 
 /** 微信查单结果里这笔一共退了多少钱（分），不超过订单价。 */
@@ -271,5 +286,6 @@ function createVipHandler({
 module.exports = {
   createVipHandler,
   isVip,
+  freeUntilOf,
   vipView,
 };

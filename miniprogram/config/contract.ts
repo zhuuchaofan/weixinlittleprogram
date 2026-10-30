@@ -96,6 +96,7 @@ export const CONTRACT = {
     }
   },
   "vip": {
+    "freeUntil": "2026-12-31",
     "plans": [
       {
         "id": "vip_month",

@@ -23,7 +23,8 @@ export interface Household {
   /** 退出小家时带走的旧账还没复制完（接着在「退出小家」页复制）。 */
   copying: boolean;
   /** 会员属于整个小家，两人共用；until 是到期时间戳（没开通过为 0）。 */
-  vip: { active: boolean; until: number };
+  /** active / until：真正开通的会员；free：限时免费的截止时间戳（没有为 0）；member：现在能不能用会员功能。 */
+  vip: { active: boolean; until: number; free: number; member: boolean };
   members: HouseholdMember[];
 }
 

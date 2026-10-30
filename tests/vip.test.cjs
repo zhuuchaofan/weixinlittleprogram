@@ -7,6 +7,9 @@ const { isVip } = require('../cloudfunctions/api/vip');
 const { limitOf, limitMessage } = require('../cloudfunctions/api/quota');
 const { vip: VIP, ai: QUOTAS } = require('../cloudfunctions/api/contract.json');
 
+// 限时免费期间所有小家都算会员；这里测的是免费 / 会员各自的行为，所以先关掉。
+process.env.VIP_FREE_UNTIL = 'off';
+
 const NOW = Date.parse('2026-10-25T04:00:00Z');
 const DAY = 24 * 60 * 60 * 1000;
 const ENV = {
@@ -295,6 +298,8 @@ test('发货推送：向微信查单确认已支付后开通会员，household.g
   assert.deepEqual(household.vip, {
     active: true,
     until: NOW + VIP.plans[0].days * DAY,
+    free: 0,
+    member: true,
   });
   assert.equal(ctx.orders.docs.get(order.outTradeNo).status, 'delivered');
 });
@@ -599,4 +604,26 @@ test('退款推送：没开通过的订单退款只记账，之后也不会再�
   assert.equal(ctx.orders.docs.get(order.outTradeNo).refunded, 900);
   await ctx.route.deliver(deliverEvent(order));
   assert.equal((await vipOf(ctx)).active, false);
+});
+
+test('限时免费：到日期那天的最后一刻所有小家都算会员，环境变量能改日期或关掉', () => {
+  const { freeUntilOf, isVip } = require('../cloudfunctions/api/vip');
+  const saved = process.env.VIP_FREE_UNTIL;
+  try {
+    delete process.env.VIP_FREE_UNTIL;
+    const end = Date.parse('2026-12-31T23:59:59.999+08:00');
+    assert.equal(freeUntilOf(), end);
+    assert.equal(isVip({}, end - 1), true);
+    assert.equal(isVip({}, end + 1), false);
+    // 真开通的会员不受限免影响
+    assert.equal(isVip({ vip: { until: end + 1000 } }, end + 1), true);
+    process.env.VIP_FREE_UNTIL = '2027-01-15';
+    assert.equal(isVip({}, end + 1), true);
+    process.env.VIP_FREE_UNTIL = 'off';
+    assert.equal(freeUntilOf(), 0);
+    assert.equal(isVip({}, end - 1), false);
+  } finally {
+    if (saved === undefined) delete process.env.VIP_FREE_UNTIL;
+    else process.env.VIP_FREE_UNTIL = saved;
+  }
 });

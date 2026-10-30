@@ -73,7 +73,7 @@ Page({
       const household = await getHousehold();
       if (household) {
         householdId = household.id;
-        const isVip = household.vip.active;
+        const isVip = household.vip.member;
         this.setData({
           isVip,
           limit: isVip ? PHOTO_LIMITS.vip : PHOTO_LIMITS.free,
