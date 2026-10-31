@@ -2191,3 +2191,121 @@ test('AI 小帮手：纪念日祝福只用自己家的纪念日，不存', async
     'NOT_FOUND',
   );
 });
+
+test('主页汇总 home.get：一次请求读齐六样，和分开读的结果一样，小家只读一次', async () => {
+  const { call, households } = await setup();
+  await call('A', 'expense.add', expense());
+  await call('B', 'todo.add', { text: '牛奶', kind: 'shop', who: 'both' });
+  await call('A', 'date.add', {
+    title: '结婚纪念日',
+    date: '2025-11-03',
+    yearly: true,
+  });
+  await call('A', 'goal.add', {
+    title: '旅行',
+    target: 100000,
+    deadline: '2027-05',
+  });
+  await call('A', 'wish.add', {
+    title: '箱根',
+    done: true,
+    doneOn: '2026-10-05',
+  });
+  const separate = {
+    month: (await call('A', 'expense.list', { month: '2026-10' })).data,
+    todos: (await call('A', 'todo.list', {})).data,
+    dates: (await call('A', 'date.list', {})).data,
+    goals: (await call('A', 'goal.list', {})).data,
+    recent: (await call('A', 'activity.recent', {})).data,
+  };
+
+  let reads = 0;
+  const find = households.findByMember;
+  households.findByMember = async (openid) => {
+    reads++;
+    return find(openid);
+  };
+  const home = await call('A', 'home.get', { month: '2026-10' });
+  households.findByMember = find;
+
+  assert.equal(home.ok, true);
+  assert.equal(reads, 1);
+  assert.deepEqual(home.data.month, separate.month);
+  assert.deepEqual(home.data.todos, separate.todos);
+  assert.deepEqual(home.data.dates, separate.dates);
+  assert.deepEqual(home.data.goals, separate.goals);
+  assert.deepEqual(home.data.recent, separate.recent);
+  assert.equal(home.data.footprints.total.places, 1);
+  assert.equal(home.data.footprints.items[0].title, '箱根');
+});
+
+test('主页汇总 home.get：别的小家看不到；没有小家、月份不对都报错；攒钱等读不到只给 null', async () => {
+  const { call, goals, activity, wishes } = await setup();
+  await call('A', 'expense.add', expense({ note: '只有我家' }));
+  const other = await call('X', 'home.get', { month: '2026-10' });
+  assert.equal(other.ok, true);
+  assert.equal(other.data.month.records.length, 0);
+  assert.equal(
+    (await call('Z', 'home.get', { month: '2026-10' })).code,
+    'NO_HOUSEHOLD',
+  );
+  assert.equal(
+    (await call('A', 'home.get', { month: '10月' })).code,
+    'VALIDATION',
+  );
+  assert.equal((await call('A', 'home.get', {})).code, 'VALIDATION');
+
+  goals.listAll = async () => {
+    throw new Error('db down');
+  };
+  activity.listAll = async () => {
+    throw new Error('db down');
+  };
+  wishes.listAll = async () => {
+    throw new Error('db down');
+  };
+  const degraded = await call('A', 'home.get', { month: '2026-10' });
+  assert.equal(degraded.ok, true);
+  assert.equal(degraded.data.month.records.length, 1);
+  assert.equal(degraded.data.goals, null);
+  assert.equal(degraded.data.recent, null);
+  assert.equal(degraded.data.footprints, null);
+});
+
+test('足迹轻量版：主页用的不去读当天的账，足迹页照旧算花了多少', async () => {
+  const { call, expenses } = await setup();
+  await call('A', 'expense.add', expense({ date: '2026-10-05', amount: 8800 }));
+  await call('A', 'wish.add', {
+    title: '箱根',
+    done: true,
+    doneOn: '2026-10-05',
+  });
+  let reads = 0;
+  const listMonth = expenses.listMonth;
+  expenses.listMonth = async (...args) => {
+    reads++;
+    return listMonth(...args);
+  };
+  const light = await call('A', 'footprint.list', { light: true });
+  assert.equal(reads, 0);
+  assert.equal(light.data.items[0].spent, 0);
+  const full = await call('A', 'footprint.list', {});
+  assert.equal(reads, 1);
+  assert.equal(full.data.items[0].spent, 8800);
+});
+
+test('TA 最近：有按日期读的接口时只读近两周的，没有时读全部再筛，结果一样', async () => {
+  const { call, activity } = await setup();
+  await call('B', 'todo.add', { text: '牛奶', kind: 'shop', who: 'both' });
+  const before = (await call('A', 'activity.recent', {})).data;
+  let since = '';
+  activity.listSince = async (householdId, from) => {
+    since = from;
+    return (await activity.listAll(householdId)).filter(
+      (record) => record.date >= from,
+    );
+  };
+  const after = (await call('A', 'activity.recent', {})).data;
+  assert.equal(since, '2026-10-06');
+  assert.deepEqual(after, before);
+});

@@ -319,7 +319,8 @@ function createCollectionHandlers({
         )
         .slice(0, FOOTPRINT_SHOWN);
       const spentByDay = new Map();
-      if (expenses)
+      // light：主页只要个数和照片，不算每天花了多少（那要读好几个月的账）。
+      if (expenses && payload.light !== true)
         for (const month of new Set(
           inYear.map((wish) => String(wish.doneOn || '').slice(0, 7)),
         ))

@@ -225,6 +225,8 @@ function createRecordRepository(db, collectionName) {
   const _ = db.command;
   return {
     listAll: (householdId) => listAll(collection, { householdId }),
+    listSince: (householdId, since) =>
+      listAll(collection, { householdId, date: _.gte(since) }),
     listMonth: (householdId, month) =>
       listAll(collection, {
         householdId,

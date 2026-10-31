@@ -132,6 +132,35 @@ function createRouter({
       now,
     }),
   };
+  /**
+   * 主页一次要读的东西合成一个请求（原来是 6 个，每个都是一次云函数调用）。
+   * 本月账目、清单、纪念日是主页的主体，读不到就整个报错；攒钱、TA 最近、足迹读不到时给 null，主页其余部分照常显示。
+   * 同一个人的小家只读一次。足迹用轻量版（不算当天花了多少，主页用不上）。
+   */
+  actions['home.get'] = (openid, payload) =>
+    household.scoped(async () => {
+      const [month, todos, dates, goals, recent, footprints] =
+        await Promise.allSettled([
+          actions['expense.list'](openid, { month: payload.month }),
+          actions['todo.list'](openid, {}),
+          actions['date.list'](openid, {}),
+          actions['goal.list'](openid, {}),
+          actions['activity.recent'](openid, {}),
+          actions['footprint.list'](openid, { light: true }),
+        ]);
+      for (const required of [month, todos, dates])
+        if (required.status === 'rejected') throw required.reason;
+      const optional = (result) =>
+        result.status === 'fulfilled' ? result.value : null;
+      return {
+        month: month.value,
+        todos: todos.value,
+        dates: dates.value,
+        goals: optional(goals),
+        recent: optional(recent),
+        footprints: optional(footprints),
+      };
+    });
   async function route(event, openid) {
     const action = event?.action;
     try {

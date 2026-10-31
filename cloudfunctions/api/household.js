@@ -1,4 +1,5 @@
 const { randomInt } = require('node:crypto');
+const { AsyncLocalStorage } = require('node:async_hooks');
 const { ApiError } = require('./errors');
 const { vipView } = require('./vip');
 
@@ -91,12 +92,15 @@ function publicHousehold(household, openid, at = Date.now()) {
  * addMember(id, code, member) -> boolean（原子地从 1 人变 2 人）、
  * update(id, fields)
  */
+/** 汇总请求（如 home.get）里共用的「已读到的小家」，请求结束就丢掉。 */
+const scope = new AsyncLocalStorage();
+
 function createHouseholdHandler({
   repository,
   now = () => Date.now(),
   makeCode = makeInviteCode,
 }) {
-  async function requireMembership(openid) {
+  async function lookup(openid) {
     const household = await repository.findByMember(openid);
     if (!household)
       throw new ApiError(
@@ -104,6 +108,15 @@ function createHouseholdHandler({
         '还没有小家哦，先创建一个或加入 TA 的吧。',
       );
     return household;
+  }
+
+  /** 在 scoped 里同一个人只查一次（同时发起的几路读取共用同一个查询），其余时候每次都查。 */
+  function requireMembership(openid) {
+    const cache = scope.getStore();
+    if (cache?.has(openid)) return cache.get(openid);
+    const pending = lookup(openid);
+    cache?.set(openid, pending);
+    return pending;
   }
 
   async function uniqueCode() {
@@ -197,7 +210,12 @@ function createHouseholdHandler({
     },
   };
 
-  return { actions, requireMembership, uniqueCode };
+  /** 在 task 里（含它等着的所有异步操作）requireMembership 同一个人只读一次小家，给只读的汇总请求用。 */
+  function scoped(task) {
+    return scope.run(new Map(), task);
+  }
+
+  return { actions, requireMembership, uniqueCode, scoped };
 }
 
 module.exports = {
