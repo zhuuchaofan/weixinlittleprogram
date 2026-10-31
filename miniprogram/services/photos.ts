@@ -1,6 +1,7 @@
 import { ApiError, callApi, initializeCloud } from './cloud';
 import { compressed } from './bills';
 import { exifDate } from '../utils/exif';
+import { reportWarn } from './log';
 import { todayKey } from '../utils/date';
 
 /** 从相册或相机选照片，最多 count 张，返回本地路径。取消返回空数组。 */
@@ -22,10 +23,17 @@ export async function pickPhotos(
   }
 }
 
-/** 这些照片里最早的拍摄日期（只读文件开头 64KB）；读不到、日期不合理时为空字符串。 */
-export async function photoDate(paths: string[]): Promise<string> {
+/** 读拍摄日期的结果：date 读到了就是日期，note 是读不到时要告诉用户的原因。 */
+export interface PhotoDate {
+  date: string;
+  note: string;
+}
+
+/** 这些照片里最早的拍摄日期（只读文件开头 64KB）；读不到时 note 说明原因，日期让人自己选。 */
+export async function photoDate(paths: string[]): Promise<PhotoDate> {
   const today = todayKey();
   const dates: string[] = [];
+  let note = '';
   const fs = wx.getFileSystemManager();
   for (const filePath of paths) {
     const data = await new Promise<ArrayBuffer | null>((resolve) =>
@@ -37,10 +45,28 @@ export async function photoDate(paths: string[]): Promise<string> {
         fail: () => resolve(null),
       }),
     );
-    const date = data ? exifDate(data) : '';
-    if (date >= '1990-01-01' && date <= today) dates.push(date);
+    if (!data) {
+      note = '没能读到这张照片的信息，日期请自己选一下。';
+      continue;
+    }
+    const date = exifDate(data);
+    if (date >= '1990-01-01' && date <= today) {
+      dates.push(date);
+      continue;
+    }
+    const head = new Uint8Array(data.slice(0, 12));
+    const jpeg = head[0] === 0xff && head[1] === 0xd8;
+    note = jpeg
+      ? '这张照片里没有拍摄日期（微信选图时可能被去掉了），日期请自己选一下。'
+      : '这张照片不是 JPEG 格式，读不到拍摄日期，日期请自己选一下。';
+    reportWarn('photo-date', {
+      code: jpeg ? 'NO_EXIF' : 'NOT_JPEG',
+      message: Array.from(head)
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join(''),
+    });
   }
-  return dates.sort()[0] || '';
+  return { date: dates.sort()[0] || '', note: dates.length ? '' : note };
 }
 
 /** 上传一张到「wish-photos/小家/」下，返回 fileID。 */

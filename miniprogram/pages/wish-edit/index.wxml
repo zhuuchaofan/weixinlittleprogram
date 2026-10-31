@@ -10,6 +10,7 @@
     <text class="field-label">哪天去的</text>
     <picker mode="date" value="{{doneOn}}" end="{{today}}" bindchange="pickDate"><view class="picker-value">{{doneOn}}</view></picker>
     <view wx:if="{{dateFromPhoto}}" class="small muted field-hint">按照片的拍摄日期填好了，不对可以改。</view>
+    <view wx:elif="{{dateNote}}" class="small muted field-hint">{{dateNote}}</view>
     <view wx:elif="{{past}}" class="small muted field-hint">记不清哪天就选个大概的日子，加了照片会自动按拍摄日期填。</view>
   </view>
   <block wx:if="{{done}}">
