@@ -4,6 +4,7 @@ import { errorMessage } from '../../services/cloud';
 import { DISH_TAG_OPTIONS, LENGTHS } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
+import { doneBack } from '../../utils/feedback';
 
 Page({
   data: {
@@ -57,7 +58,7 @@ Page({
         kind: 'dish',
         tag: this.data.tag,
       });
-      wx.navigateBack();
+      await doneBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -66,11 +67,11 @@ Page({
   },
   async remove() {
     if (this.data.busy || !this.data.id) return;
-    if (!(await confirmAction('从菜单删除？', '删除后无法恢复。'))) return;
+    if (!(await confirmAction('删除这条？', '删除后无法恢复。'))) return;
     this.setData({ busy: true, error: '' });
     try {
       await dishService.remove(this.data.id);
-      wx.navigateBack();
+      await doneBack('已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

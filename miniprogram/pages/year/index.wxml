@@ -1,0 +1,92 @@
+<page-meta page-style="{{themeStyle}}" />
+<wxs module="money" src="../../wxs/money.wxs" />
+<view class="page">
+  <view class="month-bar">
+    <view class="month-arrow" data-delta="-1" bindtap="changeYear" hover-class="month-arrow-active" aria-role="button" aria-label="前一年">‹ 前一年</view>
+    <view class="month-text">{{year}} 年</view>
+    <view class="month-arrow {{isThisYear ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeYear" hover-class="{{isThisYear ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="后一年">后一年 ›</view>
+  </view>
+
+  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
+  <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+
+  <block wx:if="{{ready}}">
+    <view class="hero grad-card">
+      <view class="hero-label">{{year}} 年我们一起花了</view>
+      <view class="hero-total"><text wx:if="{{money.sign(totalText)}}" class="cur">¥</text>{{money.digits(totalText)}}</view>
+      <view class="hero-count">{{coverText}}</view>
+    </view>
+
+    <view wx:if="{{locked}}" class="card year-card lock-card">
+      <image class="lock-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" aria-hidden="true" />
+      <view class="lock-title">完整的年度回顾是会员功能</view>
+      <view class="small muted lock-text">每个月花了多少、花在哪、这一年之最、一起吃得最多的、去过的地方，还有喵喵写的年度寄语，都在里面。一个人开通，两个人都能看。</view>
+      <button class="primary lock-button" bindtap="openVip">看看会员</button>
+    </view>
+
+    <block wx:else>
+      <view wx:if="{{quiet}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这一年还没有记账，一起记几笔吧。</view>
+
+      <view wx:if="{{!quiet}}" class="card year-card">
+        <view class="small muted year-head">每个月花了多少</view>
+        <view wx:for="{{months}}" wx:key="label" class="bar-row">
+          <view class="bar-label">{{item.label}}</view>
+          <view class="bar-track"><view class="bar-fill {{item.peak ? 'bar-peak' : ''}}" style="width: {{item.percent}}%"></view></view>
+          <view class="bar-value">{{item.amountText}}</view>
+        </view>
+      </view>
+
+      <view wx:if="{{top.length}}" class="card year-card">
+        <view class="small muted year-head">花在哪</view>
+        <view wx:for="{{top}}" wx:key="cat" class="year-row">
+          <view class="cat-dot" style="background: {{item.color}}"></view>
+          <view class="year-name">{{item.cat}}</view>
+          <view class="small muted">{{item.share}}</view>
+          <view class="year-value">{{item.amountText}}</view>
+        </view>
+      </view>
+
+      <view wx:if="{{facts.length}}" class="card year-card">
+        <view class="small muted year-head">这一年之最</view>
+        <view wx:for="{{facts}}" wx:key="label" class="year-row">
+          <view class="year-name muted">{{item.label}}</view>
+          <view class="year-value">{{item.value}}</view>
+        </view>
+      </view>
+
+      <view class="card year-card">
+        <view class="small muted year-head">这一年一起</view>
+        <view wx:for="{{together}}" wx:key="label" class="together-row">
+          <view class="together-label {{item.on ? 'together-on' : ''}}">{{item.label}}</view>
+          <view class="together-text {{item.on ? '' : 'muted'}}">{{item.text}}</view>
+        </view>
+      </view>
+
+      <view wx:if="{{!quiet}}" class="card year-card">
+        <view class="ai-head">
+          <image class="ai-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" />
+          <view class="ai-title">年度寄语</view>
+          <text class="tag">AI 生成</text>
+        </view>
+        <view wx:if="{{writing}}" class="ai-text muted">喵喵正在翻这一年…（十几秒）</view>
+        <block wx:elif="{{noteText}}">
+          <view class="ai-text">{{noteText}}</view>
+          <view class="small muted ai-disclaimer">以上内容由 AI 根据这一年的汇总数字生成，仅供参考。</view>
+        </block>
+        <view wx:else class="ai-text muted">让喵喵给你们这一年写一段话。由阿里云通义千问生成，只发汇总数字、分类名、吃得最多的菜名和去过的地方名，不发名字和账目明细。</view>
+        <view wx:if="{{noteError}}" class="ai-error small">{{noteError}}</view>
+        <view class="ai-foot">
+          <text class="small muted">{{noteHint}}</text>
+          <button class="btn-small" bindtap="writeNote" loading="{{writing}}" disabled="{{writing}}">{{noteText ? '重新写' : '写寄语'}}</button>
+        </view>
+      </view>
+
+      <view wx:if="{{!quiet}}" class="year-actions">
+        <button class="primary" bindtap="savePoster" loading="{{drawing}}" disabled="{{drawing}}">存成图片</button>
+        <button class="secondary" open-type="share">分享给 TA</button>
+      </view>
+    </block>
+  </block>
+  <canvas type="2d" id="poster" class="poster-canvas" style="width: {{posterWidth}}px; height: {{posterHeight}}px;" />
+  <view class="page-end"></view>
+</view>

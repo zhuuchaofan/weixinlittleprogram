@@ -14,19 +14,6 @@
     <switch checked="{{together}}" bindchange="toggleTogether" color="{{accent}}" aria-label="作为在一起的起点" />
   </view>
   <button wx:if="{{id}}" class="secondary calendar" bindtap="addToCalendar">写进手机日历{{yearly ? '（每年提醒）' : ''}}</button>
-  <view wx:if="{{id}}" class="card wish-card">
-    <view class="wish-head"><text class="wish-title">喵喵出主意</text><text class="tag">AI 生成</text></view>
-    <view class="small muted">礼物预算</view>
-    <view class="chips wish-budget">
-      <view wx:for="{{budgets}}" wx:key="value" class="chip {{budget === item.value ? 'chip-on' : ''}}" data-value="{{item.value}}" bindtap="chooseBudget">{{item.label}}</view>
-    </view>
-    <block wx:if="{{wish}}">
-      <view class="wish-text">{{wish}}</view>
-      <view wx:for="{{ideas}}" wx:key="index" class="wish-idea">· {{item}}</view>
-      <view class="small muted wish-note">以上由 AI 生成，仅供参考，不会保存。</view>
-    </block>
-    <button class="btn-small wish-button" bindtap="ask" loading="{{asking}}" disabled="{{asking}}">{{wish ? '换一个' : '写祝福和点子'}}</button>
-  </view>
 
   <view wx:if="{{error}}" class="notice error">{{error}}</view>
   <button class="primary save" bindtap="save" loading="{{busy}}" disabled="{{busy}}">保存</button>

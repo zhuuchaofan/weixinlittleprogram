@@ -1,30 +1,24 @@
 /**
- * 清单、吃啥、纪念日里的 AI 小帮手（提示词在 prompts.js，额度在 contract.json 的 ai）。
+ * 一句话类的 AI 小帮手（提示词在 prompts.js，额度在 contract.json 的 ai）。
  * - todo.split：一句话拆成清单条目，只返回给小程序确认，不直接保存。
- * - dish.pick：从小家自己的菜单里挑 3 个。模型只回编号，这里按编号找回菜品，挑不在菜单里的丢掉。
- * - date.wish：给一个纪念日写祝福和 3 个点子（不存，不发名字）。
- * 都是先 ai.ensure → 再占小家次数 → 再调模型，失败也算一次。
- * repositories：dishes.listAll(householdId)、dates.get(householdId, id)；ai：createAi() 的返回值，没有配置模型时为 null。
+ * - expense.quick：一句话拆成几笔账（一句话记账），只返回给小程序确认，用 expense.addSome 保存。
+ * 先 ai.ensure → 再占小家次数 → 再调模型，失败也算一次。
+ * ai：createAi() 的返回值，没有配置模型时为 null。
  */
 const { ApiError } = require('./errors');
 const validate = require('./validate');
 const CONTRACT = require('./contract.json');
-const { requireRecord } = require('./records');
-const { todayKey } = require('./dates');
-const { countdown } = require('./anniversary');
 const { takeQuota } = require('./quota');
-const { extractJson } = require('./bill-parse');
+const { extractJson, parseAmount, parseBillDate } = require('./bill-parse');
+const { todayKey } = require('./dates');
 const prompts = require('./prompts');
 
 const { lengths: LENGTHS } = CONTRACT;
 const MAX_TODO_ITEMS = 10;
 const TODO_ITEM_MAX = 40;
-const MAX_MENU = 80;
-const PICKS = 3;
-const REASON_MAX = 20;
-const WISH_MAX = 200;
-const IDEA_MAX = 40;
-const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_QUICK_ITEMS = 10;
+const QUICK_NOTE_MAX = 20;
+const WEEKDAYS = '日一二三四五六';
 
 const UNAVAILABLE =
   '这个功能还没开通：需要在云函数 api 里配置 DASHSCOPE_API_KEY。';
@@ -53,63 +47,35 @@ function parseTodoItems(reply) {
   return items;
 }
 
-/** 距离 today 过了几天；没吃过为 -1。 */
-function daysSince(ateOn, today) {
-  if (!validate.isDate(ateOn)) return -1;
-  const [a, b] = [ateOn, today].map((day) => Date.parse(`${day}T00:00:00Z`));
-  return Math.max(0, Math.round((b - a) / DAY_MS));
-}
-
-const ateText = (days) =>
-  days < 0
-    ? '没记过'
-    : days === 0
-      ? '今天'
-      : days === 1
-        ? '昨天'
-        : `${days} 天前`;
-
-/** 模型回复 → 挑中的菜：编号必须在候选里，不重复，理由限长。 */
-function parsePicks(reply, candidates) {
-  const rows = extractJson(reply)?.picks;
-  const used = new Set();
-  const picks = [];
+/**
+ * 模型回复 → 几笔账：金额读不出来的丢掉；分类不认识的归「其他」；日期读不出来按今天，并标出来让人核对。
+ * 金额单位为分，和 expense.add 一样。
+ */
+function parseQuickItems(reply, today) {
+  const rows = extractJson(reply)?.items;
+  const items = [];
   for (const row of Array.isArray(rows) ? rows : []) {
-    const dish = candidates[Number(row?.n) - 1];
-    if (!dish || used.has(dish.id)) continue;
-    used.add(dish.id);
-    picks.push({
-      id: dish.id,
-      name: dish.name,
-      tag: dish.tag,
-      reason: clean(row?.reason, REASON_MAX),
+    const amount = parseAmount(row?.amount);
+    if (!amount) continue;
+    const cat = CONTRACT.categories.includes(row?.cat) ? row.cat : '其他';
+    const day = String(row?.day ?? '').trim();
+    const parsed = day ? parseBillDate(day, today) : null;
+    const date = parsed && parsed.date <= today ? parsed.date : today;
+    items.push({
+      amount: amount.fen,
+      flow: row?.flow === 'in' || amount.sign === '+' ? 'in' : 'out',
+      cat: cat === CONTRACT.settlement ? '其他' : cat,
+      note: clean(row?.note, Math.min(QUICK_NOTE_MAX, LENGTHS.expenseNote)),
+      date,
+      // 没说哪天的就是今天，不用核对；说了却读不出来的按今天，要核对。
+      dateGuessed: Boolean(day) && day !== '今天' && !parsed,
     });
-    if (picks.length >= PICKS) break;
+    if (items.length >= MAX_QUICK_ITEMS) break;
   }
-  return picks;
+  return items;
 }
 
-/** 模型回复 → 祝福和点子；祝福为空算失败，点子最多 3 个。 */
-function parseWish(reply) {
-  const data = extractJson(reply);
-  const wish = clean(data?.wish, WISH_MAX);
-  const ideas = (Array.isArray(data?.ideas) ? data.ideas : [])
-    .map((idea) => clean(idea, IDEA_MAX))
-    .filter(Boolean)
-    .slice(0, 3);
-  return wish ? { wish, ideas } : null;
-}
-
-const yearsText = (item) =>
-  item.yearly && item.years > 0 ? `第 ${item.years} 个周年` : '';
-
-function createAssistHandler({
-  repositories,
-  households,
-  requireMembership,
-  now,
-  ai,
-}) {
+function createAssistHandler({ households, requireMembership, now, ai }) {
   async function start(openid) {
     const household = await requireMembership(openid);
     if (!ai) throw new ApiError('UNAVAILABLE', UNAVAILABLE);
@@ -139,92 +105,34 @@ function createAssistHandler({
       return { items };
     },
 
-    async 'dish.pick'(openid, payload) {
+    async 'expense.quick'(openid, payload) {
       const household = await start(openid);
-      const want = validate.text(payload?.want, {
-        field: '想吃的',
-        max: LENGTHS.dishWant,
+      const text = validate.text(payload?.text, {
+        field: '内容',
+        min: 2,
+        max: LENGTHS.quickText,
       });
-      const tag = payload?.tag
-        ? validate.oneOf(
-            payload.tag,
-            CONTRACT.dishTags,
-            '选一下在家做、外食还是外卖吧。',
-          )
-        : '';
       const today = todayKey(now());
-      const all = (await repositories.dishes.listAll(household._id))
-        .filter((dish) => !tag || dish.tag === tag)
-        .map((dish) => ({
-          id: dish._id,
-          name: dish.name,
-          tag: dish.tag,
-          days: daysSince(dish.ateOn, today),
-        }));
-      if (all.length < 2)
-        throw new ApiError(
-          'VALIDATION',
-          '菜单里至少要有 2 个才好挑，先加几个吧。',
-        );
-      // 最近吃过的靠后，菜单太长只留前 MAX_MENU 个。
-      const candidates = all
-        .sort(
-          (a, b) => (b.days < 0 ? 999 : b.days) - (a.days < 0 ? 999 : a.days),
-        )
-        .slice(0, MAX_MENU);
-      await spend(household, 'dishPick');
-      const picks = parsePicks(
+      const weekday = WEEKDAYS[new Date(`${today}T00:00:00Z`).getUTCDay()];
+      await spend(household, 'quickAdd');
+      const items = parseQuickItems(
         await ai.write(
-          'dishPick',
-          prompts.dishPick({
-            want,
-            menu: candidates.map(
-              (dish, index) =>
-                `${index + 1}｜${dish.name}｜${dish.tag}｜${ateText(dish.days)}`,
+          'quickAdd',
+          prompts.quickAdd({
+            text,
+            today: `${today} 周${weekday}`,
+            categories: CONTRACT.categories.filter(
+              (cat) => cat !== CONTRACT.settlement,
             ),
           }),
         ),
-        candidates,
+        today,
       );
-      if (!picks.length)
-        throw failed('没挑出来，换个说法再试试，或者用「抽一个」。');
-      return { picks };
-    },
-
-    async 'date.wish'(openid, payload) {
-      const household = await start(openid);
-      const record = await requireRecord(
-        repositories.dates,
-        household,
-        validate.id(payload?.id),
-      );
-      const budget = Object.hasOwn(prompts.BUDGETS, payload?.budget)
-        ? payload.budget
-        : 'mid';
-      const item = countdown(
-        record.date,
-        Boolean(record.yearly),
-        todayKey(now()),
-      );
-      const when = item.passed
-        ? `已经过去 ${item.days} 天`
-        : item.days === 0
-          ? '就是今天'
-          : `还有 ${item.days} 天`;
-      await spend(household, 'dateWish');
-      const result = parseWish(
-        await ai.write(
-          'dateWish',
-          prompts.dateWish({
-            title: clean(record.title, LENGTHS.dateTitle),
-            years: yearsText(item),
-            when,
-            budget,
-          }),
-        ),
-      );
-      if (!result) throw failed('喵喵这次没想出来，过一会儿再试试吧。');
-      return result;
+      if (!items.length)
+        throw failed(
+          '没听出金额，说成「午饭 68，打车 23」这样再试试，或者点「记一笔」手动记。',
+        );
+      return { items };
     },
   };
 }
@@ -232,7 +140,5 @@ function createAssistHandler({
 module.exports = {
   createAssistHandler,
   parseTodoItems,
-  parsePicks,
-  parseWish,
-  daysSince,
+  parseQuickItems,
 };

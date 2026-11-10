@@ -25,19 +25,19 @@
     <view wx:if="{{writing}}" class="ai-text muted">喵喵正在看账本…（十几秒）</view>
     <block wx:elif="{{summaryText}}">
       <view class="ai-text">{{summaryText}}</view>
-      <view class="small muted ai-disclaimer">以上内容由 AI 根据账目汇总生成，仅供参考。</view>
+      <view class="small muted ai-disclaimer">以上内容由 AI 根据这个月的账目汇总和一起做的事生成，仅供参考。</view>
     </block>
-    <view wx:else class="ai-text muted">让喵喵用几句话说说这个月钱花在哪、比上月有什么变化。由阿里云通义千问生成，只发汇总数字和大额单笔的备注，不发截图。</view>
+    <view wx:else class="ai-text muted">让喵喵用一段话说说这个月：钱花在哪、比上月有什么变化、一起做了什么，和小报页是同一段。由阿里云通义千问生成，只发汇总数字、大额单笔的备注、吃得最多的菜名和去过的地方名，不发名字和截图。</view>
     <view wx:if="{{summaryError}}" class="ai-error small">{{summaryError}}</view>
     <button wx:if="{{summaryLimit}}" class="text-button" bindtap="openVip">看看会员</button>
     <view class="ai-foot">
       <text class="small muted">{{summaryNote}}</text>
-      <button class="btn-small" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新生成' : '写小结'}}</button>
+      <button class="btn-small" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新写' : '写小结'}}</button>
     </view>
   </view>
 
   <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。</view>
+  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。回主页点「记一笔」，记了就能看到花在哪儿。</view>
 
   <block wx:if="{{categories.length}}">
     <view class="section-head"><view class="section-title">{{compareTitle}}</view><button class="text-button" bindtap="openBudgets">分类预算 ›</button></view>

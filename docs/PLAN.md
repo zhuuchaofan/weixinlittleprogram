@@ -27,11 +27,14 @@
 - 所有 AI 调用都走 `cloudfunctions/api/ai.js`：每个功能登记一次（档位、模型、温度、最长输出），键和 `shared/contract.json` 的 `ai` 一一对应。
 - 两档：`organize`「AI 整理」（截图识别这类，结果要用户确认才保存）；`write`「AI 写文字」（喵喵小结这类，界面标「AI 生成 · 仅供参考」）。环境变量 `AI_WRITE_OFF=1` 关掉所有 `write`。
 - 顺序固定：`ai.ensure(功能)`（总开关、全站费用上限）→ `quota.takeQuota`（小家的次数，先占后调，失败也算）→ `ai.read / ai.write`。
-- 次数：`contract.json` 的 `ai.<功能>` 写 `free`、`vip`、`per`（day / month）；计数存在 `households.<功能>Quota`（截图和小结沿用 `billQuota`、`summaryQuota`）。
+- 次数：`contract.json` 的 `ai.<功能>` 写 `free`、`vip`、`per`（day / month），可选 `freePer`（不开通时按它算，例如截图记账会员按天、不开通按月）；`free` 为 0 表示只给会员；计数存在 `households.<功能>Quota`（截图和小结沿用 `billQuota`、`summaryQuota`）。
 - 全站费用：每次调用按 `ai.js` 的估算单价记进 `ai_usage`；当天到 `AI_DAILY_BUDGET`（默认 20 元）的 80% 停 `write`、100% 停 `organize`。
 - 发给模型的只有这个功能需要的文字，不发名字和 openid；日志只记功能名、模型、耗时、token 数和错误码。
 - 提示词都在 `cloudfunctions/api/prompts.js`：用户写的内容放在分隔线里、一律当数据；要求只回 JSON 的功能由 `assist.js` / `bill-parse.js` 校验后再返回，模型说了什么都不直接信。
-- 清单、吃啥、纪念日三项在 `assist.js`：`todo.split`（organize，只返回拆分结果，由用户勾选后用 `todo.add` 保存）、`dish.pick`（write，模型只回编号，按编号找回菜单里的菜，挑不在菜单里的丢掉）、`date.wish`（write，不保存，不发名字，只发纪念日名称、周年数和预算档）。模型用 `ASSIST_MODEL`，没填依次用 `SUMMARY_MODEL`、`BILL_MODEL`。
+- 一句话类功能在 `assist.js`：`todo.split`（organize，只返回拆分结果，由用户勾选后用 `todo.add` 保存）、`expense.quick`（organize，一句话拆成几笔账，金额读不出的丢掉，日期用 `parseBillDate` 推算；用户在 `draft-list` 里确认后用 `expense.addSome` 保存，最多 10 笔，记在自己名下，开着分摊时支出按一半）。模型用 `ASSIST_MODEL`，没填依次用 `SUMMARY_MODEL`、`BILL_MODEL`。
+- 喵喵小结一个月一段（`insight.write`）：账目汇总加上小报里「这个月一起做的事」（`recap.js` 的 `lifeLines`，只列有的），存在 `insights` 的 `<小家>-<月>`，花销分析页和小报页读同一份。`fingerprint` 是账目、`life` 是做过的事，小报页两样都比，花销分析页只比账目。
+- 年度回顾在 `year.js`：`year.get` 按年数（支出口径同花销分析），不是会员只回封面（locked）；`year.write` 是年度寄语（write，只给会员，存 `insights` 的 `<小家>-year-<年>`）。存图是页面在屏幕外的 canvas 画好后用 `wx.showShareImageMenu`，不申请相册权限。
+- 1.17.0 下线了「吃啥帮我挑」`dish.pick`、「纪念日祝福和点子」`date.wish`、「小报寄语」`recap.write`（用得少，且能被随机挑、自己写替代）。旧的寄语还留在 `insights`（id 含 `-recap-`），不再显示。
 - 第一次用文字类功能弹说明（本机存 `aiTextNoticed`），写文字的结果旁一律标「AI 生成」。
 - 「先确认再保存」的列表是组件 `components/draft-list`，行的计算在 `utils/drafts.ts`。
 

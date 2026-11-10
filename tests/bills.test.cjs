@@ -162,8 +162,9 @@ async function setup(
 ) {
   const expenses = memoryExpenses();
   const vision = fakeVision(replies);
+  const households = memoryHouseholds();
   const route = createRouter({
-    households: memoryHouseholds(),
+    households,
     archive: {},
     expenses,
     ai: vision,
@@ -176,7 +177,12 @@ async function setup(
     code: created.data.inviteCode,
   });
   await call('X', 'household.create', { name: '别人家' });
-  return { call, expenses, vision };
+  /** 把 A 的小家开成会员（账单文件导入只给会员）。 */
+  const makeVip = async () => {
+    const household = await households.findByMember('A');
+    household.vip = { until: clock.now + 24 * 60 * 60 * 1000 };
+  };
+  return { call, expenses, vision, makeVip };
 }
 
 test('金额：保留正负号，按字符串换算成分', () => {
@@ -294,18 +300,21 @@ test('识别截图：需要模型配置，只有小家成员能用', async () =>
   assert.match(result.message, /DASHSCOPE_API_KEY/);
 });
 
-test('识别截图：每个小家每天最多 5 张，两人合计，第二天重新计数', async () => {
+test('识别截图：不是会员每月 15 张，两人合计，下个月重新计数；会员按天算', async () => {
   const clock = { now: NOW };
-  const { call, vision } = await setup(undefined, clock);
-  for (let i = 0; i < 5; i++) {
+  const { call, vision, makeVip } = await setup(undefined, clock);
+  for (let i = 0; i < 15; i++) {
     const who = i % 2 ? 'B' : 'A';
     const result = await call(who, 'bill.parse', { url: 'https://img/1' });
     assert.equal(result.ok, true, result.message);
   }
   const over = await call('B', 'bill.parse', { url: 'https://img/1' });
   assert.equal(over.code, 'LIMIT');
-  assert.match(over.message, /已经识别了 5 张/);
-  assert.equal(vision.calls.length, 5);
+  assert.match(
+    over.message,
+    /这个月已经识别了 15 张截图，下个月再来吧。开通会员每天可以识别 100 张/,
+  );
+  assert.equal(vision.calls.length, 15);
   // 别的小家不受影响
   assert.equal(
     (await call('X', 'bill.parse', { url: 'https://img/1' })).ok,
@@ -313,7 +322,19 @@ test('识别截图：每个小家每天最多 5 张，两人合计，第二天�
   );
   clock.now += 24 * 60 * 60 * 1000;
   assert.equal(
+    (await call('A', 'bill.parse', { url: 'https://img/1' })).code,
+    'LIMIT',
+    '第二天还是同一个月',
+  );
+  await makeVip();
+  assert.equal(
     (await call('A', 'bill.parse', { url: 'https://img/1' })).ok,
+    true,
+    '开通会员按天算',
+  );
+  clock.now += 20 * 24 * 60 * 60 * 1000;
+  assert.equal(
+    (await call('B', 'bill.parse', { url: 'https://img/1' })).ok,
     true,
   );
 });
@@ -558,7 +579,7 @@ test('通义千问接口：OpenAI 兼容格式、流式拼接，密钥只放请�
   assert.equal(await summary.write('summary', '写小结'), '喵');
   const written = JSON.parse(requests[1].options.body);
   assert.equal(written.model, 'qwen-flash', '小结可以单独换模型');
-  assert.equal(written.max_tokens, 300);
+  assert.equal(written.max_tokens, 400);
   assert.equal(written.enable_thinking, false);
   assert.deepEqual(written.messages[0].content, [
     { type: 'text', text: '写小结' },
@@ -929,7 +950,8 @@ test('账单文件：跳过中性和没付成的，部分退款记净额，全�
 });
 
 test('账单文件：查重、两人互转不记、保存后再导是已导入过，先截图后导文件不重复', async () => {
-  const { call, expenses } = await setup();
+  const { call, expenses, makeVip } = await setup();
+  await makeVip();
   // 10-21 先用截图导入过同一笔滴滴（同一分钟、同金额）
   const shot = (
     await call('A', 'bill.match', {
@@ -1215,10 +1237,14 @@ test('支付宝账单：退款和原支出分在不同批里也能配上', () =>
 });
 
 test('支付宝账单：整条链路——查重、和小家成员的转账不记、保存后再导是已导入过', async () => {
-  const { call } = await setup();
+  const { call, makeVip } = await setup();
   const file = alipayRows(new Uint8Array(ALIPAY_GBK));
   const send = () =>
     call('A', 'bill.file', { app: 'alipay', enc: file.enc, rows: file.rows });
+  const locked = await send();
+  assert.equal(locked.code, 'LIMIT', '账单文件导入只给会员');
+  assert.match(locked.message, /会员功能/);
+  await makeVip();
   const first = await send();
   assert.equal(first.ok, true, first.message);
   const status = Object.fromEntries(

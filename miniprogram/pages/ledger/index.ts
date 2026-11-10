@@ -266,6 +266,8 @@ Page({
     const ok = await confirmAction(
       '记为已结算？',
       `将新增一条结算记录：${this.data.summaryText.suggestion}。删除这条记录即可撤销。`,
+      '记下',
+      false,
     );
     if (!ok) return;
     this.setData({ busy: true, error: '' });

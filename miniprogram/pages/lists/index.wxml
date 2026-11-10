@@ -14,13 +14,13 @@
     <button class="btn-small" bindtap="splitText" loading="{{splitting}}" disabled="{{splitting || busy}}">让喵喵拆成多条</button>
   </view>
   <view wx:if="{{split.length}}" class="card split-card">
-    <view class="split-head"><text class="split-title">喵喵拆好了，勾选要加的</text><text class="tag">AI 整理</text></view>
+    <view class="split-head"><text class="split-title">喵喵拆好了，勾选要加的</text><text class="tag">AI 生成</text></view>
     <view wx:for="{{split}}" wx:key="index" class="split-row" data-index="{{index}}" bindtap="toggleSplit" aria-role="checkbox" aria-checked="{{item.on}}" aria-label="{{item.text}}">
-      <view class="tick-box {{item.on ? 'tick-on' : ''}}">{{item.on ? '✓' : ''}}</view>
+      <view class="tick-box {{item.on ? 'tick-on' : ''}}"><image wx:if="{{item.on}}" class="tick-paw" src="/images/ui/paw.png" /></view>
       <view class="row-main"><view class="row-title">{{item.text}}</view></view>
       <text class="tag">{{item.kind === 'shop' ? '购物' : '待办'}}</text>
     </view>
-    <view class="small muted split-note">以上由 AI 根据你写的话整理，仅供参考，确认后才保存。</view>
+    <view class="small muted split-note">以上内容由 AI 根据你写的话生成，仅供参考，确认后才保存。</view>
     <view class="split-actions">
       <button class="text-button" bindtap="cancelSplit" disabled="{{busy}}">不要了</button>
       <button class="primary btn-inline" bindtap="addSplit" disabled="{{busy}}">加进清单</button>

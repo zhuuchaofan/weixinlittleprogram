@@ -460,15 +460,19 @@ test('次数用完时只给非会员附开通提示', () => {
   const free = limitMessage({}, 'billImage', NOW);
   assert.equal(
     free,
-    `今天已经识别了 ${QUOTAS.billImage.free} 张截图，明天再来吧。开通会员每天可以识别 ${QUOTAS.billImage.vip} 张。`,
+    `这个月已经识别了 ${QUOTAS.billImage.free} 张截图，下个月再来吧。开通会员每天可以识别 ${QUOTAS.billImage.vip} 张。`,
+  );
+  assert.equal(
+    limitMessage({ vip: { until: NOW + DAY } }, 'billImage', NOW),
+    `今天已经识别了 ${QUOTAS.billImage.vip} 张截图，明天再来吧。`,
   );
   assert.equal(
     limitMessage({ vip: { until: NOW + DAY } }, 'summary', NOW),
-    `今天已经生成了 ${QUOTAS.summary.vip} 次小结，明天再来吧。`,
+    `这个月已经生成了 ${QUOTAS.summary.vip} 次小结，下个月再来吧。`,
   );
   assert.match(
     limitMessage({ vip: { until: NOW - DAY } }, 'summary', NOW),
-    /开通会员每天可以生成/,
+    /开通会员每月可以生成/,
   );
 });
 

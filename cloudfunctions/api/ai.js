@@ -1,6 +1,6 @@
 /**
  * 所有 AI 功能的统一入口（docs/PLAN.md「AI 功能」）。每个功能在 FEATURES 里登记一次：
- * - tier：organize 是「AI 整理」（识别、拆分，结果要用户确认才保存），write 是「AI 写文字」（小结、祝福等，标「AI 生成」）。
+ * - tier：organize 是「AI 整理」（识别、拆分，结果要用户确认才保存），write 是「AI 写文字」（喵喵小结，标「AI 生成」）。
  * - 用哪个模型、温度、最长输出。模型可以用环境变量换，不用改代码。
  * 每次调用记下功能名、token 数和估算费用到 ai_usage（每天一条），不记内容。
  * 全站每天的费用到 AI_DAILY_BUDGET 元的 WRITE_SHARE 时先停「写文字」，到 100% 再停「整理」。
@@ -14,7 +14,7 @@ const { DEFAULT_MODEL } = require('./vision');
 const DEFAULT_BUDGET = 20;
 const WRITE_SHARE = 0.8;
 
-/** 清单、吃啥、纪念日这几个纯文字功能的模型：ASSIST_MODEL，没填用小结的，再没填用截图识别的。 */
+/** 一句话类纯文字功能的模型：ASSIST_MODEL，没填用小结的，再没填用截图识别的。 */
 const assistModel = (env) =>
   env.ASSIST_MODEL || env.SUMMARY_MODEL || env.BILL_MODEL || DEFAULT_MODEL;
 
@@ -30,8 +30,8 @@ const FEATURES = {
     // 小结只有文字，可以单独换一个更快的纯文本模型（例如 qwen-flash），不填就和截图识别用同一个。
     model: (env) => env.SUMMARY_MODEL || env.BILL_MODEL || DEFAULT_MODEL,
     temperature: 0.3,
-    // 小结 150 字以内，中文大约 1 字 1 token；封顶防止模型写长了拖时间。
-    maxTokens: 300,
+    // 小结 200 字以内，中文大约 1 字 1 token；封顶防止模型写长了拖时间。
+    maxTokens: 400,
   },
   // 一句话拆成清单条目：结果先让用户确认，才加进清单。
   todoSplit: {
@@ -40,26 +40,19 @@ const FEATURES = {
     temperature: 0,
     maxTokens: 400,
   },
-  // 从自己的菜单里挑：编号过一遍校验，只能挑菜单里有的；理由是模型写的短句。
-  dishPick: {
-    tier: 'write',
+  // 一句话记账：拆成几笔，结果先让用户确认，才记进账本。
+  quickAdd: {
+    tier: 'organize',
     model: assistModel,
-    temperature: 0.5,
-    maxTokens: 300,
+    temperature: 0,
+    maxTokens: 600,
   },
-  // 每月小报的寄语：只给汇总数字，生成式文字，界面标「AI 生成」。
-  recapNote: {
+  // 年度回顾的寄语：只给会员，生成式文字，界面标「AI 生成」。
+  yearNote: {
     tier: 'write',
     model: assistModel,
     temperature: 0.6,
-    maxTokens: 400,
-  },
-  // 纪念日祝福和点子：生成式文字，界面标「AI 生成」。
-  dateWish: {
-    tier: 'write',
-    model: assistModel,
-    temperature: 0.8,
-    maxTokens: 600,
+    maxTokens: 500,
   },
 };
 

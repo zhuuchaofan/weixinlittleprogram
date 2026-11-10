@@ -56,7 +56,7 @@ function requestPayment(order: VipOrder): Promise<void> {
           new ApiError(
             /cancel/i.test(error.errMsg || '')
               ? '已取消支付。'
-              : `支付没有完成（${error.errCode}${detail ? `：${detail}` : ''}），请重试。`,
+              : `支付没有完成（${error.errCode}${detail ? `：${detail}` : ''}），再试一次吧。`,
             'PAY_FAILED',
           ),
         );

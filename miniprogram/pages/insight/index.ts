@@ -69,8 +69,8 @@ function summaryView(summary: InsightSummary | null) {
     summaryTs: summary?.ts || 0,
     summaryNote: summary
       ? summary.stale
-        ? '生成之后这个月的账有变动，可以重新生成'
-        : `${formatTimestamp(summary.ts)} 生成`
+        ? '写完之后这个月的账有变动，可以重新写'
+        : `${formatTimestamp(summary.ts)} 写的`
       : '',
   };
 }

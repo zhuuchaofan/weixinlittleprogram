@@ -10,8 +10,14 @@ const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
 const { createAssistHandler } = require('./assist');
+const { createYearHandler } = require('./year');
 const { createActivityLog, createActivityFeed } = require('./activity');
-const { createRecapHandler } = require('./recap');
+const {
+  createRecapHandler,
+  createRecapBuilder,
+  lifeLines,
+  lifeFingerprint,
+} = require('./recap');
 const { createLeaveHandler } = require('./leave');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
@@ -62,6 +68,16 @@ function createRouter({
     uniqueCode: household.uniqueCode,
     now,
   });
+  const recapRepositories = { expenses, goals, dates, activity };
+  const buildRecap = createRecapBuilder({
+    repositories: recapRepositories,
+    now,
+  });
+  // 喵喵小结一个月一段：账目加上小报里「这个月一起做的事」。
+  const life = async (record, month) => {
+    const recap = await buildRecap(record, month);
+    return { lines: lifeLines(recap), fingerprint: lifeFingerprint(recap) };
+  };
   const actions = {
     ...household.actions,
     // 退出到一半时（新小家没建成）先补建，再读。
@@ -87,19 +103,25 @@ function createRouter({
       requireMembership,
       now,
       ai,
+      life,
     }),
     ...createAssistHandler({
-      repositories: { dishes, dates },
       households,
       requireMembership,
       now,
       ai,
     }),
-    ...createRecapHandler({
-      repositories: { expenses, goals, dates, activity },
+    ...createYearHandler({
+      repositories: { expenses, activity, wishes, goals, dates },
       households,
       insights,
       ai,
+      requireMembership,
+      now,
+    }),
+    ...createRecapHandler({
+      repositories: recapRepositories,
+      insights,
       requireMembership,
       now,
     }),

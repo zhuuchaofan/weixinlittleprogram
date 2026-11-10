@@ -1,0 +1,26 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <block wx:if="{{!rows.length}}">
+    <view class="card quick-card">
+      <view class="quick-head"><text class="quick-title">说一句，喵喵帮你记</text><text class="tag">AI 生成</text></view>
+      <textarea class="quick-input" value="{{text}}" maxlength="{{limits.quickText}}" placeholder="例如：午饭两人 68，打车 23，昨天超市买菜 112" auto-height bindinput="inputText" />
+      <view class="small muted quick-tip">一句话里可以有好几笔；点手机键盘上的话筒，直接说也行。没说哪天的算今天。</view>
+    </view>
+    <view wx:if="{{error}}" class="notice error">{{error}}</view>
+    <button wx:if="{{limitHit}}" class="text-button" bindtap="openVip">看看会员</button>
+    <button class="primary quick-go" bindtap="parse" loading="{{parsing}}" disabled="{{parsing}}">{{parsing ? '喵喵正在记…' : '帮我拆成几笔'}}</button>
+    <button class="secondary" bindtap="manual">一笔一笔手动记</button>
+  </block>
+
+  <block wx:else>
+    <view class="notice">喵喵拆出 {{rows.length}} 笔，点开可以改金额、分类和日期，确认后才记进账本。记在你名下。</view>
+    <draft-list rows="{{rows}}" today="{{today}}" bind:change="changeRows" />
+    <view class="small muted quick-note">以上内容由 AI 根据你写的话整理，仅供参考，确认后才保存。</view>
+    <view wx:if="{{error}}" class="notice error">{{error}}</view>
+    <view class="save-bar">
+      <button class="primary" bindtap="save" loading="{{busy}}" disabled="{{busy || !selectedCount}}">记下 {{selectedCount}} 笔</button>
+      <button class="text-button again" bindtap="again" disabled="{{busy}}">重新说一句</button>
+    </view>
+  </block>
+  <view class="page-end"></view>
+</view>

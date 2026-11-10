@@ -46,7 +46,8 @@ export const CONTRACT = {
       "unit": "张",
       "what": "截图",
       "per": "day",
-      "free": 5,
+      "freePer": "month",
+      "free": 15,
       "vip": 100
     },
     "summary": {
@@ -54,8 +55,8 @@ export const CONTRACT = {
       "verb": "生成",
       "unit": "次",
       "what": "小结",
-      "per": "day",
-      "free": 5,
+      "per": "month",
+      "free": 3,
       "vip": 30
     },
     "todoSplit": {
@@ -67,32 +68,23 @@ export const CONTRACT = {
       "free": 10,
       "vip": 100
     },
-    "dishPick": {
-      "name": "吃啥帮我挑",
-      "verb": "挑",
+    "quickAdd": {
+      "name": "一句话记账",
+      "verb": "记",
       "unit": "次",
-      "what": "菜",
+      "what": "账",
       "per": "day",
-      "free": 3,
-      "vip": 30
+      "free": 20,
+      "vip": 100
     },
-    "recapNote": {
-      "name": "小报寄语",
+    "yearNote": {
+      "name": "年度寄语",
       "verb": "写",
       "unit": "次",
       "what": "寄语",
       "per": "day",
-      "free": 2,
-      "vip": 20
-    },
-    "dateWish": {
-      "name": "纪念日祝福和点子",
-      "verb": "写",
-      "unit": "次",
-      "what": "祝福",
-      "per": "day",
-      "free": 2,
-      "vip": 20
+      "free": 0,
+      "vip": 5
     }
   },
   "vip": {
@@ -174,7 +166,7 @@ export const CONTRACT = {
     "wishMemo": 100,
     "dateTitle": 20,
     "todoSplitText": 120,
-    "dishWant": 30,
+    "quickText": 120,
     "goalTitle": 20
   }
 } as const;

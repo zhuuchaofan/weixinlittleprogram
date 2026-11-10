@@ -61,20 +61,20 @@
     <view class="card recap-card ai">
       <view class="ai-head">
         <image class="ai-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" />
-        <view class="ai-title">喵喵寄语</view>
+        <view class="ai-title">喵喵小结</view>
         <text class="tag">AI 生成</text>
       </view>
-      <view wx:if="{{writing}}" class="ai-text muted">喵喵正在翻小报…（十几秒）</view>
+      <view wx:if="{{writing}}" class="ai-text muted">喵喵正在翻这个月…（十几秒）</view>
       <block wx:elif="{{noteText}}">
         <view class="ai-text">{{noteText}}</view>
-        <view class="small muted ai-disclaimer">以上内容由 AI 根据这份小报的数字生成，仅供参考。</view>
+        <view class="small muted ai-disclaimer">以上内容由 AI 根据这个月的账目汇总和一起做的事生成，仅供参考。</view>
       </block>
-      <view wx:else class="ai-text muted">让喵喵给你们写几句这个月的寄语。由阿里云通义千问生成，只发汇总数字、吃得最多的菜名和去过的地方名，不发名字和账目明细。</view>
+      <view wx:else class="ai-text muted">让喵喵用一段话说说这个月：钱花在哪、一起做了什么，和花销分析页是同一段。由阿里云通义千问生成，只发汇总数字、大额单笔的备注、吃得最多的菜名和去过的地方名，不发名字和截图。</view>
       <view wx:if="{{noteError}}" class="ai-error small">{{noteError}}</view>
       <button wx:if="{{noteLimit}}" class="text-button" bindtap="openVip">看看会员</button>
       <view class="ai-foot">
         <text class="small muted">{{noteHint}}</text>
-        <button class="btn-small" bindtap="writeNote" loading="{{writing}}" disabled="{{writing}}">{{noteText ? '重新写' : '写寄语'}}</button>
+        <button class="btn-small" bindtap="writeNote" loading="{{writing}}" disabled="{{writing}}">{{noteText ? '重新写' : '写小结'}}</button>
       </view>
     </view>
 

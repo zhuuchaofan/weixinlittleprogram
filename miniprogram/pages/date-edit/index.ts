@@ -4,18 +4,7 @@ import { todayKey } from '../../utils/date';
 import { confirmAction } from '../../utils/confirm';
 import { LENGTHS } from '../../config/options';
 import { applyTheme, themeData } from '../../services/theme';
-import {
-  agreedToAiText,
-  wishForDate,
-  type WishBudget,
-} from '../../services/assist';
-
-const BUDGETS: { value: WishBudget; label: string }[] = [
-  { value: 'none', label: '不限' },
-  { value: 'low', label: '几十元' },
-  { value: 'mid', label: '一两百' },
-  { value: 'high', label: '五百以上' },
-];
+import { doneBack } from '../../utils/feedback';
 
 Page({
   data: {
@@ -27,11 +16,6 @@ Page({
     yearly: true,
     together: false,
     nextDate: '',
-    budgets: BUDGETS,
-    budget: 'mid' as WishBudget,
-    wish: '',
-    ideas: [] as string[],
-    asking: false,
     busy: false,
     error: '',
   },
@@ -98,23 +82,6 @@ Page({
       });
     else wx.addPhoneCalendar({ ...event, success: done, fail });
   },
-  chooseBudget(event: WechatMiniprogram.TouchEvent) {
-    this.setData({ budget: event.currentTarget.dataset.value as WishBudget });
-  },
-  /** 给这个纪念日写祝福和点子；只有保存过的纪念日才能写。 */
-  async ask() {
-    if (this.data.asking || !this.data.id) return;
-    if (!(await agreedToAiText())) return;
-    this.setData({ asking: true, error: '' });
-    try {
-      const result = await wishForDate(this.data.id, this.data.budget);
-      this.setData({ wish: result.wish, ideas: result.ideas });
-    } catch (error) {
-      this.setData({ error: errorMessage(error) });
-    } finally {
-      this.setData({ asking: false });
-    }
-  },
   async save() {
     if (this.data.busy) return;
     const input = {
@@ -131,7 +98,7 @@ Page({
     try {
       if (this.data.id) await dateService.update(this.data.id, input);
       else await dateService.add(input);
-      wx.navigateBack();
+      await doneBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -144,7 +111,7 @@ Page({
     this.setData({ busy: true, error: '' });
     try {
       await dateService.remove(this.data.id);
-      wx.navigateBack();
+      await doneBack('已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

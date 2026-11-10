@@ -1,0 +1,4 @@
+{
+  "navigationBarTitleText": "一句话记账",
+  "usingComponents": { "draft-list": "/components/draft-list/index" }
+}
