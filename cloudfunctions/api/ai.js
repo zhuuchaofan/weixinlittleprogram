@@ -40,6 +40,13 @@ const FEATURES = {
     temperature: 0,
     maxTokens: 400,
   },
+  // 一句话记账：拆成几笔，结果先让用户确认，才记进账本。
+  quickAdd: {
+    tier: 'organize',
+    model: assistModel,
+    temperature: 0,
+    maxTokens: 600,
+  },
 };
 
 /**

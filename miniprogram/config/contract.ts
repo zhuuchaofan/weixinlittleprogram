@@ -66,6 +66,15 @@ export const CONTRACT = {
       "per": "day",
       "free": 10,
       "vip": 100
+    },
+    "quickAdd": {
+      "name": "一句话记账",
+      "verb": "记",
+      "unit": "次",
+      "what": "账",
+      "per": "day",
+      "free": 20,
+      "vip": 100
     }
   },
   "vip": {
@@ -147,6 +156,7 @@ export const CONTRACT = {
     "wishMemo": 100,
     "dateTitle": 20,
     "todoSplitText": 120,
+    "quickText": 120,
     "goalTitle": 20
   }
 } as const;

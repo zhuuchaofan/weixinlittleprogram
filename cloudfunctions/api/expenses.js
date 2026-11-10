@@ -30,6 +30,9 @@ const FIELDS = [
   'src',
 ];
 
+/** 一句话记账一次最多存几笔。 */
+const MAX_SOME = 10;
+
 /** 计入预算的支出：不含结算和收入，口径同 summary.spending。 */
 const isSpending = (record) =>
   record.cat !== SETTLEMENT && (record.flow || 'out') !== 'in';
@@ -108,6 +111,39 @@ function createExpenseHandler({ repository, requireMembership, now }) {
         view({ ...record, _id: id }, household),
         await budgetOf(repository, household, record),
       );
+    },
+    /**
+     * 一句话记账确认后一起保存（最多 MAX_SOME 笔）：都记在自己名下；开着两人分摊时支出按一人一半，
+     * 和手动记一笔的默认一样，收入只算自己的。
+     */
+    async 'expense.addSome'(openid, payload) {
+      const household = await requireMembership(openid);
+      const items = payload?.items;
+      if (!Array.isArray(items) || items.length < 1 || items.length > MAX_SOME)
+        throw new ApiError('VALIDATION', `一次最多记 ${MAX_SOME} 笔。`);
+      const payer = household.members.find(
+        (member) => member.openid === openid,
+      ).role;
+      const records = items.map((item) => {
+        const flow = item?.flow === 'in' ? 'in' : 'out';
+        return {
+          ...validate.expense({
+            amount: item?.amount,
+            note: item?.note ?? '',
+            cat: item?.cat,
+            date: item?.date,
+            flow,
+            payer,
+            split:
+              household.splitting === true && flow === 'out' ? 'half' : 'self',
+          }),
+          householdId: household._id,
+          ts: now(),
+          by: openid,
+        };
+      });
+      for (const record of records) await repository.insert(record);
+      return { added: records.length };
     },
     async 'expense.update'(openid, payload) {
       const household = await requireMembership(openid);

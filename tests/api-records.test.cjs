@@ -2121,6 +2121,96 @@ test('AI 小帮手：一句话拆清单只返回结果、不保存，坏内容�
   );
 });
 
+test('一句话记账：拆成几笔只返回不保存，金额坏的丢掉，日期按今天推算；确认后记在自己名下', async () => {
+  assert.equal(
+    (await (await setup()).call('A', 'expense.quick', { text: '午饭 68' }))
+      .code,
+    'UNAVAILABLE',
+  );
+  const prompts = [];
+  const vision = {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'quickAdd');
+      prompts.push(prompt);
+      return '```json\n{"items":[{"amount":"68","flow":"out","cat":"吃饭","note":"**午饭**","day":"今天"},{"amount":"23.5","flow":"out","cat":"交通","note":"打车","day":"昨天"},{"amount":"abc","cat":"吃饭","note":"坏的"},{"amount":"5000","flow":"in","cat":"不认识","note":"工资","day":"火星日"},{"amount":"9","cat":"结算","note":"x","day":"12-31"}]}\n```';
+    },
+  };
+  const { call, expenses } = await setup({ vision });
+  assert.equal(
+    (await call('A', 'expense.quick', { text: '饭' })).code,
+    'VALIDATION',
+  );
+  const result = await call('A', 'expense.quick', {
+    text: '午饭 68，昨天打车 23.5，发工资 5000',
+  });
+  const today = new Date(NOW + 8 * 3600e3).toISOString().slice(0, 10);
+  const yesterday = new Date(NOW + 8 * 3600e3 - 86400e3)
+    .toISOString()
+    .slice(0, 10);
+  assert.deepEqual(result.data.items, [
+    {
+      amount: 6800,
+      flow: 'out',
+      cat: '吃饭',
+      note: '午饭',
+      date: today,
+      dateGuessed: false,
+    },
+    {
+      amount: 2350,
+      flow: 'out',
+      cat: '交通',
+      note: '打车',
+      date: yesterday,
+      dateGuessed: false,
+    },
+    {
+      amount: 500000,
+      flow: 'in',
+      cat: '其他',
+      note: '工资',
+      date: today,
+      dateGuessed: true,
+    },
+    {
+      amount: 900,
+      flow: 'out',
+      cat: '其他',
+      note: 'x',
+      date: '2025-12-31',
+      dateGuessed: false,
+    },
+  ]);
+  assert.ok(prompts[0].includes('午饭 68，昨天打车 23.5，发工资 5000'));
+  assert.ok(prompts[0].includes(`今天是 ${today} 周`));
+  assert.equal(prompts[0].includes('结算'), false, '分类里没有结算');
+  assert.equal(expenses.docs.size, 0, '拆完不保存');
+
+  const items = result.data.items
+    .slice(0, 3)
+    .map((item) => ({ ...item, dateGuessed: undefined }));
+  assert.equal((await call('B', 'expense.addSome', { items })).data.added, 3);
+  const saved = [...expenses.docs.values()];
+  assert.equal(saved.length, 3);
+  assert.ok(saved.every((doc) => doc.payer === 'b' && doc.split === 'self'));
+  assert.equal(saved.find((doc) => doc.flow === 'in').amount, 500000);
+  assert.equal(
+    (
+      await call('B', 'expense.addSome', {
+        items: [{ ...items[0], amount: 0 }],
+      })
+    ).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('B', 'expense.addSome', { items: Array(11).fill(items[0]) }))
+      .code,
+    'VALIDATION',
+  );
+  assert.equal(expenses.docs.size, 3);
+});
+
 test('主页汇总 home.get：一次请求读齐六样，和分开读的结果一样，小家只读一次', async () => {
   const { call, households } = await setup();
   await call('A', 'expense.add', expense());

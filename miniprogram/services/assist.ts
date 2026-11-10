@@ -1,6 +1,15 @@
-import type { TodoKind } from '../models';
+import type { Flow, TodoKind } from '../models';
 import { callApi } from './cloud';
 
+/** 一句话记账拆出来的一笔：金额单位为分；dateGuessed 表示说了日期却没读懂，按今天记，要核对。 */
+export interface QuickItem {
+  amount: number;
+  flow: Flow;
+  cat: string;
+  note: string;
+  date: string;
+  dateGuessed: boolean;
+}
 export interface SplitItem {
   text: string;
   kind: TodoKind;
@@ -19,7 +28,7 @@ export async function agreedToAiText(): Promise<boolean> {
   const result = await wx.showModal({
     title: '喵喵帮忙说明',
     content:
-      '你写的这句话会发给第三方服务阿里云通义千问，由 AI 整理成条目。不会发送头像、昵称等个人信息，整理结果由你确认后才保存。',
+      '你写的这句话会发给第三方服务阿里云通义千问，由 AI 整理成清单条目或账目。不会发送头像、昵称等个人信息，整理结果由你确认后才保存。',
     confirmText: '知道了',
     cancelText: '不用了',
   });
@@ -35,4 +44,16 @@ export async function agreedToAiText(): Promise<boolean> {
 /** 一句话拆成清单条目，只返回结果，不保存。 */
 export function splitTodos(text: string): Promise<{ items: SplitItem[] }> {
   return callApi('todo.split', { text });
+}
+
+/** 一句话拆成几笔账，只返回结果，不保存。 */
+export function quickExpenses(text: string): Promise<{ items: QuickItem[] }> {
+  return callApi('expense.quick', { text });
+}
+
+/** 一句话记账确认后一起保存，都记在自己名下。 */
+export function addSomeExpenses(
+  items: Array<Omit<QuickItem, 'dateGuessed'>>,
+): Promise<{ added: number }> {
+  return callApi('expense.addSome', { items });
 }

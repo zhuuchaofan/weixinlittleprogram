@@ -114,6 +114,10 @@ Page({
     });
     this.refreshRatioHint();
   },
+  /** 一句话记好几笔：换到一句话记账页，返回时直接回到记账页。 */
+  openQuick() {
+    wx.redirectTo({ url: '/pages/quick-add/index' });
+  },
   inputAmount(event: WechatMiniprogram.Input) {
     this.setData({ amountText: event.detail.value });
     this.refreshRatioHint();

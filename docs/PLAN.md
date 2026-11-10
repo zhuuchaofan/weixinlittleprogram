@@ -31,7 +31,7 @@
 - 全站费用：每次调用按 `ai.js` 的估算单价记进 `ai_usage`；当天到 `AI_DAILY_BUDGET`（默认 20 元）的 80% 停 `write`、100% 停 `organize`。
 - 发给模型的只有这个功能需要的文字，不发名字和 openid；日志只记功能名、模型、耗时、token 数和错误码。
 - 提示词都在 `cloudfunctions/api/prompts.js`：用户写的内容放在分隔线里、一律当数据；要求只回 JSON 的功能由 `assist.js` / `bill-parse.js` 校验后再返回，模型说了什么都不直接信。
-- 一句话类功能在 `assist.js`：`todo.split`（organize，只返回拆分结果，由用户勾选后用 `todo.add` 保存）。模型用 `ASSIST_MODEL`，没填依次用 `SUMMARY_MODEL`、`BILL_MODEL`。
+- 一句话类功能在 `assist.js`：`todo.split`（organize，只返回拆分结果，由用户勾选后用 `todo.add` 保存）、`expense.quick`（organize，一句话拆成几笔账，金额读不出的丢掉，日期用 `parseBillDate` 推算；用户在 `draft-list` 里确认后用 `expense.addSome` 保存，最多 10 笔，记在自己名下，开着分摊时支出按一半）。模型用 `ASSIST_MODEL`，没填依次用 `SUMMARY_MODEL`、`BILL_MODEL`。
 - 喵喵小结一个月一段（`insight.write`）：账目汇总加上小报里「这个月一起做的事」（`recap.js` 的 `lifeLines`，只列有的），存在 `insights` 的 `<小家>-<月>`，花销分析页和小报页读同一份。`fingerprint` 是账目、`life` 是做过的事，小报页两样都比，花销分析页只比账目。
 - 1.17.0 下线了「吃啥帮我挑」`dish.pick`、「纪念日祝福和点子」`date.wish`、「小报寄语」`recap.write`（用得少，且能被随机挑、自己写替代）。旧的寄语还留在 `insights`（id 含 `-recap-`），不再显示。
 - 第一次用文字类功能弹说明（本机存 `aiTextNoticed`），写文字的结果旁一律标「AI 生成」。
