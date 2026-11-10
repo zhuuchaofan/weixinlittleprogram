@@ -29,7 +29,8 @@
       "unit": "张",
       "what": "截图",
       "per": "day",
-      "free": 5,
+      "freePer": "month",
+      "free": 15,
       "vip": 100
     },
     "summary": {
@@ -37,8 +38,8 @@
       "verb": "生成",
       "unit": "次",
       "what": "小结",
-      "per": "day",
-      "free": 5,
+      "per": "month",
+      "free": 3,
       "vip": 30
     },
     "todoSplit": {

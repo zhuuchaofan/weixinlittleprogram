@@ -27,7 +27,7 @@
 - 所有 AI 调用都走 `cloudfunctions/api/ai.js`：每个功能登记一次（档位、模型、温度、最长输出），键和 `shared/contract.json` 的 `ai` 一一对应。
 - 两档：`organize`「AI 整理」（截图识别这类，结果要用户确认才保存）；`write`「AI 写文字」（喵喵小结这类，界面标「AI 生成 · 仅供参考」）。环境变量 `AI_WRITE_OFF=1` 关掉所有 `write`。
 - 顺序固定：`ai.ensure(功能)`（总开关、全站费用上限）→ `quota.takeQuota`（小家的次数，先占后调，失败也算）→ `ai.read / ai.write`。
-- 次数：`contract.json` 的 `ai.<功能>` 写 `free`、`vip`、`per`（day / month）；计数存在 `households.<功能>Quota`（截图和小结沿用 `billQuota`、`summaryQuota`）。
+- 次数：`contract.json` 的 `ai.<功能>` 写 `free`、`vip`、`per`（day / month），可选 `freePer`（不开通时按它算，例如截图记账会员按天、不开通按月）；`free` 为 0 表示只给会员；计数存在 `households.<功能>Quota`（截图和小结沿用 `billQuota`、`summaryQuota`）。
 - 全站费用：每次调用按 `ai.js` 的估算单价记进 `ai_usage`；当天到 `AI_DAILY_BUDGET`（默认 20 元）的 80% 停 `write`、100% 停 `organize`。
 - 发给模型的只有这个功能需要的文字，不发名字和 openid；日志只记功能名、模型、耗时、token 数和错误码。
 - 提示词都在 `cloudfunctions/api/prompts.js`：用户写的内容放在分隔线里、一律当数据；要求只回 JSON 的功能由 `assist.js` / `bill-parse.js` 校验后再返回，模型说了什么都不直接信。

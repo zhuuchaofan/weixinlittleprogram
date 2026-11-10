@@ -9,12 +9,26 @@ import { CONTRACT } from '../../config/contract';
 const EACH = { day: '每天', month: '每月' } as const;
 
 /** 会员权益：每项 AI 功能会员和不开通时的次数，来自契约（shared/contract.json 的 ai）。 */
-const PERKS = Object.values(CONTRACT.ai).map((quota) => ({
-  title: `${quota.name}${EACH[quota.per]}${quota.verb} ${quota.vip} ${quota.unit}`,
-  sub: quota.free
-    ? `不开通时${EACH[quota.per]} ${quota.free} ${quota.unit}`
-    : '只给会员',
-}));
+const PERKS = [
+  {
+    title: '年度情侣账单回顾',
+    sub: '一年花了多少、花在哪、一起吃的和去过的，能存成图；不开通只看封面',
+  },
+  {
+    title: '导入微信、支付宝账单文件',
+    sub: '一次导入几个月的账；不开通时不能用',
+  },
+  ...Object.values(CONTRACT.ai).map((quota) => {
+    const freePer: keyof typeof EACH =
+      'freePer' in quota ? quota.freePer : quota.per;
+    return {
+      title: `${quota.name}${EACH[quota.per]}${quota.verb} ${quota.vip} ${quota.unit}`,
+      sub: quota.free
+        ? `不开通时${EACH[freePer]} ${quota.free} ${quota.unit}`
+        : '只给会员',
+    };
+  }),
+];
 
 Page({
   data: {

@@ -1688,7 +1688,7 @@ test('喵喵小结一个月一段：小报页和花销分析页同一段，带�
   assert.equal((await call('X', 'recap.get', {})).data.note, null);
 });
 
-test('AI 小结：只发汇总、存下来、账目变了提示重新生成、每天最多 5 次', async () => {
+test('AI 小结：只发汇总、存下来、账目变了提示重新生成、不开通每月最多 3 次', async () => {
   assert.equal(
     (await (await setup()).call('A', 'insight.write', { month: '2026-10' }))
       .code,
@@ -1749,7 +1749,7 @@ test('AI 小结：只发汇总、存下来、账目变了提示重新生成、�
     true,
   );
 
-  for (let i = 2; i <= 5; i++)
+  for (let i = 2; i <= 3; i++)
     assert.equal(
       (await call('B', 'insight.write', { month: '2026-10' })).ok,
       true,
@@ -1759,7 +1759,7 @@ test('AI 小结：只发汇总、存下来、账目变了提示重新生成、�
     (await call('B', 'insight.write', { month: '2026-10' })).code,
     'LIMIT',
   );
-  assert.equal(prompts.length, 5);
+  assert.equal(prompts.length, 3);
 });
 
 test('AI 小结：备注截到 12 字', () => {

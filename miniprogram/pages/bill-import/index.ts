@@ -234,6 +234,7 @@ Page({
         phase: 'empty',
         error:
           errorMessage(error) + (detail ? `\n${detail.slice(0, 200)}` : ''),
+        limitHit: error instanceof ApiError && error.code === 'LIMIT',
       });
     }
   },
