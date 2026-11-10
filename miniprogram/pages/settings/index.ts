@@ -137,6 +137,6 @@ Page({
     wx.navigateTo({ url: `/pages/${event.currentTarget.dataset.page}/index` });
   },
   openBudgets() {
-    wx.navigateTo({ url: '/pages/budgets/index' });
+    wx.navigateTo({ url: '/pages/insight/index?tab=budget' });
   },
 });

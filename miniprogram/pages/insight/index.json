@@ -1,1 +1,8 @@
-{ "navigationBarTitleText": "花销分析", "enablePullDownRefresh": true }
+{
+  "navigationBarTitleText": "花销和攒钱",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "budget-panel": "/components/budget-panel/index",
+    "goal-panel": "/components/goal-panel/index"
+  }
+}
