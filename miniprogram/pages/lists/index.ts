@@ -246,6 +246,7 @@ Page({
       !(await confirmAction(
         `清除 ${count} 条已完成的${label}？`,
         '清除后无法恢复。',
+        '清除',
       ))
     )
       return;

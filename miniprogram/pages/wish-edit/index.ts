@@ -13,6 +13,7 @@ import {
 } from '../../services/photos';
 import { todayKey } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
+import { doneBack } from '../../utils/feedback';
 
 /** 这次编辑里新传的照片；没保存就离开要删掉。 */
 let uploaded: string[] = [];
@@ -243,7 +244,7 @@ Page({
         return;
       }
       saved = true;
-      wx.navigateBack();
+      await doneBack(this.data.past ? '放进足迹啦' : '已保存');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -252,11 +253,11 @@ Page({
   },
   async remove() {
     if (this.data.busy || !this.data.id) return;
-    if (!(await confirmAction('删除这条收藏？', '删除后无法恢复。'))) return;
+    if (!(await confirmAction('删除这条？', '删除后无法恢复。'))) return;
     this.setData({ busy: true, error: '' });
     try {
       await wishService.remove(this.data.id);
-      wx.navigateBack();
+      await doneBack('已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

@@ -4,6 +4,8 @@ import { todayKey } from '../../utils/date';
 import { confirmAction } from '../../utils/confirm';
 import { LENGTHS } from '../../config/options';
 import { applyTheme, themeData } from '../../services/theme';
+import { doneBack } from '../../utils/feedback';
+
 Page({
   data: {
     ...themeData(),
@@ -96,7 +98,7 @@ Page({
     try {
       if (this.data.id) await dateService.update(this.data.id, input);
       else await dateService.add(input);
-      wx.navigateBack();
+      await doneBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -109,7 +111,7 @@ Page({
     this.setData({ busy: true, error: '' });
     try {
       await dateService.remove(this.data.id);
-      wx.navigateBack();
+      await doneBack('已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

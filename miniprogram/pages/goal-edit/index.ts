@@ -7,6 +7,7 @@ import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { shiftMonth, shortDate, todayKey } from '../../utils/date';
 import { LENGTHS } from '../../config/options';
 import { applyTheme, themeData } from '../../services/theme';
+import { doneBack } from '../../utils/feedback';
 
 Page({
   data: {
@@ -94,7 +95,7 @@ Page({
     try {
       if (this.data.id) await goalService.update(this.data.id, input);
       else await goalService.add(input as GoalInput);
-      wx.navigateBack();
+      await doneBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -113,7 +114,7 @@ Page({
     this.setData({ busy: true, error: '' });
     try {
       await goalService.remove(this.data.id);
-      wx.navigateBack();
+      await doneBack('已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

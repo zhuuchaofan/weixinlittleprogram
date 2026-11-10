@@ -79,6 +79,7 @@ Page({
       await confirmAction(
         '确定注销账号？',
         '你的数据会被删除，不能恢复。已经复制保存了吗？',
+        '注销',
       )
     )
       await this.remove();

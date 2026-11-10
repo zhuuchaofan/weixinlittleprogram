@@ -22,6 +22,7 @@ import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
 import { budgetAlert } from '../../utils/budget';
+import { doneBack } from '../../utils/feedback';
 
 /** 付款人承担的百分比：只接受范围内的整数，否则返回 null。 */
 function parseRatio(text: string): number | null {
@@ -199,7 +200,7 @@ Page({
           showCancel: false,
           confirmText: '知道了',
         });
-      wx.navigateBack();
+      await doneBack();
     } catch (error) {
       // 保留表单内容，提示后可直接重试。
       this.setData({ error: errorMessage(error) });
@@ -212,12 +213,13 @@ Page({
     const ok = await confirmAction(
       this.data.isSettlement ? '撤销这次结算？' : '删除这笔账？',
       '删除后无法恢复。',
+      this.data.isSettlement ? '撤销' : '删除',
     );
     if (!ok) return;
     this.setData({ busy: true, error: '' });
     try {
       await removeExpense(this.data.id);
-      wx.navigateBack();
+      await doneBack(this.data.isSettlement ? '已撤销' : '已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

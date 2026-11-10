@@ -22,6 +22,15 @@
       <button class="btn-small" bindtap="dismissNudge">收到啦</button>
     </view>
 
+    <view wx:if="{{freeHint}}" class="card nudge" aria-role="status">
+      <image class="nudge-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" aria-hidden="true" />
+      <view class="nudge-main" bindtap="openVip" aria-role="link">
+        <view class="nudge-text">{{freeHint.text}}</view>
+        <view class="small muted">{{freeHint.sub}} <text class="chevron-sm">›</text></view>
+      </view>
+      <button class="btn-small" bindtap="dismissFreeHint">知道了</button>
+    </view>
+
     <view wx:if="{{household.inviteCode}}" class="card solo">
       <view class="pair-mini" aria-hidden="true">
         <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>

@@ -112,6 +112,44 @@ function whenText(date: string): string {
   return `${Number(date.slice(5, 7))}月${Number(date.slice(8))}日`;
 }
 
+/** 限时免费快结束时主页顶部的提示。key 用来记「已经点过知道了」。 */
+interface FreeHint {
+  key: string;
+  text: string;
+  sub: string;
+}
+
+const FREE_HINT_KEY = 'freeHintSeen';
+// 结束前这么多天开始提示；最后两天（含当天）点过「知道了」也会再提示一次。
+const FREE_HINT_DAYS = 7;
+const FREE_HINT_LAST = 1;
+
+/** 限免还剩 7 天以内、又没真正开通会员时给一句提示；不用提示返回 null。 */
+function freeHintOf(household: Household): FreeHint | null {
+  const { free, active } = household.vip || { free: 0, active: false };
+  if (!free || active) return null;
+  const end = todayKey(free);
+  const left = daysBetween(todayKey(), end);
+  if (left < 0 || left > FREE_HINT_DAYS) return null;
+  const key = `${end}:${left <= FREE_HINT_LAST ? 'last' : 'week'}`;
+  try {
+    if (wx.getStorageSync(FREE_HINT_KEY) === key) return null;
+  } catch {
+    // 读不到就照常提示。
+  }
+  const day = `${Number(end.slice(5, 7))} 月 ${Number(end.slice(8))} 日`;
+  return {
+    key,
+    text:
+      left === 0
+        ? '限时免费今天结束'
+        : left === 1
+          ? '限时免费明天结束'
+          : `限时免费还有 ${left} 天`,
+    sub: `${day}之后记账照常免费，喵喵 AI 的次数和照片张数会变少`,
+  };
+}
+
 /** 最近的动态里挑出要给 TA 看的：对方做的（可回应）、对方回应了我做的。 */
 function feedRows(
   items: ActivityItem[],
@@ -154,6 +192,8 @@ Page({
     nudge: null as Nudge | null,
     nudgeMore: 0,
     nudgeKeys: [] as string[],
+    /** 限时免费快结束的提示，不用提示时为 null。 */
+    freeHint: null as FreeHint | null,
     reactions: REACTIONS,
     /** TA 近一天记了几笔账。 */
     partnerSpent: '',
@@ -174,7 +214,7 @@ Page({
   showSnapshot() {
     const household = peekHousehold();
     if (!household) return;
-    this.setData({ household });
+    this.setData({ household, freeHint: freeHintOf(household) });
     const month = peekMonth(todayKey().slice(0, 7));
     if (month) this.showMonth(month);
     const todos = todoService.peek();
@@ -192,7 +232,7 @@ Page({
       key: 'home',
       force,
       fetch: (household) => {
-        this.setData({ household });
+        this.setData({ household, freeHint: freeHintOf(household) });
         return loadHome(todayKey().slice(0, 7));
       },
       show: ({ month, todos, dates, goals, recent, footprints }) => {
@@ -244,6 +284,19 @@ Page({
   dismissNudge() {
     rememberSeen(this.data.nudgeKeys);
     this.setData({ nudge: null, nudgeMore: 0, nudgeKeys: [] });
+  },
+  /** 「知道了」：这一阶段不再提示（最后两天会再提示一次）。 */
+  dismissFreeHint() {
+    const key = this.data.freeHint?.key;
+    this.setData({ freeHint: null });
+    try {
+      if (key) wx.setStorageSync(FREE_HINT_KEY, key);
+    } catch {
+      // 记不住就下次再提示一次，不影响别的。
+    }
+  },
+  openVip() {
+    wx.navigateTo({ url: '/pages/vip/index' });
   },
   /** 点一个回应；再点同一个收回。 */
   async react(event: WechatMiniprogram.TouchEvent) {

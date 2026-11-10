@@ -10,6 +10,7 @@ import { LENGTHS } from '../../config/options';
 import { todayKey } from '../../utils/date';
 import { toRow, type DraftRow } from '../../utils/drafts';
 import { applyTheme, themeData } from '../../services/theme';
+import { doneBack } from '../../utils/feedback';
 
 /**
  * 一句话记账：写（或用键盘的话筒说）一句话 → 喵喵拆成几笔 → 在确认列表里改、勾选 → 一起记进账本。
@@ -114,8 +115,7 @@ Page({
           date: row.date,
         })),
       );
-      wx.showToast({ title: `记下 ${added} 笔`, icon: 'success' });
-      setTimeout(() => wx.navigateBack(), 800);
+      await doneBack(`记下 ${added} 笔`);
     } catch (error) {
       this.setData({ error: errorMessage(error), busy: false });
     }

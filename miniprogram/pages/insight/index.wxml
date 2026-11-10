@@ -32,12 +32,12 @@
     <button wx:if="{{summaryLimit}}" class="text-button" bindtap="openVip">看看会员</button>
     <view class="ai-foot">
       <text class="small muted">{{summaryNote}}</text>
-      <button class="btn-small" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新生成' : '写小结'}}</button>
+      <button class="btn-small" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新写' : '写小结'}}</button>
     </view>
   </view>
 
   <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。</view>
+  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。回主页点「记一笔」，记了就能看到花在哪儿。</view>
 
   <block wx:if="{{categories.length}}">
     <view class="section-head"><view class="section-title">{{compareTitle}}</view><button class="text-button" bindtap="openBudgets">分类预算 ›</button></view>
