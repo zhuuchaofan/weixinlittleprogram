@@ -8,8 +8,9 @@
  *   对比月正好是开始记账的那个月、且不是从 1 号记起时，那个月只记了一部分：days < fullDays。
  * - big：大额单笔，本月支出按金额从大到小，前 3 笔一定列出，之后只列 ≥ BIG_AMOUNT 的，最多 MAX_BIG 笔。
  * - trend：截至本月的近 TREND_MONTHS 个月，每月支出合计。
- * AI 月度小结：只把上面这份汇总写成文字发给千问（大额单笔带备注或商户名，截到 NOTE_MAX 字），
- * 不发截图、明细和名字。结果存在 insights（每小家每月一份），每小家每天的次数见 contract.json 的 ai.summary。
+ * 喵喵小结（每月一段）：把上面这份汇总，加上小报里「这个月一起做的事」（recap.js 的 lifeLines），
+ * 写成文字发给千问（大额单笔带备注或商户名，截到 NOTE_MAX 字），不发截图、明细和名字。
+ * 结果存在 insights（每小家每月一份），花销分析页和小报页显示同一段；每小家的次数见 contract.json 的 ai.summary。
  */
 const { ApiError } = require('./errors');
 const validate = require('./validate');
@@ -180,7 +181,7 @@ function compareLines(insight) {
  * 发给模型的全部内容：只有汇总数字和大额单笔的备注。
  * 和哪个月比、能不能下结论见 compareLines；走势只列记过账的月份。
  */
-function summaryPrompt(insight) {
+function summaryPrompt(insight, life = []) {
   const { compare } = insight;
   const { rule, fact } = compareLines(insight);
   const lines = [
@@ -217,6 +218,8 @@ function summaryPrompt(insight) {
           .map((row) => `${monthText(row.month)} ${yuan(row.total)}`)
           .join('，'),
     );
+  if (life.length)
+    lines.push('这个月一起做的事：', ...life.map((line) => `- ${line}`));
   return lines.join('\n');
 }
 
@@ -229,15 +232,18 @@ function cleanSummary(text) {
     .slice(0, SUMMARY_MAX);
 }
 
-/** 账目变了（合计或笔数不同）就提示可以重新生成。 */
-const fingerprint = (insight) => `${insight.total}/${insight.count}`;
+/** 账目变了（支出合计或笔数不同）就提示可以重新生成；小报的支出口径相同，也用这个比。 */
+const spendFingerprint = (spend) => `${spend.total}/${spend.count}`;
+
+/** 每小家每月一份小结的 id，小报页按同一个 id 读。 */
+const summaryId = (household, month) => `${household._id}-${month}`;
 
 function publicSummary(doc, insight) {
   return doc
     ? {
         text: doc.text,
         ts: doc.ts,
-        stale: doc.fingerprint !== fingerprint(insight),
+        stale: doc.fingerprint !== spendFingerprint(insight),
       }
     : null;
 }
@@ -246,6 +252,7 @@ function publicSummary(doc, insight) {
  * repository：expenses 的 listRange(householdId, fromMonth, toMonth)，两头的月份都包含。
  * insights：get(householdId, id)、insertWithId、update；households：takeQuota(id, field, day, limit)。
  * ai：createAi() 的返回值（ai.js）；没有配置模型时为 null。
+ * life(household, month) -> { lines, fingerprint }：这个月一起做的事（router 用 recap.js 拼好传进来），不传就只写账。
  */
 function createInsightHandler({
   repository,
@@ -254,6 +261,7 @@ function createInsightHandler({
   requireMembership,
   now,
   ai,
+  life = null,
 }) {
   async function load(household, month) {
     const records = await repository.listRange(
@@ -263,8 +271,6 @@ function createInsightHandler({
     );
     return analyze(month, records);
   }
-  const summaryId = (household, month) => `${household._id}-${month}`;
-
   return {
     async 'insight.get'(openid, payload) {
       const household = await requireMembership(openid);
@@ -286,11 +292,14 @@ function createInsightHandler({
       const insight = await load(household, month);
       if (!insight.count)
         throw new ApiError('VALIDATION', '这个月还没有支出，记几笔再来吧。');
+      const done = life
+        ? await life(household, month)
+        : { lines: [], fingerprint: '' };
       await ai.ensure('summary');
-      // 会员的每日次数更多。
+      // 会员的次数更多。
       await takeQuota(households, household, 'summary', now());
       const text = cleanSummary(
-        await ai.write('summary', summaryPrompt(insight)),
+        await ai.write('summary', summaryPrompt(insight, done.lines)),
       );
       if (!text)
         throw new ApiError(
@@ -302,7 +311,8 @@ function createInsightHandler({
         householdId: household._id,
         month,
         text,
-        fingerprint: fingerprint(insight),
+        fingerprint: spendFingerprint(insight),
+        life: done.fingerprint,
         ts: now(),
         by: openid,
       };
@@ -319,6 +329,8 @@ module.exports = {
   analyze,
   shiftMonth,
   summaryPrompt,
+  summaryId,
+  spendFingerprint,
   cleanSummary,
   TREND_MONTHS,
 };

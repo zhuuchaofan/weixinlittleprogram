@@ -1,5 +1,6 @@
 import type { Household, MonthRecap, RecapNote } from '../../models';
-import { getRecap, writeRecapNote } from '../../services/recap';
+import { getRecap } from '../../services/recap';
+import { writeSummary } from '../../services/insight';
 import { ApiError, errorMessage } from '../../services/cloud';
 import { memberNames } from '../../services/household';
 import { createLoader } from '../../services/page-load';
@@ -230,7 +231,7 @@ Page({
     const before = this.data.noteTs;
     this.setData({ writing: true, noteError: '', noteLimit: false });
     try {
-      this.setData(noteView(await writeRecapNote(month)));
+      this.setData(noteView(await writeSummary(month)));
     } catch (error) {
       const note =
         error instanceof ApiError && error.code === 'NETWORK'
@@ -249,7 +250,7 @@ Page({
       this.setData({ writing: false });
     }
   },
-  /** 断开之后看云端有没有写完：有比 before 新的寄语就返回它。 */
+  /** 断开之后看云端有没有写完：有比 before 新的小结就返回它。 */
   async recoverNote(month: string, before: number) {
     for (let i = 0; i < RECOVER_TRIES; i++) {
       if (this.data.month !== month) return null;

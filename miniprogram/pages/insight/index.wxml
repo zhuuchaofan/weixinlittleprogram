@@ -25,9 +25,9 @@
     <view wx:if="{{writing}}" class="ai-text muted">喵喵正在看账本…（十几秒）</view>
     <block wx:elif="{{summaryText}}">
       <view class="ai-text">{{summaryText}}</view>
-      <view class="small muted ai-disclaimer">以上内容由 AI 根据账目汇总生成，仅供参考。</view>
+      <view class="small muted ai-disclaimer">以上内容由 AI 根据这个月的账目汇总和一起做的事生成，仅供参考。</view>
     </block>
-    <view wx:else class="ai-text muted">让喵喵用几句话说说这个月钱花在哪、比上月有什么变化。由阿里云通义千问生成，只发汇总数字和大额单笔的备注，不发截图。</view>
+    <view wx:else class="ai-text muted">让喵喵用一段话说说这个月：钱花在哪、比上月有什么变化、一起做了什么，和小报页是同一段。由阿里云通义千问生成，只发汇总数字、大额单笔的备注、吃得最多的菜名和去过的地方名，不发名字和截图。</view>
     <view wx:if="{{summaryError}}" class="ai-error small">{{summaryError}}</view>
     <button wx:if="{{summaryLimit}}" class="text-button" bindtap="openVip">看看会员</button>
     <view class="ai-foot">

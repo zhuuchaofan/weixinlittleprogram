@@ -74,7 +74,7 @@ test('AI 入口：按功能选模型和参数，记下用量和费用，日志�
   });
   assert.equal(await ai.write('summary', '这个月花了 3980 元'), '喵');
   assert.equal(client.calls[0].options.model, 'qwen-flash');
-  assert.equal(client.calls[0].options.maxTokens, 300);
+  assert.equal(client.calls[0].options.maxTokens, 400);
   assert.equal(client.calls[0].options.temperature, 0.3);
   const day = usage.days.get('2026-10-25');
   assert.equal(day.calls, 1);

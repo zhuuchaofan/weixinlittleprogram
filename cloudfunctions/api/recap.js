@@ -10,15 +10,15 @@
  * - saved：这个月「存了一笔」的合计，两人各存了多少。
  * - togetherDay：这个月最后一天（本月到今天为止）是在一起第几天，没设起点或起点还没到为 0。
  * activity 是年度回顾用的「做过的事」，集合没建时都按没有算。
+ * 小报不再单独写 AI 寄语：页面上的「喵喵小结」和花销分析是同一段（insight.js 的 insight.write），
+ * 这里的 lifeLines 给那段小结补上「这个月一起做的事」。
  */
 const validate = require('./validate');
 const { ApiError } = require('./errors');
 const { settlement: SETTLEMENT } = require('./contract.json');
 const { normalizeCategory } = require('./ledger');
 const { todayKey, lastDayOfMonth } = require('./dates');
-const { takeQuota } = require('./quota');
-const { shiftMonth, cleanSummary } = require('./insight');
-const { recapNote } = require('./prompts');
+const { shiftMonth, summaryId, spendFingerprint } = require('./insight');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TOP_CATS = 3;
@@ -27,11 +27,9 @@ const MAX_WISHES = 5;
 const isSpending = (record) =>
   record.cat !== SETTLEMENT && record.flow !== 'in';
 
-/** 数字没变就是同一份小报；账、做过的事变了才提示可以重新写。 */
-const fingerprint = (recap) =>
+/** 做过的事没变就是同一份；变了才提示可以重新写小结。账目那一半见 insight.js 的 spendFingerprint。 */
+const lifeFingerprint = (recap) =>
   [
-    recap.spend.total,
-    recap.spend.count,
     recap.meals.count,
     recap.todos.count,
     recap.wishes.length,
@@ -40,77 +38,46 @@ const fingerprint = (recap) =>
 
 const yuan = (fen) => Math.round(fen / 100);
 
-/** 发给模型的事实：只有数字、吃得最多的菜名和去过的地方名，没有名字和明细。 */
-function noteLines(recap) {
-  const { spend, meals, todos, saved } = recap;
-  const lines = [
-    spend.count
-      ? `这个月支出合计 ${yuan(spend.total)} 元，共 ${spend.count} 笔${
-          spend.prevTotal === null
-            ? ''
-            : `，上个月是 ${yuan(spend.prevTotal)} 元`
-        }。`
-      : '这个月没有记账。',
-  ];
-  if (spend.top.length)
+/**
+ * 发给模型的「这个月一起做的事」：只有次数、吃得最多的菜名和去过的地方名，没有名字和明细。
+ * 只列有的，没有的不写，免得模型去说「没去哪儿」。
+ */
+function lifeLines(recap) {
+  const { meals, todos, saved } = recap;
+  const lines = [];
+  if (meals.count)
     lines.push(
-      '花得最多的类别：' +
-        spend.top.map((row) => `${row.cat} ${yuan(row.amount)} 元`).join('，'),
+      `一起吃了 ${meals.count} 顿「就吃这个」${
+        meals.top ? `，吃得最多的是「${meals.top.title}」` : ''
+      }。`,
     );
-  if (spend.count)
+  if (todos.count) lines.push(`做完了 ${todos.count} 件待办。`);
+  if (recap.wishes.length)
     lines.push(
-      `平均每天 ${yuan(spend.perDay)} 元，有 ${spend.freeDays} 天没花钱。`,
+      `去过的地方：${recap.wishes.map((title) => `「${title}」`).join('、')}。`,
     );
-  lines.push(
-    meals.count
-      ? `一起吃了 ${meals.count} 顿「就吃这个」${
-          meals.top ? `，吃得最多的是「${meals.top.title}」` : ''
-        }。`
-      : '这个月没有记「就吃这个」。',
-  );
-  lines.push(
-    todos.count ? `做完了 ${todos.count} 件待办。` : '这个月没有做完的待办。',
-  );
-  lines.push(
-    recap.wishes.length
-      ? `去过的地方：${recap.wishes.map((title) => `「${title}」`).join('、')}。`
-      : '这个月没有去过新的地方。',
-  );
   if (saved.total) lines.push(`一起攒了 ${yuan(saved.total)} 元。`);
   if (recap.togetherDay) lines.push(`在一起第 ${recap.togetherDay} 天。`);
   return lines;
 }
 
+/** 小报页看到的小结：账目或做过的事变了都算过时（早期的小结没记做过的事，只看账目）。 */
 function publicNote(doc, recap) {
   return doc
     ? {
         text: doc.text,
         ts: doc.ts,
-        stale: doc.fingerprint !== fingerprint(recap),
+        stale:
+          doc.fingerprint !== spendFingerprint(recap.spend) ||
+          (doc.life !== undefined && doc.life !== lifeFingerprint(recap)),
       }
     : null;
 }
 
-function createRecapHandler({
-  repositories,
-  households = null,
-  insights = null,
-  ai = null,
-  requireMembership,
-  now,
-}) {
+/** 数出一个月的小报（见文件开头）；花销分析写小结时也用它补「一起做的事」。 */
+function createRecapBuilder({ repositories, now }) {
   const { expenses, goals, dates, activity } = repositories;
-  const noteId = (household, month) => `${household._id}-recap-${month}`;
-  const monthOf = (payload) => {
-    const today = todayKey(now());
-    const month = payload?.month
-      ? validate.month(payload.month)
-      : shiftMonth(today.slice(0, 7), -1);
-    if (month > today.slice(0, 7))
-      throw new ApiError('VALIDATION', '还没到这个月。');
-    return month;
-  };
-  async function build(household, month) {
+  return async function build(household, month) {
     const today = todayKey(now());
     const roleOf = (who) =>
       household.members.find((member) => member.openid === who)?.role || '';
@@ -239,59 +206,41 @@ function createRecapHandler({
       saved,
       togetherDay,
     };
-  }
+  };
+}
 
+function createRecapHandler({
+  repositories,
+  insights = null,
+  requireMembership,
+  now,
+}) {
+  const build = createRecapBuilder({ repositories, now });
+  const monthOf = (payload) => {
+    const today = todayKey(now());
+    const month = payload?.month
+      ? validate.month(payload.month)
+      : shiftMonth(today.slice(0, 7), -1);
+    if (month > today.slice(0, 7))
+      throw new ApiError('VALIDATION', '还没到这个月。');
+    return month;
+  };
   return {
     async 'recap.get'(openid, payload) {
       const household = await requireMembership(openid);
       const month = monthOf(payload);
       const recap = await build(household, month);
       const saved = insights
-        ? await insights.get(household._id, noteId(household, month))
+        ? await insights.get(household._id, summaryId(household, month))
         : null;
       return { ...recap, note: publicNote(saved, recap) };
-    },
-    /** AI 写小报寄语：每个月一份，两人同时写后写的为准。 */
-    async 'recap.write'(openid, payload) {
-      const household = await requireMembership(openid);
-      const month = monthOf(payload);
-      if (!ai || !insights)
-        throw new ApiError(
-          'UNAVAILABLE',
-          'AI 寄语还没开通：需要在云函数 api 里配置 DASHSCOPE_API_KEY。',
-        );
-      const recap = await build(household, month);
-      await ai.ensure('recapNote');
-      await takeQuota(households, household, 'recapNote', now());
-      const text = cleanSummary(
-        await ai.write(
-          'recapNote',
-          recapNote({
-            month: `${month.slice(0, 4)} 年 ${Number(month.slice(5))} 月`,
-            lines: noteLines(recap),
-          }),
-        ),
-      );
-      if (!text)
-        throw new ApiError(
-          'UNAVAILABLE',
-          '寄语喵喵这次没想出来，过一会儿再试试吧。',
-        );
-      const id = noteId(household, month);
-      const doc = {
-        householdId: household._id,
-        kind: 'recap',
-        month,
-        text,
-        fingerprint: fingerprint(recap),
-        ts: now(),
-        by: openid,
-      };
-      if (!(await insights.insertWithId(id, doc)))
-        await insights.update(household._id, id, doc);
-      return publicNote(doc, recap);
     },
   };
 }
 
-module.exports = { createRecapHandler };
+module.exports = {
+  createRecapHandler,
+  createRecapBuilder,
+  lifeLines,
+  lifeFingerprint,
+};

@@ -326,7 +326,7 @@ export interface MonthInsight {
   }>;
   /** 截至本月的近 6 个月，从早到晚。 */
   trend: Array<{ month: string; total: number }>;
-  /** AI 月度小结，还没生成时为 null。 */
+  /** 喵喵小结（每月一段，和小报页同一段），还没生成时为 null。 */
   summary: InsightSummary | null;
 }
 
@@ -411,7 +411,7 @@ export interface MonthRecap {
   saved: { total: number; byRole: { a: number; b: number } };
   /** 在一起第几天（数到这个月最后一天或今天）；没设起点为 0。 */
   togetherDay: number;
-  /** AI 写的寄语；还没写过为 null，stale 表示写完之后数字变了。 */
+  /** 喵喵小结（和花销分析页同一段）；还没写过为 null，stale 表示写完之后账目或一起做的事变了。 */
   note: RecapNote | null;
 }
 
