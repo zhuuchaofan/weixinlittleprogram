@@ -13,6 +13,8 @@ import {
 } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
+import { addWeekly, askWeekly, stopWeekly } from '../../services/weekly';
+import { doneStay } from '../../utils/feedback';
 
 const loader = createLoader();
 // 模型慢，小程序可能先断开而云端照常写完：断开后每隔几秒取一次，最多这么多次。
@@ -144,6 +146,9 @@ function view(recap: MonthRecap, household: Household) {
       },
     ],
     ...noteView(recap.note),
+    // 云端没更新时没有 weekly，订阅卡片先不出现。
+    weeklyKnown: Boolean(recap.weekly),
+    weeklyTimes: recap.weekly?.times || 0,
     quiet:
       !spend.count &&
       !meals.count &&
@@ -188,6 +193,10 @@ Page({
     noteError: '',
     noteLimit: false,
     writing: false,
+    weeklyKnown: false,
+    weeklyTimes: 0,
+    weeklyBusy: false,
+    weeklyNote: '',
   },
   onShow() {
     applyTheme(this);
@@ -263,6 +272,45 @@ Page({
       await wait(RECOVER_GAP_MS);
     }
     return null;
+  },
+  /** 订阅每周小结：先弹微信的订阅窗口（必须是点按后第一个调用），点了允许再告诉云端。 */
+  async subscribeWeekly() {
+    if (this.data.weeklyBusy) return;
+    const answer = await askWeekly();
+    if (answer !== 'accept') {
+      this.setData({
+        weeklyNote:
+          answer === 'reject'
+            ? '这次没订上，想收的时候再点「订阅」就好。'
+            : answer === 'off'
+              ? '微信里关掉了这个小程序的通知：右上角「···」→「设置」→「通知管理」打开后再来订。'
+              : '微信没弹出订阅窗口，稍后再试一次吧。',
+      });
+      return;
+    }
+    this.setData({ weeklyBusy: true, weeklyNote: '' });
+    try {
+      const { times } = await addWeekly();
+      this.setData({ weeklyTimes: times });
+      doneStay('已订阅');
+    } catch (error) {
+      this.setData({ weeklyNote: errorMessage(error) });
+    } finally {
+      this.setData({ weeklyBusy: false });
+    }
+  },
+  async stopWeekly() {
+    if (this.data.weeklyBusy) return;
+    this.setData({ weeklyBusy: true, weeklyNote: '' });
+    try {
+      const { times } = await stopWeekly();
+      this.setData({ weeklyTimes: times });
+      doneStay('不会再发了');
+    } catch (error) {
+      this.setData({ weeklyNote: errorMessage(error) });
+    } finally {
+      this.setData({ weeklyBusy: false });
+    }
   },
   onShareAppMessage() {
     return {

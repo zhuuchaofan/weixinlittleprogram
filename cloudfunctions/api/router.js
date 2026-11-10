@@ -19,6 +19,7 @@ const {
   lifeFingerprint,
 } = require('./recap');
 const { createLeaveHandler } = require('./leave');
+const { createWeekly } = require('./weekly');
 
 /** 所有 action 的唯一入口。身份只来自云函数上下文中的 openid。 */
 function createRouter({
@@ -36,6 +37,8 @@ function createRouter({
   ai = null,
   orders = null,
   xpay = null,
+  subscriptions = null,
+  sender = null,
   now = () => Date.now(),
   log = (line) => console.error(line),
 }) {
@@ -78,6 +81,17 @@ function createRouter({
     const recap = await buildRecap(record, month);
     return { lines: lifeLines(recap), fingerprint: lifeFingerprint(recap) };
   };
+  const weekly = subscriptions
+    ? createWeekly({
+        subscriptions,
+        households,
+        expenses,
+        sender,
+        requireMembership,
+        now,
+        log,
+      })
+    : null;
   const actions = {
     ...household.actions,
     // 退出到一半时（新小家没建成）先补建，再读。
@@ -153,7 +167,23 @@ function createRouter({
       requireMembership,
       now,
     }),
+    ...(weekly ? weekly.actions : {}),
   };
+  if (weekly) {
+    // 小报页顺带告诉小程序每周小结还能收几次，不用多一次调用。
+    const recapGet = actions['recap.get'];
+    actions['recap.get'] = async (openid, payload) => ({
+      ...(await recapGet(openid, payload)),
+      weekly: await weekly.actions['weekly.get'](openid),
+    });
+    // 注销时把订阅次数也删掉（只有次数和日期，但带着 openid）。
+    const deleteAccount = actions['account.delete'];
+    actions['account.delete'] = async (openid, payload) => {
+      const result = await deleteAccount(openid, payload);
+      if (result?.deleted) await subscriptions.remove(openid);
+      return result;
+    };
+  }
   /**
    * 主页一次要读的东西合成一个请求（原来是 6 个，每个都是一次云函数调用）。
    * 本月账目、清单、纪念日是主页的主体，读不到就整个报错；攒钱、TA 最近、足迹读不到时给 null，主页其余部分照常显示。
@@ -218,6 +248,21 @@ function createRouter({
   route.deliver = vip.deliver;
   /** 微信虚拟支付的退款推送：查单确认后收回会员天数。 */
   route.refund = vip.refund;
+  /** 每周一的定时触发器：发上周小结。 */
+  route.weekly = async () => {
+    if (!weekly) return { ok: false };
+    try {
+      return { ok: true, data: await weekly.run() };
+    } catch (error) {
+      log(
+        JSON.stringify({
+          event: 'weekly',
+          error: String(error?.message || error).slice(0, 120),
+        }),
+      );
+      return { ok: false };
+    }
+  };
   return route;
 }
 

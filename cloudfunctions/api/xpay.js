@@ -187,6 +187,7 @@ function parseRefund(event) {
 
 module.exports = {
   createXpay,
+  httpsRequest,
   parseDeliver,
   parseRefund,
   DELIVER_EVENT,

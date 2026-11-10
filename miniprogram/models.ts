@@ -390,6 +390,11 @@ export interface SavingTip {
   save20: number;
 }
 
+/** 每周一的上周小结（一次性订阅消息）：times 是还能收几次，点一次「订阅」加一次。 */
+export interface WeeklyStatus {
+  times: number;
+}
+
 /** 每月小报（recap.get）：一个月里两人一起做了什么。金额单位为「分」。 */
 export interface MonthRecap {
   month: string;
@@ -417,6 +422,8 @@ export interface MonthRecap {
   togetherDay: number;
   /** 喵喵小结（和花销分析页同一段）；还没写过为 null，stale 表示写完之后账目或一起做的事变了。 */
   note: RecapNote | null;
+  /** 每周小结订阅消息还能收几次（1.23.0 起；云端没更新时没有这个字段）。 */
+  weekly?: WeeklyStatus;
 }
 
 export interface RecapNote {
