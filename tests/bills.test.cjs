@@ -182,7 +182,7 @@ async function setup(
     const household = await households.findByMember('A');
     household.vip = { until: clock.now + 24 * 60 * 60 * 1000 };
   };
-  return { call, expenses, vision, makeVip };
+  return { call, expenses, vision, makeVip, clock };
 }
 
 test('金额：保留正负号，按字符串换算成分', () => {
@@ -1237,13 +1237,21 @@ test('支付宝账单：退款和原支出分在不同批里也能配上', () =>
 });
 
 test('支付宝账单：整条链路——查重、和小家成员的转账不记、保存后再导是已导入过', async () => {
-  const { call, makeVip } = await setup();
+  const { call, makeVip, clock } = await setup();
   const file = alipayRows(new Uint8Array(ALIPAY_GBK));
   const send = () =>
     call('A', 'bill.file', { app: 'alipay', enc: file.enc, rows: file.rows });
+  // 不是会员：免费体验一次，从第一次导入算起 24 小时内都能导，过了就只给会员。
+  assert.equal((await call('A', 'household.get')).data.fileTrial, true);
+  assert.equal((await send()).ok, true, '第一次免费');
+  clock.now += 23 * 60 * 60 * 1000;
+  assert.equal((await send()).ok, true, '24 小时内还算这一次');
+  assert.equal((await call('B', 'household.get')).data.fileTrial, true);
+  clock.now += 2 * 60 * 60 * 1000;
   const locked = await send();
-  assert.equal(locked.code, 'LIMIT', '账单文件导入只给会员');
+  assert.equal(locked.code, 'LIMIT', '体验过后账单文件导入只给会员');
   assert.match(locked.message, /会员功能/);
+  assert.equal((await call('A', 'household.get')).data.fileTrial, false);
   await makeVip();
   const first = await send();
   assert.equal(first.ok, true, first.message);

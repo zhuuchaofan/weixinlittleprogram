@@ -45,6 +45,15 @@
       </view>
     </view>
 
+    <view wx:if="{{showStart}}" class="card start">
+      <view class="start-title">第一次来？先看看钱花在哪</view>
+      <view class="small muted">导入上个月的微信或支付宝账单，一两分钟就能看到每一类花了多少。每个小家可以免费导一次。</view>
+      <view class="start-actions">
+        <button class="btn-small" bindtap="startImport">导入账单</button>
+        <button class="text-button" bindtap="dismissStart">先不用</button>
+      </view>
+    </view>
+
     <view wx:if="{{household.inviteCode}}" class="card solo">
       <view class="pair-mini" aria-hidden="true">
         <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>

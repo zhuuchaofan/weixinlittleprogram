@@ -79,3 +79,8 @@
 .fp-thumbs { display: flex; align-items: center; flex-shrink: 0; min-width: 76rpx; padding-left: 16rpx; }
 .fp-thumb { width: 76rpx; height: 76rpx; margin-left: -16rpx; border-radius: 16rpx; border: 4rpx solid var(--surface); box-sizing: border-box; background: var(--accent-soft); }
 .fp-icon { width: 76rpx; height: 76rpx; margin-left: -16rpx; padding: 18rpx; border-radius: 22rpx; background: var(--accent-soft); box-sizing: border-box; }
+
+/* 第一次来的引导：导入上个月的账单，马上有东西看 */
+.start { margin-bottom: var(--gap-card); background: var(--accent-soft); box-shadow: none; }
+.start-title { font-size: 32rpx; font-weight: 700; margin-bottom: 8rpx; }
+.start-actions { display: flex; align-items: center; gap: 28rpx; margin-top: 20rpx; }

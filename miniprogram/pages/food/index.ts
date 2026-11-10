@@ -1,3 +1,4 @@
+import { DISH_STARTERS } from '../../config/options';
 import { openExpenseWith } from '../../utils/expense-link';
 import type {
   Dish,
@@ -293,6 +294,21 @@ Page({
       this.setData({ error: errorMessage(error) });
     } finally {
       this.setData({ busy: false });
+    }
+  },
+  /** 菜单空着时一键加上常见的 10 个，马上就能抽；加完可以随便删改。 */
+  async addStarters() {
+    if (this.data.busy || this.data.dishes.length) return;
+    this.setData({ busy: true, error: '' });
+    try {
+      await Promise.all(
+        DISH_STARTERS.map((item) => dishService.add({ ...item, kind: 'dish' })),
+      );
+    } catch (error) {
+      this.setData({ error: errorMessage(error) });
+    } finally {
+      this.setData({ busy: false });
+      await this.load(true);
     }
   },
   open(event: WechatMiniprogram.TouchEvent) {

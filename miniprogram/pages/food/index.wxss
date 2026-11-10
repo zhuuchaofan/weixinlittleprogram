@@ -21,3 +21,4 @@
 
 /* 出去吃 / 外卖：就吃这个之后，顺手记这顿的钱 */
 .draw-pay { position: relative; z-index: 1; margin-top: 20rpx; padding: 8rpx 0; font-size: 28rpx; font-weight: 600; text-decoration: underline; }
+button.starter:not([size='mini']) { display: block; margin: 24rpx auto 0; }

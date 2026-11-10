@@ -28,6 +28,15 @@ function freeUntilOf(env = process.env) {
   return Date.parse(`${value}T23:59:59.999+08:00`) || 0;
 }
 
+/** 账单文件导入的免费体验：每个小家一次，从第一次导入（fileTrialAt）算起这么久之内都算这一次。 */
+const FILE_TRIAL_MS = 24 * 60 * 60 * 1000;
+
+/** 不是会员的小家现在还能不能免费导入账单文件：没用过，或第一次导入还没过 24 小时。 */
+function fileTrialOpen(household, at) {
+  const started = household.fileTrialAt || 0;
+  return !started || at - started < FILE_TRIAL_MS;
+}
+
 /** 会员属于整个小家：一人开通，两人都享受；限免期间所有人都算。 */
 function isVip(household, at) {
   return Number(household?.vip?.until) > at || freeUntilOf() > at;
@@ -289,6 +298,7 @@ function createVipHandler({
 module.exports = {
   createVipHandler,
   isVip,
+  fileTrialOpen,
   freeUntilOf,
   vipView,
 };

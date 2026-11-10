@@ -155,6 +155,16 @@ interface FreeHint {
   sub: string;
 }
 
+const START_KEY = 'startDismissed';
+
+function startDismissed(): boolean {
+  try {
+    return Boolean(wx.getStorageSync(START_KEY));
+  } catch {
+    return false;
+  }
+}
+
 const FREE_HINT_KEY = 'freeHintSeen';
 // 结束前这么多天开始提示；最后两天（含当天）点过「知道了」也会再提示一次。
 const FREE_HINT_DAYS = 7;
@@ -253,6 +263,8 @@ Page({
     reactions: REACTIONS,
     limits: LENGTHS,
     /** 首屏一句话记账输入框里的字，和下面那行小字。 */
+    /** 第一次来的引导卡片：这个月还没记账、也没点过「先不用」时显示。 */
+    showStart: false,
     quickText: '',
     quickHint: '可以一句说好几笔',
     /** 最要紧的一个攒钱目标（没攒完、截止最早），没有时为 null。 */
@@ -311,6 +323,7 @@ Page({
     this.setData({
       spentText: formatYuan(total),
       countText: records.length ? `记了 ${records.length} 笔` : '还没有记账',
+      showStart: !records.length && !startDismissed(),
     });
     this.showFeed();
   },
@@ -431,6 +444,19 @@ Page({
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({ url: `/pages/${event.currentTarget.dataset.page}/index` });
+  },
+  /** 引导卡片的「导入账单」：直接去选微信账单文件，点过就不再显示。 */
+  startImport() {
+    this.dismissStart();
+    void chooseBillImport();
+  },
+  dismissStart() {
+    this.setData({ showStart: false });
+    try {
+      wx.setStorageSync(START_KEY, 1);
+    } catch {
+      // 记不住就下次再显示一次，不影响别的。
+    }
   },
   inputQuick(event: WechatMiniprogram.Input) {
     this.setData({ quickText: event.detail.value });

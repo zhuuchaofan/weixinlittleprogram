@@ -25,6 +25,8 @@ export interface Household {
   /** 会员属于整个小家，两人共用；until 是到期时间戳（没开通过为 0）。 */
   /** active / until：真正开通的会员；free：限时免费的截止时间戳（没有为 0）；member：现在能不能用会员功能。 */
   vip: { active: boolean; until: number; free: number; member: boolean };
+  /** 不是会员时还能不能免费导入一次账单文件（第一次导入起 24 小时内）。老的云端没有这一项。 */
+  fileTrial?: boolean;
   members: HouseholdMember[];
 }
 
