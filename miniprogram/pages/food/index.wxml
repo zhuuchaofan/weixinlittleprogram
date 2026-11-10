@@ -13,6 +13,7 @@
         <button class="draw-button" bindtap="eat" disabled="{{busy}}">{{picked.ateToday ? '记下了' : '就吃这个'}}</button>
         <button class="draw-button draw-ghost" bindtap="draw">换一个</button>
       </view>
+      <view wx:if="{{picked.ateToday && picked.tag !== '在家做'}}" class="draw-pay" bindtap="pay" aria-role="button">这顿花了多少？记一笔 ›</view>
       <block wx:if="{{picked.ateToday}}">
         <view class="draw-label draw-rate-label">吃完觉得怎么样？</view>
         <view class="draw-actions">

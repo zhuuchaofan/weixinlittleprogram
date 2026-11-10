@@ -1,3 +1,4 @@
+import { openExpenseWith } from '../../utils/expense-link';
 import type {
   Dish,
   DishRating,
@@ -248,6 +249,11 @@ Page({
       this.replaceDish(current);
       this.setData({ error: errorMessage(error) });
     }
+  },
+  /** 出去吃、点外卖的那顿：带着「吃饭」和店名去记一笔。 */
+  pay() {
+    const picked = this.data.picked;
+    if (picked) openExpenseWith({ cat: '吃饭', note: picked.name });
   },
   /** 吃完评价：好吃 / 一般 / 踩雷；踩雷的以后不会被抽到。 */
   async rate(event: WechatMiniprogram.TouchEvent) {
