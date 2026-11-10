@@ -1,4 +1,4 @@
-import type { Expense, ExpenseInput, LedgerMonth } from '../models';
+import type { Expense, ExpenseInput, LedgerMonth, Reaction } from '../models';
 import { callApi } from './cloud';
 import { readSnapshot, saveSnapshot } from './snapshot';
 import { todayKey } from '../utils/date';
@@ -50,6 +50,16 @@ export function updateExpense(
   input: ExpenseInput,
 ): Promise<Expense> {
   return callApi<Expense>('expense.update', { id, ...input });
+}
+
+/** 回应对方记的一笔账；reaction 传空串收回。 */
+export async function reactExpense(
+  id: string,
+  reaction: Reaction | '',
+): Promise<Expense> {
+  const record = await callApi<Expense>('expense.react', { id, reaction });
+  recent.set(record.id, record);
+  return record;
 }
 
 export async function removeExpense(id: string): Promise<void> {

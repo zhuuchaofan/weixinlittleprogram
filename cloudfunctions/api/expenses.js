@@ -1,5 +1,6 @@
 const { ApiError } = require('./errors');
 const validate = require('./validate');
+const CONTRACT = require('./contract.json');
 const {
   SETTLEMENT,
   summarize,
@@ -74,8 +75,13 @@ function byDateDesc(a, b) {
 
 /** repository: listMonth(householdId, month)、listAll(householdId)、get、insert、insertWithId(id, doc) -> 是否插入、update、remove */
 function createExpenseHandler({ repository, requireMembership, now }) {
-  const view = (record, household) =>
-    withCategory(publicRecord(record, household, FIELDS));
+  // reactions：对方对这笔账的回应（主页「TA 最近」里点的），{ a?: 'great', b?: … }，有才返回。
+  const view = (record, household) => {
+    const result = withCategory(publicRecord(record, household, FIELDS));
+    if (record.reactions && Object.keys(record.reactions).length)
+      result.reactions = record.reactions;
+    return result;
+  };
 
   async function monthView(household, month) {
     const records = (await repository.listMonth(household._id, month)).sort(
@@ -166,6 +172,25 @@ function createExpenseHandler({ repository, requireMembership, now }) {
         view(updated, household),
         await budgetOf(repository, household, updated, existing),
       );
+    },
+    /** 回应对方记的一笔账（辛苦啦 / 好棒喵 / 贴贴）；reaction 传空串收回。不算修改，不留「改过」的痕迹。 */
+    async 'expense.react'(openid, payload) {
+      const household = await requireMembership(openid);
+      const id = validate.id(payload.id);
+      const reaction = payload.reaction === '' ? '' : payload.reaction;
+      if (reaction !== '' && !CONTRACT.reactions.includes(reaction))
+        throw new ApiError('VALIDATION', '先选一个回应吧。');
+      const record = await requireRecord(repository, household, id);
+      if (record.by === openid)
+        throw new ApiError('VALIDATION', '只能回应对方记的账。');
+      const role = household.members.find(
+        (member) => member.openid === openid,
+      )?.role;
+      const reactions = { ...(record.reactions || {}) };
+      if (reaction) reactions[role] = reaction;
+      else delete reactions[role];
+      await repository.update(household._id, id, { reactions });
+      return view({ ...record, reactions }, household);
     },
     async 'expense.remove'(openid, payload) {
       const household = await requireMembership(openid);

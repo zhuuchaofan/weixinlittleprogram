@@ -118,6 +118,19 @@ const DISH_TAG_LABELS: Record<DishTag, string> = {
 };
 export const DISH_TAG_OPTIONS: Array<{ value: DishTag; label: string }> =
   DISH_TAGS.map((value) => ({ value, label: DISH_TAG_LABELS[value] }));
+/** 吃啥菜单空着时可以一键加上的常见选项，加完随便删改。 */
+export const DISH_STARTERS: Array<{ name: string; tag: DishTag }> = [
+  { name: '番茄炒蛋', tag: '在家做' },
+  { name: '可乐鸡翅', tag: '在家做' },
+  { name: '青椒肉丝', tag: '在家做' },
+  { name: '煮个面', tag: '在家做' },
+  { name: '火锅', tag: '外食' },
+  { name: '烤肉', tag: '外食' },
+  { name: '日料', tag: '外食' },
+  { name: '麻辣烫', tag: '外卖' },
+  { name: '黄焖鸡米饭', tag: '外卖' },
+  { name: '汉堡炸鸡', tag: '外卖' },
+];
 export function dishTagLabel(tag: DishTag): string {
   return DISH_TAG_LABELS[tag] || tag;
 }

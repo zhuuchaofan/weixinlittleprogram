@@ -31,6 +31,29 @@
       <button class="btn-small" bindtap="dismissFreeHint">知道了</button>
     </view>
 
+    <view class="card quick">
+      <view class="composer">
+        <input class="composer-input" value="{{quickText}}" maxlength="{{limits.quickText}}" placeholder="说一句就记：午饭 32，打车 15" confirm-type="done" bindinput="inputQuick" bindconfirm="quickAdd" />
+        <button class="primary btn-inline" bindtap="quickAdd">记</button>
+      </view>
+      <view class="quick-foot">
+        <view class="small muted quick-hint">{{quickHint}}</view>
+        <view class="quick-links">
+          <view class="month-link small" bindtap="addExpense" aria-role="button">手动记 <text class="chevron-sm">›</text></view>
+          <view class="month-link small" bindtap="importBill" aria-role="button">导入账单 <text class="chevron-sm">›</text></view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{showStart}}" class="card start">
+      <view class="start-title">第一次来？先看看钱花在哪</view>
+      <view class="small muted">导入上个月的微信或支付宝账单，一两分钟就能看到每一类花了多少。每个小家可以免费导一次。</view>
+      <view class="start-actions">
+        <button class="btn-small" bindtap="startImport">导入账单</button>
+        <button class="text-button" bindtap="dismissStart">先不用</button>
+      </view>
+    </view>
+
     <view wx:if="{{household.inviteCode}}" class="card solo">
       <view class="pair-mini" aria-hidden="true">
         <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>
@@ -64,9 +87,8 @@
       </view>
     </view>
 
-    <view wx:if="{{household.members.length > 1 && (feed.length || partnerSpent)}}" class="card recent">
+    <view wx:if="{{household.members.length > 1 && feed.length}}" class="card recent">
       <view class="small muted recent-head">TA 最近</view>
-      <view wx:if="{{partnerSpent}}" class="recent-row"><view class="recent-text">{{partnerSpent}}</view></view>
       <view wx:for="{{feed}}" wx:key="id" class="recent-row">
         <view class="recent-line">
           <view class="recent-text">{{item.text}}</view>
@@ -90,35 +112,6 @@
       </view>
     </view>
 
-    <view wx:if="{{goalsReady}}" class="card saving" data-page="goals" bindtap="open" hover-class="card-active" aria-role="button">
-      <view class="month-head">
-        <view class="small muted">攒钱{{goal ? ' · ' + goal.title : ''}}</view>
-        <view class="small muted">{{goal ? goal.percent + '%' : '定一个目标'}} <text class="chevron-sm">›</text></view>
-      </view>
-      <block wx:if="{{goal}}">
-        <view class="saving-track" aria-hidden="true"><view class="saving-bar {{goal.done ? 'saving-done' : ''}}" style="width: {{goal.percent}}%"></view></view>
-        <view class="small {{goal.behind ? 'saving-behind' : 'muted'}}">{{goal.savedText}} / {{goal.targetText}}{{goal.monthText ? ' · ' + goal.monthText : ' · 攒够啦'}}</view>
-      </block>
-      <view wx:else class="small muted">比如旅行、应急金：写下金额和期限，算出每月要存多少</view>
-    </view>
-
-    <view class="card footprint" data-page="footprints" bindtap="open" hover-class="card-active" aria-role="button">
-      <view class="fp-thumbs" aria-hidden="true">
-        <image wx:for="{{footprint.thumbs}}" wx:key="*this" class="fp-thumb" src="{{item}}" mode="aspectFill" />
-        <image wx:if="{{!footprint.thumbs.length}}" class="fp-icon" src="/images/themes/{{themeId}}/home-footprints.svg" />
-      </view>
-      <view class="row-main">
-        <view class="recap-title">我们的足迹</view>
-        <view class="small muted">{{footprint.text}}</view>
-      </view>
-      <text class="chevron">›</text>
-    </view>
-
-    <view class="actions">
-      <button class="primary" bindtap="addExpense"><text class="plus">+</text>记一笔</button>
-      <button class="secondary" bindtap="importBill">导入账单</button>
-    </view>
-
     <view class="grid">
       <view class="grid-cell" data-page="lists" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-accent"><image class="tile-icon" src="/images/themes/{{themeId}}/home-lists.svg" /></view>
@@ -128,26 +121,53 @@
       <view class="grid-cell" data-page="food" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-orange"><image class="tile-icon" src="/images/themes/{{themeId}}/home-food.svg" /></view>
         <view class="grid-title">吃啥</view>
-        <view class="small muted">抽一个今天吃的</view>
+        <view class="small muted">抽一个</view>
       </view>
       <view class="grid-cell" data-page="wishes" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-blue"><image class="tile-icon" src="/images/themes/{{themeId}}/home-wishes.svg" /></view>
         <view class="grid-title">想去</view>
-        <view class="small muted">想去的地方和想做的事</view>
-      </view>
-      <view class="grid-cell" data-page="dates" bindtap="open" hover-class="grid-cell-active" aria-role="button">
-        <view class="tile tile-pink"><image class="tile-icon" src="/images/themes/{{themeId}}/home-dates.svg" /></view>
-        <view class="grid-title">纪念日</view>
-        <view class="small muted">倒数和已经多少天</view>
+        <view class="small muted">地方和事</view>
       </view>
     </view>
 
-    <view class="card recap" data-page="recap" bindtap="open" hover-class="card-active" aria-role="button">
-      <view class="row-main">
-        <view class="recap-title">我们的小报</view>
-        <view class="small muted">看看上个月一起花了、吃了、做了什么</view>
+    <view class="list-label">{{household.members.length > 1 ? '我们的' : '我的'}}</view>
+    <view class="list">
+      <view class="list-row" data-page="recap" bindtap="open" hover-class="list-row-active" aria-role="button">
+        <view class="row-main">
+          <view class="row-title">每月小报</view>
+          <view class="row-sub">上个月花了、吃了、做了什么</view>
+        </view>
+        <text class="chevron">›</text>
       </view>
-      <view class="month-link small" data-page="year" catchtap="open" hover-stop-propagation aria-role="link">年度回顾 <text class="chevron-sm">›</text></view>
+      <view class="list-row" data-page="footprints" bindtap="open" hover-class="list-row-active" aria-role="button">
+        <view class="row-main">
+          <view class="row-title">足迹</view>
+          <view class="row-sub">{{footprint.text}}</view>
+        </view>
+        <text class="chevron">›</text>
+      </view>
+      <view class="list-row" data-page="goals" bindtap="open" hover-class="list-row-active" aria-role="button">
+        <view class="row-main">
+          <view class="row-title">攒钱{{goal ? ' · ' + goal.title : ''}}</view>
+          <view wx:if="{{goal}}" class="row-sub {{goal.behind ? 'saving-behind' : ''}}">{{goal.percent}}% · {{goal.savedText}} / {{goal.targetText}}{{goal.monthText ? ' · ' + goal.monthText : ' · 攒够啦'}}</view>
+          <view wx:else class="row-sub">定一个目标，算出每月要存多少</view>
+        </view>
+        <text class="chevron">›</text>
+      </view>
+      <view wx:if="{{household.inviteCode}}" class="list-row" data-page="dates" bindtap="open" hover-class="list-row-active" aria-role="button">
+        <view class="row-main">
+          <view class="row-title">纪念日</view>
+          <view class="row-sub">倒数和已经多少天</view>
+        </view>
+        <text class="chevron">›</text>
+      </view>
+      <view class="list-row" data-page="year" bindtap="open" hover-class="list-row-active" aria-role="button">
+        <view class="row-main">
+          <view class="row-title">年度回顾</view>
+          <view class="row-sub">这一年一起花的、吃的、去的</view>
+        </view>
+        <text class="chevron">›</text>
+      </view>
     </view>
   </block>
   <view class="page-end"></view>

@@ -1,7 +1,7 @@
 const { randomInt } = require('node:crypto');
 const { AsyncLocalStorage } = require('node:async_hooks');
 const { ApiError } = require('./errors');
-const { vipView } = require('./vip');
+const { vipView, fileTrialOpen } = require('./vip');
 
 // 去掉 0/O、1/I 等容易看错的字符。
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -74,6 +74,8 @@ function publicHousehold(household, openid, at = Date.now()) {
     copying: Boolean(household.copy && !household.copy.done),
     // 会员属于整个小家：{ active, until（到期时间戳，没开通过为 0） }。
     vip: vipView(household, at),
+    // 不是会员也能免费导入一次账单文件（第一次导入起 24 小时内）；还能用时为 true。
+    fileTrial: fileTrialOpen(household, at),
     members: household.members.map((member) => ({
       role: member.role,
       name: member.name,

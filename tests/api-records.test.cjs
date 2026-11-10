@@ -331,6 +331,33 @@ test('结算并发：两人同时结算只产生一条结算记录，撤销后�
   assert.equal(settlements().length, 2);
 });
 
+test('回应对方记的账：只能回应对方的，再传空串收回，不留「改过」的痕迹', async () => {
+  const { call } = await setup();
+  const { data } = await call('A', 'expense.add', expense());
+  assert.equal(data.reactions, undefined);
+  assert.equal(
+    (await call('A', 'expense.react', { id: data.id, reaction: 'great' })).code,
+    'VALIDATION',
+  );
+  assert.equal(
+    (await call('B', 'expense.react', { id: data.id, reaction: 'wow' })).code,
+    'VALIDATION',
+  );
+  const reacted = await call('B', 'expense.react', {
+    id: data.id,
+    reaction: 'great',
+  });
+  assert.deepEqual(reacted.data.reactions, { b: 'great' });
+  assert.equal(reacted.data.editedAt, undefined);
+  const list = await call('A', 'expense.list', { month: '2026-10' });
+  assert.deepEqual(list.data.records[0].reactions, { b: 'great' });
+  const cleared = await call('B', 'expense.react', {
+    id: data.id,
+    reaction: '',
+  });
+  assert.equal(cleared.data.reactions, undefined);
+});
+
 test('编辑与删除：只能操作本小家的记录', async () => {
   const { call } = await setup();
   const { data } = await call('A', 'expense.add', expense());

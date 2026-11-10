@@ -37,7 +37,7 @@
   </view>
 
   <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。回主页点「记一笔」，记了就能看到花在哪儿。</view>
+  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。回主页说一句或点「手动记」，记了就能看到花在哪儿。</view>
 
   <block wx:if="{{categories.length}}">
     <view class="section-head"><view class="section-title">{{compareTitle}}</view><button class="text-button" bindtap="openBudgets">分类预算 ›</button></view>
@@ -78,5 +78,16 @@
       </view>
     </view>
   </block>
+  <view wx:if="{{ready}}" class="list-label">管住钱</view>
+  <view wx:if="{{ready}}" class="list">
+    <view class="list-row" bindtap="openBudgets" hover-class="list-row-active" aria-role="button">
+      <view class="row-main"><view class="row-title">分类预算</view><view class="row-sub">给花得多的那几类定个上限，快超了会提醒</view></view>
+      <text class="chevron">›</text>
+    </view>
+    <view class="list-row" bindtap="openGoals" hover-class="list-row-active" aria-role="button">
+      <view class="row-main"><view class="row-title">攒钱目标</view><view class="row-sub">写下金额和期限，算出每月要存多少</view></view>
+      <text class="chevron">›</text>
+    </view>
+  </view>
   <view class="page-end"></view>
 </view>

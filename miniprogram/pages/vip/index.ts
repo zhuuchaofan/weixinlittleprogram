@@ -17,7 +17,7 @@ const PERKS = [
   },
   {
     title: '导入微信、支付宝账单文件',
-    sub: '一次导入几个月的账；不开通时不能用',
+    sub: '一次导入几个月的账；不开通时只能免费体验一次',
   },
   ...Object.values(CONTRACT.ai).map((quota) => {
     const freePer: keyof typeof EACH =

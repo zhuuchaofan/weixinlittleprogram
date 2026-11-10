@@ -93,6 +93,16 @@ function matchText(item: BillItem): string {
   return `${who}记过：${shortDate(match.date)} ${clip(match.note) || '（无备注）'} ${formatYuan(match.amount)}`;
 }
 
+/** 这批账里笔数最多的月份（YYYY-MM）；没有时为空串。 */
+function busiestMonth(rows: Array<{ date: string }>): string {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const month = row.date.slice(0, 7);
+    counts.set(month, (counts.get(month) || 0) + 1);
+  }
+  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+}
+
 const present = (item: BillItem): DraftRow => toRow(item, matchText(item));
 
 Page({
@@ -312,7 +322,15 @@ Page({
           : `已记 ${result.added} 笔`,
         icon: result.skipped ? 'none' : 'success',
       });
-      setTimeout(() => wx.navigateBack(), 800);
+      // 账单文件导完直接去看这个月钱花在哪（记得最多的那个月）；截图导入照旧回上一页。
+      const month = this.data.mode === 'file' ? busiestMonth(chosen) : '';
+      setTimeout(
+        () =>
+          month
+            ? wx.redirectTo({ url: `/pages/insight/index?month=${month}` })
+            : wx.navigateBack(),
+        800,
+      );
     } catch (error) {
       this.setData({
         error:

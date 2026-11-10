@@ -50,6 +50,18 @@ Page({
     error: '',
     limitHit: false,
   },
+  /** 从主页首屏带着一句话进来：直接开始拆。 */
+  onLoad(options: Record<string, string | undefined>) {
+    let text = options.text || '';
+    try {
+      text = decodeURIComponent(text);
+    } catch {
+      // 已经是解码后的字（里面带 %）就原样用。
+    }
+    if (!text) return;
+    this.setData({ text });
+    void this.parse();
+  },
   onShow() {
     applyTheme(this);
   },

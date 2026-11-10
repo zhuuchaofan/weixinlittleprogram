@@ -1,3 +1,4 @@
+import { openExpenseWith } from '../../utils/expense-link';
 import type { MemberRole, Wish } from '../../models';
 import { getHousehold, peekHousehold } from '../../services/household';
 import { photoUrls } from '../../services/photos';
@@ -164,7 +165,17 @@ Page({
     this.replace({ ...current, done, doneOn });
     try {
       this.replace(await wishService.update(id, { done, doneOn }));
-      if (done) wx.showToast({ title: '去过啦', icon: 'success' });
+      if (done) {
+        // 去过了顺手记花销：足迹里会带上那天花了多少。
+        const { confirm } = await wx.showModal({
+          title: '去过啦',
+          content: `「${current.title}」这次花了多少？顺手记一笔，足迹里会带上那天的花销。`,
+          confirmText: '记一笔',
+          cancelText: '先不记',
+        });
+        if (confirm)
+          openExpenseWith({ cat: '娱乐', note: current.title, date: doneOn });
+      }
     } catch (error) {
       this.replace(current);
       this.setData({

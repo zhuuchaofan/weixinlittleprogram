@@ -133,18 +133,28 @@ async function readGuide(app: FileApp): Promise<boolean> {
 
 /** 账单文件：从微信聊天里选微信账单 Excel / 支付宝账单 CSV，到导入页读取和确认。 */
 export async function pickBillFile(app: FileApp): Promise<void> {
-  // 会员才能导入文件：先说清楚，免得选完文件才被拦（云端 bill.file 也会再查一次）。
+  // 会员才能导入文件，不是会员的小家有一次免费体验：先说清楚，免得选完文件才被拦（云端 bill.file 也会再查一次）。
   const household = peekHousehold();
   if (household && !household.vip?.member) {
+    if (!household.fileTrial) {
+      const result = await wx.showModal({
+        title: '账单文件导入是会员功能',
+        content:
+          '免费体验的那一次已经用过了。开通会员后两个人都能导入微信、支付宝账单文件；不开通的话，截图记账每月能识别 15 张。',
+        confirmText: '看看会员',
+        cancelText: '先不用',
+      });
+      if (result.confirm) wx.navigateTo({ url: '/pages/vip/index' });
+      return;
+    }
     const result = await wx.showModal({
-      title: '账单文件导入是会员功能',
+      title: '免费体验一次',
       content:
-        '开通会员后两个人都能导入微信、支付宝账单文件。不开通的话，截图记账每月能识别 15 张。',
-      confirmText: '看看会员',
+        '导入账单文件是会员功能，每个小家可以免费体验一次：从第一次导入算起 24 小时内，微信、支付宝的账单都能导。建议一次选最近一两个月。',
+      confirmText: '开始导入',
       cancelText: '先不用',
     });
-    if (result.confirm) wx.navigateTo({ url: '/pages/vip/index' });
-    return;
+    if (!result.confirm) return;
   }
   if (!(await readGuide(app))) return;
   let path: string;

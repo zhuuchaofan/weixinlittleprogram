@@ -25,6 +25,8 @@ export interface Household {
   /** 会员属于整个小家，两人共用；until 是到期时间戳（没开通过为 0）。 */
   /** active / until：真正开通的会员；free：限时免费的截止时间戳（没有为 0）；member：现在能不能用会员功能。 */
   vip: { active: boolean; until: number; free: number; member: boolean };
+  /** 不是会员时还能不能免费导入一次账单文件（第一次导入起 24 小时内）。老的云端没有这一项。 */
+  fileTrial?: boolean;
   members: HouseholdMember[];
 }
 
@@ -85,6 +87,8 @@ export interface Expense extends ExpenseInput {
   /** 截图导入的账目才有：来自哪个 App、原始商户名。 */
   src?: { app: BillApp; merchant: string; time: string; key: string };
   byRole: MemberRole | '';
+  /** 对方在主页「TA 最近」里点的回应，有才带。 */
+  reactions?: Partial<Record<MemberRole, Reaction>>;
   /** 被修改过才有：最后一次修改的时间和人。 */
   editedAt?: number;
   editedByRole?: MemberRole | '';

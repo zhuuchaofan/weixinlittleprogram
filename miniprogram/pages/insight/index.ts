@@ -249,6 +249,9 @@ Page({
       url: `/pages/expense-edit/index?id=${event.currentTarget.dataset.id}`,
     });
   },
+  openGoals() {
+    wx.navigateTo({ url: '/pages/goals/index' });
+  },
   openBudgets() {
     wx.navigateTo({ url: '/pages/budgets/index' });
   },

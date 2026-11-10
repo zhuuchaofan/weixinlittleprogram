@@ -78,7 +78,10 @@ Page({
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     }
-    if (!options.id) return;
+    if (!options.id) {
+      this.prefill(options);
+      return;
+    }
     let record;
     try {
       record = await getExpense(options.id);
@@ -114,6 +117,26 @@ Page({
           : '',
     });
     this.refreshRatioHint();
+  },
+  /** 从吃啥「就吃这个」、想去「去过了」带着分类、备注、日期进来：先填好，金额自己写。 */
+  prefill(options: Record<string, string | undefined>) {
+    const decode = (value = '') => {
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value;
+      }
+    };
+    const cat = decode(options.cat);
+    const note = decode(options.note).slice(0, LENGTHS.expenseNote);
+    const date = options.date || '';
+    this.setData({
+      ...(CATEGORIES.includes(cat) ? { cat } : {}),
+      ...(note ? { note } : {}),
+      ...(/^\d{4}-\d{2}-\d{2}$/.test(date) && date <= todayKey()
+        ? { date }
+        : {}),
+    });
   },
   /** 一句话记好几笔：换到一句话记账页，返回时直接回到记账页。 */
   openQuick() {

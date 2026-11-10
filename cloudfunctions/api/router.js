@@ -198,7 +198,7 @@ function createRouter({
       if (!handler)
         throw new ApiError(
           'NOT_FOUND',
-          '这个功能云端还没准备好，稍后再试试吧。',
+          '这个功能要等云端更新后才能用，过一会儿再来试试吧。',
         );
       return { ok: true, data: await handler(openid, event?.payload || {}) };
     } catch (error) {

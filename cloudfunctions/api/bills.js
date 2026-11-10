@@ -13,7 +13,7 @@ const CONTRACT = require('./contract.json');
 const { SETTLEMENT } = require('./ledger');
 const { todayKey } = require('./dates');
 const { takeQuota } = require('./quota');
-const { isVip } = require('./vip');
+const { isVip, fileTrialOpen } = require('./vip');
 const {
   KINDS,
   MAX_ITEMS,
@@ -34,7 +34,7 @@ const { parseAlipayRows } = require('./bill-alipay');
 
 const BAD_SOURCE = '这张截图没读明白，重新识别一次吧。';
 const FILE_VIP =
-  '导入微信、支付宝账单文件是会员功能，开通后两个人都能用。截图记账不开通每月也能识别 15 张。';
+  '免费体验的那一次已经用过了。导入微信、支付宝账单文件是会员功能，开通后两个人都能用；截图记账不开通每月也能识别 15 张。';
 
 /**
  * 前端送回来的原始字段（bill.parse / bill.file 给出的 src）：逐项校验后重新算 key，不相信前端的 key。
@@ -165,7 +165,13 @@ function createBillHandler({
     /** 账单文件：手机上读出的行 → 整理、查重后的每一笔，加上跳过了多少。不花 AI 次数，只给会员。 */
     async 'bill.file'(openid, payload) {
       const household = await requireMembership(openid);
-      if (!isVip(household, now())) throw new ApiError('LIMIT', FILE_VIP);
+      // 不是会员：每个小家有一次免费体验，从第一次导入算起 24 小时内都能导（一份文件要分几批，微信、支付宝各一份也来得及）。
+      if (!isVip(household, now())) {
+        if (!fileTrialOpen(household, now()))
+          throw new ApiError('LIMIT', FILE_VIP);
+        if (!household.fileTrialAt)
+          await households.update(household._id, { fileTrialAt: now() });
+      }
       if (payload?.app !== 'wechat' && payload?.app !== 'alipay')
         throw new ApiError(
           'VALIDATION',

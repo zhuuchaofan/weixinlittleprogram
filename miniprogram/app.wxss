@@ -104,6 +104,8 @@ button[disabled] { background: var(--sunken) !important; color: var(--muted) !im
 .stack > button + button { margin-top: 20rpx; }
 /* 页面上，按钮紧跟在卡片 / 列表 / 表单后面时留出间距（上面清零外边距的规则会盖掉按钮自己的 margin-top） */
 .page > view + button { margin-top: var(--gap); }
+/* 主按钮下面紧跟的次按钮（「帮我拆成几笔」下面的「一笔一笔手动记」）隔开 20，和 .stack 里一样 */
+.page > button.primary + button.secondary:not([size='mini']) { margin-top: 20rpx; }
 /* 卡片里的小按钮（存了一笔、写小结）。不要用 size="mini"：它自带的行高和上面的 flex 冲突，字会偏上。
    固定高度 + line-height: 1，字就上下居中。 */
 .btn-small, button.btn-small:not([size='mini']) { width: auto; min-height: 0; height: 64rpx; padding: 0 28rpx; line-height: 1; flex-shrink: 0; background: var(--accent-soft); color: var(--accent); font-size: 26rpx; font-weight: 600; }

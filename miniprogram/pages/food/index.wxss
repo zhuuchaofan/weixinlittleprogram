@@ -18,3 +18,7 @@
 .vote-chip { height: 64rpx; padding: 0 20rpx; display: flex; align-items: center; justify-content: center; border-radius: 999rpx; border: 1rpx solid var(--line); background: var(--surface); color: var(--muted); font-size: 26rpx; white-space: nowrap; }
 .vote-want { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
 .vote-no { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); font-weight: 600; }
+
+/* 出去吃 / 外卖：就吃这个之后，顺手记这顿的钱 */
+.draw-pay { position: relative; z-index: 1; margin-top: 20rpx; padding: 8rpx 0; font-size: 28rpx; font-weight: 600; text-decoration: underline; }
+button.starter:not([size='mini']) { display: block; margin: 24rpx auto 0; }
