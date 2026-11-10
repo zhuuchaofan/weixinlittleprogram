@@ -1,7 +1,6 @@
 import { openExpenseWith } from '../../utils/expense-link';
 import type { MemberRole, Wish } from '../../models';
 import { getHousehold, peekHousehold } from '../../services/household';
-import { photoUrls } from '../../services/photos';
 import { wishService } from '../../services/collections';
 import { errorMessage } from '../../services/cloud';
 import { needsReload } from '../../services/snapshot';
@@ -15,12 +14,10 @@ type Row = Wish & {
   /** 我想去 / TA 也想去；done 的不显示。 */
   mine: boolean;
   theirs: boolean;
-  thumb: string;
 };
 
 const loader = createLoader();
 let myRole: MemberRole | '' = '';
-const thumbs: Record<string, string> = {};
 
 /** 没去过：显示备注第一行；去过：显示哪天去的。 */
 function toRow(wish: Wish): Row {
@@ -29,7 +26,6 @@ function toRow(wish: Wish): Row {
     ...wish,
     mine: myRole !== '' && wish.wants?.[myRole] === true,
     theirs: myRole !== '' && wish.wants?.[other] === true,
-    thumb: wish.photos?.length ? thumbs[wish.photos[0]] || '' : '',
   };
   if (wish.done) {
     const when = wish.doneOn
@@ -51,7 +47,8 @@ Page({
     wishes: [] as Row[],
     open: [] as Row[],
     done: [] as Row[],
-    showDone: false,
+    /** 顶上两栏：想去（清单）/ 去过（足迹相册）。 */
+    tab: 'open' as 'open' | 'done',
     title: '',
     // 正在保存「去过了」的条目；各条互不阻塞。
     pending: {} as Record<string, boolean>,
@@ -59,14 +56,36 @@ Page({
     busy: false,
     error: '',
   },
+  onLoad(query: Record<string, string | undefined>) {
+    if (query.tab === 'done') this.setData({ tab: 'done' });
+  },
   onShow() {
     applyTheme(this);
     myRole = peekHousehold()?.myRole || myRole;
     if (!this.data.wishes.length) this.showWishes(wishService.peek() || []);
     if (needsReload('wishes')) void this.load();
+    // 从回忆页、补记回来：相册重新读一次。
+    void this.wall()?.reload();
   },
   onPullDownRefresh() {
-    void this.load(true).finally(() => wx.stopPullDownRefresh());
+    void Promise.all([this.load(true), this.wall()?.reload()]).finally(() =>
+      wx.stopPullDownRefresh(),
+    );
+  },
+  onReachBottom() {
+    this.wall()?.reachBottom();
+  },
+  wall() {
+    return this.selectComponent('#wall') as
+      | (WechatMiniprogram.Component.TrivialInstance & {
+          reload(): Promise<void>;
+          reachBottom(): void;
+        })
+      | null;
+  },
+  chooseTab(event: WechatMiniprogram.TouchEvent) {
+    const tab = event.currentTarget.dataset.tab as 'open' | 'done';
+    if (tab !== this.data.tab) this.setData({ tab });
   },
   load(force = false) {
     return loader(this, {
@@ -76,28 +95,17 @@ Page({
       show: (wishes) => this.showWishes(wishes),
     });
   },
-  showWishes(wishes: Wish[]) {
-    void this.loadThumbs(wishes);
+  async showWishes(wishes: Wish[]) {
     this.setData(this.rowsFor(wishes));
-  },
-  /** 去过的第一张照片当缩略图；取到后重画一次。 */
-  async loadThumbs(wishes: Wish[]) {
-    if (!myRole)
-      try {
-        myRole = (await getHousehold())?.myRole || '';
-      } catch {
-        // 取不到身份就不显示「想去」标记。
-      }
-    const ids = wishes
-      .filter((wish) => wish.done && wish.photos?.length)
-      .map((wish) => (wish.photos as string[])[0])
-      .filter((id) => !thumbs[id])
-      .slice(0, 30);
-    if (!ids.length && !myRole) return;
-    const urls = await photoUrls(ids);
-    Object.assign(thumbs, urls);
-    if (this.data.wishes.length === wishes.length)
-      this.setData({ ...this.rowsFor(wishes) });
+    if (myRole) return;
+    // 冷启动直接进这页时还不知道我是谁：问到了再画一次「我想去 / TA 也想去」。
+    try {
+      myRole = (await getHousehold())?.myRole || '';
+    } catch {
+      // 取不到身份就不显示「想去」标记。
+    }
+    if (myRole && this.data.wishes.length === wishes.length)
+      this.setData(this.rowsFor(wishes));
   },
   rowsFor(wishes: Wish[]) {
     const rows = wishes.map(toRow);
@@ -124,9 +132,6 @@ Page({
     } finally {
       this.setData({ [`pending.${id}`]: false });
     }
-  },
-  footprints() {
-    wx.navigateTo({ url: '/pages/footprints/index' });
   },
   replace(row: Wish) {
     this.showWishes(
@@ -184,9 +189,6 @@ Page({
     } finally {
       this.setData({ [`pending.${id}`]: false });
     }
-  },
-  toggleDone() {
-    this.setData({ showDone: !this.data.showDone });
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({

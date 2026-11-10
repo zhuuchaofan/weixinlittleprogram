@@ -126,7 +126,7 @@
       <view class="grid-cell" data-page="wishes" bindtap="open" hover-class="grid-cell-active" aria-role="button">
         <view class="tile tile-blue"><image class="tile-icon" src="/images/themes/{{themeId}}/home-wishes.svg" /></view>
         <view class="grid-title">想去</view>
-        <view class="small muted">地方和事</view>
+        <view class="small muted">和去过的</view>
       </view>
     </view>
 
@@ -139,14 +139,14 @@
         </view>
         <text class="chevron">›</text>
       </view>
-      <view class="list-row" data-page="footprints" bindtap="open" hover-class="list-row-active" aria-role="button">
+      <view class="list-row" data-page="wishes" data-query="tab=done" bindtap="open" hover-class="list-row-active" aria-role="button">
         <view class="row-main">
           <view class="row-title">足迹</view>
           <view class="row-sub">{{footprint.text}}</view>
         </view>
         <text class="chevron">›</text>
       </view>
-      <view class="list-row" data-page="goals" bindtap="open" hover-class="list-row-active" aria-role="button">
+      <view class="list-row" data-page="insight" data-query="tab=goals" bindtap="open" hover-class="list-row-active" aria-role="button">
         <view class="row-main">
           <view class="row-title">攒钱{{goal ? ' · ' + goal.title : ''}}</view>
           <view wx:if="{{goal}}" class="row-sub {{goal.behind ? 'saving-behind' : ''}}">{{goal.percent}}% · {{goal.savedText}} / {{goal.targetText}}{{goal.monthText ? ' · ' + goal.monthText : ' · 攒够啦'}}</view>

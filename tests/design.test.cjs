@@ -150,7 +150,7 @@ test('页面里不写「重试」，勾选圈里不写 ✓', () => {
 test('编辑页保存后走统一反馈，弹窗按钮不超过 4 个字', () => {
   for (const [kind, name, dir] of folders()) {
     const ts = readFileSync(join(dir, 'index.ts'), 'utf8');
-    if (name.endsWith('-edit') || name === 'budgets') {
+    if (name.endsWith('-edit')) {
       assert.match(ts, /doneBack\(/, `${kind}/${name} 保存后请用 doneBack()`);
       assert.doesNotMatch(
         ts,

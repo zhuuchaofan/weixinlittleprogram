@@ -448,7 +448,12 @@ Page({
     });
   },
   open(event: WechatMiniprogram.TouchEvent) {
-    wx.navigateTo({ url: `/pages/${event.currentTarget.dataset.page}/index` });
+    // data-query：打开时带的参数，例如「我们的」里足迹是想去页的「去过」一栏。
+    const { page, query } = event.currentTarget.dataset as {
+      page: string;
+      query?: string;
+    };
+    wx.navigateTo({ url: `/pages/${page}/index${query ? '?' + query : ''}` });
   },
   /** 引导卡片的「导入账单」：直接去选微信账单文件，点过就不再显示。 */
   startImport() {

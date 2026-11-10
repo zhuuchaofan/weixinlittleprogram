@@ -1,4 +1,3 @@
-<page-meta page-style="{{themeStyle}}" />
 <template name="fp">
   <view class="polaroid {{cover ? '' : 'polaroid-plain'}}" data-id="{{id}}" bindtap="open" aria-role="button" aria-label="{{title}}">
     <view class="tape"></view>
@@ -14,7 +13,7 @@
   </view>
 </template>
 
-<view class="page">
+<view class="panel">
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
   <view wx:if="{{loading && !groups.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
   <view wx:elif="{{!total.places && !error}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />去过的地方会留在这里。点下面的「补记」加一个，或者在「想去」里打勾。</view>
@@ -46,5 +45,4 @@
     <view wx:if="{{more}}" class="status">往下滑看更多…</view>
     <view wx:elif="{{groups.length}}" class="end-note">— 一起去过的地方，都在这里 —</view>
   </block>
-  <view class="page-end"></view>
 </view>

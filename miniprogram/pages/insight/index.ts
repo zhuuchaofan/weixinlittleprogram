@@ -123,9 +123,18 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const RECOVER_TRIES = 8;
 const RECOVER_GAP_MS = 4000;
 
+type Tab = 'spend' | 'budget' | 'goals';
+const TABS: Array<{ value: Tab; label: string }> = [
+  { value: 'spend', label: '花在哪' },
+  { value: 'budget', label: '预算' },
+  { value: 'goals', label: '攒钱' },
+];
+
 Page({
   data: {
     ...themeData(),
+    tabs: TABS,
+    tab: 'spend' as Tab,
     month: todayKey().slice(0, 7),
     monthText: monthLabel(todayKey().slice(0, 7)),
     isCurrentMonth: true,
@@ -152,6 +161,8 @@ Page({
     summaryLimit: false,
   },
   onLoad(query: Record<string, string | undefined>) {
+    const tab = TABS.find((item) => item.value === query.tab)?.value;
+    if (tab) this.setData({ tab });
     const month = /^\d{4}-\d{2}$/.test(query.month || '')
       ? (query.month as string)
       : this.data.month;
@@ -160,9 +171,27 @@ Page({
   onShow() {
     applyTheme(this);
     void this.load();
+    // 从新目标 / 编辑目标回来：让「攒钱」一栏看看要不要重新读。
+    this.goalPanel()?.refresh();
   },
   onPullDownRefresh() {
-    void this.load(true).finally(() => wx.stopPullDownRefresh());
+    const goals = this.data.tab === 'goals' ? this.goalPanel() : null;
+    void (goals ? goals.load(true) : this.load(true)).finally(() =>
+      wx.stopPullDownRefresh(),
+    );
+  },
+  goalPanel() {
+    return this.selectComponent('#goals') as
+      | (WechatMiniprogram.Component.TrivialInstance & {
+          refresh(): void;
+          load(force?: boolean): Promise<void>;
+        })
+      | null;
+  },
+  /** 顶上三栏：花在哪 / 预算 / 攒钱。 */
+  chooseTab(event: WechatMiniprogram.TouchEvent) {
+    const tab = event.currentTarget.dataset.tab as Tab;
+    if (tab !== this.data.tab) this.setData({ tab });
   },
   setMonth(month: string) {
     this.setData({
@@ -249,10 +278,8 @@ Page({
       url: `/pages/expense-edit/index?id=${event.currentTarget.dataset.id}`,
     });
   },
-  openGoals() {
-    wx.navigateTo({ url: '/pages/goals/index' });
-  },
+  /** 「攒钱」一栏里点「设分类预算」。 */
   openBudgets() {
-    wx.navigateTo({ url: '/pages/budgets/index' });
+    this.setData({ tab: 'budget' });
   },
 });

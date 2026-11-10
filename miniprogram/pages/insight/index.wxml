@@ -1,93 +1,90 @@
 <page-meta page-style="{{themeStyle}}" />
 <wxs module="money" src="../../wxs/money.wxs" />
 <view class="page">
-  <view class="month-bar">
-    <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹ 上月</view>
-    <view class="month-text">{{monthText}}</view>
-    <view class="month-arrow {{isCurrentMonth ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeMonth" hover-class="{{isCurrentMonth ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="下个月">下月 ›</view>
+  <view class="segmented tabs">
+    <view wx:for="{{tabs}}" wx:key="value" class="segment {{tab === item.value ? 'segment-on' : ''}}" data-tab="{{item.value}}" bindtap="chooseTab" aria-role="button">{{item.label}}</view>
   </view>
 
-  <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
-
-  <view class="hero grad-card">
-    <view class="hero-label">{{monthText}} · 支出 {{ready ? count + ' 笔' : ''}}</view>
-    <view class="hero-total"><block wx:if="{{ready}}"><text wx:if="{{money.sign(totalText)}}" class="cur">¥</text>{{money.digits(totalText)}}</block><block wx:else>—</block></view>
-    <view wx:if="{{ready}}" class="hero-change">{{changeText}}</view>
-    <view wx:if="{{incomeText}}" class="hero-income">本月收入 {{incomeText}}（不算在支出里）</view>
-  </view>
-
-  <view wx:if="{{ready && count}}" class="card ai">
-    <view class="ai-head">
-      <image class="ai-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" />
-      <view class="ai-title">喵喵小结</view>
-      <text class="tag">AI 生成</text>
+  <block wx:if="{{tab === 'spend'}}">
+    <view class="month-bar">
+      <view class="month-arrow" data-delta="-1" bindtap="changeMonth" hover-class="month-arrow-active" aria-role="button" aria-label="上个月">‹ 上月</view>
+      <view class="month-text">{{monthText}}</view>
+      <view class="month-arrow {{isCurrentMonth ? 'month-arrow-off' : ''}}" data-delta="1" bindtap="changeMonth" hover-class="{{isCurrentMonth ? 'none' : 'month-arrow-active'}}" aria-role="button" aria-label="下个月">下月 ›</view>
     </view>
-    <view wx:if="{{writing}}" class="ai-text muted">喵喵正在看账本…（十几秒）</view>
-    <block wx:elif="{{summaryText}}">
-      <view class="ai-text">{{summaryText}}</view>
-      <view class="small muted ai-disclaimer">以上内容由 AI 根据这个月的账目汇总和一起做的事生成，仅供参考。</view>
+
+    <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
+
+    <view class="hero grad-card">
+      <view class="hero-label">{{monthText}} · 支出 {{ready ? count + ' 笔' : ''}}</view>
+      <view class="hero-total"><block wx:if="{{ready}}"><text wx:if="{{money.sign(totalText)}}" class="cur">¥</text>{{money.digits(totalText)}}</block><block wx:else>—</block></view>
+      <view wx:if="{{ready}}" class="hero-change">{{changeText}}</view>
+      <view wx:if="{{incomeText}}" class="hero-income">本月收入 {{incomeText}}（不算在支出里）</view>
+    </view>
+
+    <view wx:if="{{ready && count}}" class="card ai">
+      <view class="ai-head">
+        <image class="ai-cat" src="/images/cat-icons/pet.svg" mode="aspectFit" />
+        <view class="ai-title">喵喵小结</view>
+        <text class="tag">AI 生成</text>
+      </view>
+      <view wx:if="{{writing}}" class="ai-text muted">喵喵正在看账本…（十几秒）</view>
+      <block wx:elif="{{summaryText}}">
+        <view class="ai-text">{{summaryText}}</view>
+        <view class="small muted ai-disclaimer">以上内容由 AI 根据这个月的账目汇总和一起做的事生成，仅供参考。</view>
+      </block>
+      <view wx:else class="ai-text muted">让喵喵用一段话说说这个月：钱花在哪、比上月有什么变化、一起做了什么，和小报页是同一段。由阿里云通义千问生成，只发汇总数字、大额单笔的备注、吃得最多的菜名和去过的地方名，不发名字和截图。</view>
+      <view wx:if="{{summaryError}}" class="ai-error small">{{summaryError}}</view>
+      <button wx:if="{{summaryLimit}}" class="text-button" bindtap="openVip">看看会员</button>
+      <view class="ai-foot">
+        <text class="small muted">{{summaryNote}}</text>
+        <button class="btn-small" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新写' : '写小结'}}</button>
+      </view>
+    </view>
+
+    <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+    <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。回主页说一句或点「手动记」，记了就能看到花在哪儿。</view>
+
+    <block wx:if="{{categories.length}}">
+      <view class="section-head"><view class="section-title">{{compareTitle}}</view><button class="text-button" data-tab="budget" bindtap="chooseTab">设预算 ›</button></view>
+      <view class="card compare">
+        <view wx:for="{{categories}}" wx:key="cat" class="compare-row" aria-label="{{item.cat}} {{item.amountText}}{{compareLabel ? '，' + compareLabel + ' ' + item.refText : ''}}{{item.text ? '，' + item.text : ''}}">
+          <view class="compare-line">
+            <view class="cat-dot" style="background: {{item.color}}"></view>
+            <view class="cat-name">{{item.cat}}<text class="small muted"> {{item.countText}}</text></view>
+            <view class="compare-change small {{item.tone}}">{{item.text}}</view>
+            <view class="cat-amount">{{item.amountText}}</view>
+          </view>
+          <view class="compare-track"><view class="compare-bar" style="width: {{item.width}}%; background: {{item.color}}"></view></view>
+        </view>
+      </view>
     </block>
-    <view wx:else class="ai-text muted">让喵喵用一段话说说这个月：钱花在哪、比上月有什么变化、一起做了什么，和小报页是同一段。由阿里云通义千问生成，只发汇总数字、大额单笔的备注、吃得最多的菜名和去过的地方名，不发名字和截图。</view>
-    <view wx:if="{{summaryError}}" class="ai-error small">{{summaryError}}</view>
-    <button wx:if="{{summaryLimit}}" class="text-button" bindtap="openVip">看看会员</button>
-    <view class="ai-foot">
-      <text class="small muted">{{summaryNote}}</text>
-      <button class="btn-small" bindtap="writeSummary" loading="{{writing}}" disabled="{{writing}}">{{summaryText ? '重新写' : '写小结'}}</button>
-    </view>
-  </view>
 
-  <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
-  <view wx:elif="{{ready && !categories.length}}" class="empty"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />这个月和上个月都还没有支出。回主页说一句或点「手动记」，记了就能看到花在哪儿。</view>
-
-  <block wx:if="{{categories.length}}">
-    <view class="section-head"><view class="section-title">{{compareTitle}}</view><button class="text-button" bindtap="openBudgets">分类预算 ›</button></view>
-    <view class="card compare">
-      <view wx:for="{{categories}}" wx:key="cat" class="compare-row" aria-label="{{item.cat}} {{item.amountText}}{{compareLabel ? '，' + compareLabel + ' ' + item.refText : ''}}{{item.text ? '，' + item.text : ''}}">
-        <view class="compare-line">
-          <view class="cat-dot" style="background: {{item.color}}"></view>
-          <view class="cat-name">{{item.cat}}<text class="small muted"> {{item.countText}}</text></view>
-          <view class="compare-change small {{item.tone}}">{{item.text}}</view>
-          <view class="cat-amount">{{item.amountText}}</view>
+    <block wx:if="{{big.length}}">
+      <view class="section-head"><view class="section-title">大额单笔</view></view>
+      <view class="list">
+        <view wx:for="{{big}}" wx:key="id" class="list-row" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
+          <view class="tile" style="background: {{item.tint}}"><image class="tile-icon" src="{{item.icon}}" /></view>
+          <view class="row-main">
+            <view class="row-title">{{item.title}}</view>
+            <view class="row-sub">{{item.sub}}</view>
+          </view>
+          <view class="row-trail serif big-amount">{{item.amountText}}</view>
         </view>
-        <view class="compare-track"><view class="compare-bar" style="width: {{item.width}}%; background: {{item.color}}"></view></view>
       </view>
-    </view>
-  </block>
+    </block>
 
-  <block wx:if="{{big.length}}">
-    <view class="section-head"><view class="section-title">大额单笔</view></view>
-    <view class="list">
-      <view wx:for="{{big}}" wx:key="id" class="list-row" data-id="{{item.id}}" bindtap="open" hover-class="list-row-active">
-        <view class="tile" style="background: {{item.tint}}"><image class="tile-icon" src="{{item.icon}}" /></view>
-        <view class="row-main">
-          <view class="row-title">{{item.title}}</view>
-          <view class="row-sub">{{item.sub}}</view>
+    <block wx:if="{{ready}}">
+      <view class="section-head"><view class="section-title">近 6 个月</view></view>
+      <view class="card trend" aria-label="近 6 个月每月支出">
+        <view wx:for="{{trend}}" wx:key="month" class="trend-col">
+          <view class="trend-value small muted">{{item.totalText}}</view>
+          <view class="trend-track"><view class="trend-bar {{item.current ? 'trend-current' : ''}}" style="height: {{item.height}}%"></view></view>
+          <view class="trend-label small {{item.current ? '' : 'muted'}}">{{item.label}}</view>
         </view>
-        <view class="row-trail serif big-amount">{{item.amountText}}</view>
       </view>
-    </view>
+    </block>
   </block>
-
-  <block wx:if="{{ready}}">
-    <view class="section-head"><view class="section-title">近 6 个月</view></view>
-    <view class="card trend" aria-label="近 6 个月每月支出">
-      <view wx:for="{{trend}}" wx:key="month" class="trend-col">
-        <view class="trend-value small muted">{{item.totalText}}</view>
-        <view class="trend-track"><view class="trend-bar {{item.current ? 'trend-current' : ''}}" style="height: {{item.height}}%"></view></view>
-        <view class="trend-label small {{item.current ? '' : 'muted'}}">{{item.label}}</view>
-      </view>
-    </view>
-  </block>
-  <view wx:if="{{ready}}" class="list-label">管住钱</view>
-  <view wx:if="{{ready}}" class="list">
-    <view class="list-row" bindtap="openBudgets" hover-class="list-row-active" aria-role="button">
-      <view class="row-main"><view class="row-title">分类预算</view><view class="row-sub">给花得多的那几类定个上限，快超了会提醒</view></view>
-      <text class="chevron">›</text>
-    </view>
-    <view class="list-row" bindtap="openGoals" hover-class="list-row-active" aria-role="button">
-      <view class="row-main"><view class="row-title">攒钱目标</view><view class="row-sub">写下金额和期限，算出每月要存多少</view></view>
-      <text class="chevron">›</text>
-    </view>
-  </view>
+  <budget-panel wx:elif="{{tab === 'budget'}}" theme-id="{{themeId}}" />
+  <goal-panel wx:else id="goals" theme-id="{{themeId}}" bind:budgets="openBudgets" />
   <view class="page-end"></view>
 </view>

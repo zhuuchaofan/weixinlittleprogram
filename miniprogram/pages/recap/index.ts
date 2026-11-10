@@ -133,7 +133,7 @@ function view(recap: MonthRecap, household: Household) {
           ? recap.wishes.join('、')
           : '这个月还没去哪儿',
         on: recap.wishes.length > 0,
-        page: recap.wishes.length > 0 ? 'footprints' : '',
+        page: recap.wishes.length > 0 ? 'wishes/index?tab=done' : '',
       },
       {
         label: '一起攒',
@@ -272,6 +272,6 @@ Page({
   },
   openTogether(event: WechatMiniprogram.TouchEvent) {
     const page = event.currentTarget.dataset.page as string;
-    if (page) wx.navigateTo({ url: `/pages/${page}/index` });
+    if (page) wx.navigateTo({ url: `/pages/${page}` });
   },
 });
