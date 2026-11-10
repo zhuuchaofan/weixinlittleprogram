@@ -10,6 +10,7 @@ const { createGoalHandler } = require('./goals');
 const { createCollectionHandlers } = require('./collections');
 const { createVipHandler } = require('./vip');
 const { createAssistHandler } = require('./assist');
+const { createYearHandler } = require('./year');
 const { createActivityLog, createActivityFeed } = require('./activity');
 const {
   createRecapHandler,
@@ -109,6 +110,14 @@ function createRouter({
       requireMembership,
       now,
       ai,
+    }),
+    ...createYearHandler({
+      repositories: { expenses, activity, wishes, goals, dates },
+      households,
+      insights,
+      ai,
+      requireMembership,
+      now,
     }),
     ...createRecapHandler({
       repositories: recapRepositories,

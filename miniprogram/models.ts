@@ -420,3 +420,31 @@ export interface RecapNote {
   ts: number;
   stale: boolean;
 }
+
+/** 年度回顾（year.get）：金额单位为分。不是会员时 locked 为 true，只有封面三项。 */
+export interface YearReview {
+  year: string;
+  locked: boolean;
+  spend: {
+    total: number;
+    count: number;
+    perDay?: number;
+    freeDays?: number;
+    months?: Array<{ month: string; amount: number }>;
+    peakMonth?: { month: string; amount: number } | null;
+    top?: Array<{ cat: string; amount: number }>;
+    biggest?: {
+      amount: number;
+      cat: string;
+      note: string;
+      date: string;
+    } | null;
+  };
+  togetherDay: number;
+  meals?: { count: number; top: Array<{ title: string; count: number }> };
+  todos?: { count: number };
+  places?: { count: number; titles: string[] };
+  saved?: number;
+  /** 年度寄语；还没写过为 null，stale 表示写完之后数字变了。 */
+  note: InsightSummary | null;
+}

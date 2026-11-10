@@ -4,6 +4,7 @@
     "pages/ledger/index",
     "pages/insight/index",
     "pages/recap/index",
+    "pages/year/index",
     "pages/goals/index",
     "pages/goal-edit/index",
     "pages/budgets/index",

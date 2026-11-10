@@ -75,6 +75,15 @@ export const CONTRACT = {
       "per": "day",
       "free": 20,
       "vip": 100
+    },
+    "yearNote": {
+      "name": "年度寄语",
+      "verb": "写",
+      "unit": "次",
+      "what": "寄语",
+      "per": "day",
+      "free": 0,
+      "vip": 5
     }
   },
   "vip": {

@@ -47,6 +47,13 @@ const FEATURES = {
     temperature: 0,
     maxTokens: 600,
   },
+  // 年度回顾的寄语：只给会员，生成式文字，界面标「AI 生成」。
+  yearNote: {
+    tier: 'write',
+    model: assistModel,
+    temperature: 0.6,
+    maxTokens: 500,
+  },
 };
 
 /**

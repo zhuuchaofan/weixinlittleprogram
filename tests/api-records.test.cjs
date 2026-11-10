@@ -2211,6 +2211,90 @@ test('一句话记账：拆成几笔只返回不保存，金额坏的丢掉，�
   assert.equal(expenses.docs.size, 3);
 });
 
+test('年度回顾：不是会员只看封面；会员看全年，寄语只给会员、只发汇总', async () => {
+  const prompts = [];
+  const vision = {
+    async ensure() {},
+    async write(feature, prompt) {
+      assert.equal(feature, 'yearNote');
+      prompts.push(prompt);
+      return '这一年你们一起吃了好多拉面。';
+    },
+  };
+  const { call, households, insights } = await setup({ vision });
+  await call(
+    'A',
+    'expense.add',
+    expense({ date: '2026-03-02', amount: 300000, cat: '房租' }),
+  );
+  await call(
+    'B',
+    'expense.add',
+    expense({ date: '2026-10-05', amount: 6800, payer: 'b' }),
+  );
+  await call('A', 'expense.add', expense({ date: '2025-12-31', amount: 100 }));
+  await call(
+    'A',
+    'expense.add',
+    expense({ date: '2026-10-06', amount: 900, flow: 'in', split: 'self' }),
+  );
+  const dish = await call('B', 'dish.add', { name: '拉面', tag: '外食' });
+  await call('B', 'dish.update', { id: dish.data.id, ateOn: '2026-10-10' });
+  const wish = await call('A', 'wish.add', { title: '箱根' });
+  await call('A', 'wish.update', {
+    id: wish.data.id,
+    done: true,
+    doneOn: '2026-05-01',
+  });
+
+  const locked = await call('A', 'year.get', {});
+  assert.deepEqual(locked.data, {
+    year: '2026',
+    spend: { total: 306800, count: 2 },
+    togetherDay: 0,
+    locked: true,
+    note: null,
+  });
+  assert.equal((await call('A', 'year.write', {})).code, 'LIMIT');
+  assert.equal(
+    (await call('A', 'year.get', { year: '2027' })).code,
+    'VALIDATION',
+  );
+
+  const householdId = [...households.docs.values()].find((doc) =>
+    doc.members.some((member) => member.openid === 'A'),
+  )._id;
+  households.docs.get(householdId).vip = { until: NOW + 86400000 };
+  const full = (await call('B', 'year.get', { year: '2026' })).data;
+  assert.equal(full.locked, false);
+  assert.deepEqual(full.spend.top, [
+    { cat: '房租', amount: 300000 },
+    { cat: '吃饭', amount: 6800 },
+  ]);
+  assert.deepEqual(full.spend.peakMonth, { month: '2026-03', amount: 300000 });
+  assert.equal(full.spend.months.length, 12);
+  assert.equal(
+    full.spend.freeDays,
+    293 - 2,
+    '1 月 1 日到 10 月 20 日，只有两天花了钱',
+  );
+  assert.deepEqual(full.meals, {
+    count: 1,
+    top: [{ title: '拉面', count: 1 }],
+  });
+  assert.deepEqual(full.places, { count: 1, titles: ['箱根'] });
+  assert.equal(full.note, null);
+
+  const written = await call('A', 'year.write', { year: '2026' });
+  assert.equal(written.data.text, '这一年你们一起吃了好多拉面。');
+  assert.match(prompts[0], /2026 年一起花了 3068 元，记了 2 笔/);
+  assert.match(prompts[0], /「拉面」1 次/);
+  for (const secret of ['超凡', '佳益', '"A"', 'householdId'])
+    assert.equal(prompts[0].includes(secret), false, secret);
+  assert.equal([...insights.docs.keys()][0].includes('-year-2026'), true);
+  assert.equal((await call('B', 'year.get', {})).data.note.stale, false);
+});
+
 test('主页汇总 home.get：一次请求读齐六样，和分开读的结果一样，小家只读一次', async () => {
   const { call, households } = await setup();
   await call('A', 'expense.add', expense());
