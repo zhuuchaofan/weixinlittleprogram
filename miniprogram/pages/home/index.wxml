@@ -31,6 +31,20 @@
       <button class="btn-small" bindtap="dismissFreeHint">知道了</button>
     </view>
 
+    <view class="card quick">
+      <view class="composer">
+        <input class="composer-input" value="{{quickText}}" maxlength="{{limits.quickText}}" placeholder="说一句就记：午饭 32，打车 15" confirm-type="done" bindinput="inputQuick" bindconfirm="quickAdd" />
+        <button class="primary btn-inline" bindtap="quickAdd">记</button>
+      </view>
+      <view class="quick-foot">
+        <view class="small muted quick-hint">{{quickHint}}</view>
+        <view class="quick-links">
+          <view class="month-link small" bindtap="addExpense" aria-role="button">手动记 <text class="chevron-sm">›</text></view>
+          <view class="month-link small" bindtap="importBill" aria-role="button">导入账单 <text class="chevron-sm">›</text></view>
+        </view>
+      </view>
+    </view>
+
     <view wx:if="{{household.inviteCode}}" class="card solo">
       <view class="pair-mini" aria-hidden="true">
         <view class="avatar-sm avatar-a">{{household.members[0].name[0]}}</view>
@@ -64,9 +78,8 @@
       </view>
     </view>
 
-    <view wx:if="{{household.members.length > 1 && (feed.length || partnerSpent)}}" class="card recent">
+    <view wx:if="{{household.members.length > 1 && feed.length}}" class="card recent">
       <view class="small muted recent-head">TA 最近</view>
-      <view wx:if="{{partnerSpent}}" class="recent-row"><view class="recent-text">{{partnerSpent}}</view></view>
       <view wx:for="{{feed}}" wx:key="id" class="recent-row">
         <view class="recent-line">
           <view class="recent-text">{{item.text}}</view>
@@ -112,11 +125,6 @@
         <view class="small muted">{{footprint.text}}</view>
       </view>
       <text class="chevron">›</text>
-    </view>
-
-    <view class="actions">
-      <button class="primary" bindtap="addExpense"><text class="plus">+</text>记一笔</button>
-      <button class="secondary" bindtap="importBill">导入账单</button>
     </view>
 
     <view class="grid">

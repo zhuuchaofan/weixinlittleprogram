@@ -41,9 +41,11 @@
 .saving-done { background: var(--ok); }
 .saving-behind { color: var(--accent); }
 
-/* 记一笔 / 截图记账 */
-.actions { display: flex; gap: 20rpx; margin-top: 24rpx; }
-.actions button { flex: 1; min-height: 100rpx; font-weight: 600; }
+/* 首屏的一句话记账：输入框 + 「记」，下面一行是提示和手动记、导入账单 */
+.quick { margin-bottom: var(--gap-card); }
+.quick-foot { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 20rpx; }
+.quick-hint { flex: 1; min-width: 0; }
+.quick-links { display: flex; gap: 28rpx; flex-shrink: 0; }
 
 /* 四个入口 */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-card) 20rpx; margin-top: var(--gap-card); }

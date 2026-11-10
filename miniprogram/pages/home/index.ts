@@ -1,6 +1,7 @@
 import type {
   ActivityItem,
   Anniversary,
+  Expense,
   FootprintPage,
   Goal,
   Household,
@@ -9,7 +10,7 @@ import type {
   Todo,
 } from '../../models';
 import { inviteShare, peekHousehold } from '../../services/household';
-import { peekMonth } from '../../services/ledger';
+import { peekMonth, reactExpense } from '../../services/ledger';
 import { loadHome } from '../../services/home';
 import {
   activityService,
@@ -26,11 +27,14 @@ import { todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
 import { togetherView, type TogetherRow } from '../../utils/together';
-import { REACTIONS, REACTION_PHRASES } from '../../config/options';
+import { LENGTHS, REACTIONS, REACTION_PHRASES } from '../../config/options';
 import { errorMessage } from '../../services/cloud';
 import { daysBetween } from '../../utils/date';
 
 const loader = createLoader();
+// 最近一次读到的本月账目和动态，「TA 最近」要两份合起来排。
+let records_: Expense[] = [];
+let activity_: ActivityItem[] = [];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function partnerName(household: Household): string {
@@ -71,32 +75,64 @@ function rememberSeen(keys: string[]): void {
   }
 }
 
-/** TA 回应了我做的事、我还没看过的，最近的在前。 */
+/** 「TA 最近」和小气泡里只看这几天记的账；导入的账单一次几十笔，不算。 */
+const FEED_EXPENSE_DAYS = 3;
+
+function feedExpenses(records: Expense[]): Expense[] {
+  const since = Date.now() - FEED_EXPENSE_DAYS * DAY_MS;
+  return records.filter(
+    (record) => record.byRole && !record.src && record.ts >= since,
+  );
+}
+
+/** 一笔账在动态里的叫法：有备注用备注，没有用分类。 */
+function expenseTitle(record: Expense): string {
+  return record.note || record.cat;
+}
+
+/** TA 回应了我做的事或我记的账、我还没看过的，最近的在前。 */
 function nudgesOf(
   items: ActivityItem[],
+  records: Expense[],
   myRole: string,
   partner: string,
 ): Nudge[] {
   const seen = new Set(seenNudges());
-  const result: Nudge[] = [];
+  const other = myRole === 'a' ? 'b' : 'a';
+  const found: Array<Nudge & { ts: number }> = [];
   for (const item of items) {
     if (item.byRole && item.byRole !== myRole) continue;
-    const theirs = item.reactions[myRole === 'a' ? 'b' : 'a'];
+    const theirs = item.reactions[other];
     if (!theirs) continue;
-    const key = `${item.id}:${theirs}`;
-    if (seen.has(key)) continue;
-    result.push({
-      key,
+    found.push({
+      ts: item.ts,
+      key: `${item.id}:${theirs}`,
       text: `${partner}${REACTION_PHRASES[theirs]}`,
       sub: `因为你${DONE_TEXT[item.type]}「${item.title}」`,
     });
   }
-  return result;
+  for (const record of feedExpenses(records)) {
+    if (record.byRole !== myRole) continue;
+    const theirs = record.reactions?.[other];
+    if (!theirs) continue;
+    found.push({
+      ts: record.ts,
+      key: `${record.id}:${theirs}`,
+      text: `${partner}${REACTION_PHRASES[theirs]}`,
+      sub: `因为你记了「${expenseTitle(record)}」`,
+    });
+  }
+  return found
+    .filter((item) => !seen.has(item.key))
+    .sort((a, b) => b.ts - a.ts)
+    .map(({ key, text, sub }) => ({ key, text, sub }));
 }
 
 /** 主页「TA 最近」里的一行。 */
 interface FeedRow {
   id: string;
+  /** 做过的事（activity）还是一笔账（expense），回应时走不同的接口。 */
+  kind: 'activity' | 'expense';
   /** 一句话：TA 做了什么。 */
   text: string;
   when: string;
@@ -150,27 +186,47 @@ function freeHintOf(household: Household): FreeHint | null {
   };
 }
 
-/** 最近的动态里挑出要给 TA 看的：对方做的（可回应）、对方回应了我做的。 */
+const FEED_SHOWN = 4;
+
+/** 「TA 最近」：对方做的事和对方这几天记的账，混在一起按时间排，都可以回应。 */
 function feedRows(
   items: ActivityItem[],
+  records: Expense[],
   myRole: string,
   partner: string,
 ): FeedRow[] {
-  const rows: FeedRow[] = [];
+  const rows: Array<FeedRow & { ts: number }> = [];
   for (const item of items) {
-    const verb = DONE_TEXT[item.type];
-    const when = whenText(item.date);
-    if (item.byRole && item.byRole !== myRole) {
-      rows.push({
-        id: item.id,
-        text: `${partner}${verb}「${item.title}」`,
-        when,
-        canReact: true,
-        mine: item.reactions[myRole as 'a' | 'b'] || '',
-      });
-    }
+    if (!item.byRole || item.byRole === myRole) continue;
+    rows.push({
+      ts: item.ts,
+      id: item.id,
+      kind: 'activity',
+      text: `${partner}${DONE_TEXT[item.type]}「${item.title}」`,
+      when: whenText(item.date),
+      canReact: true,
+      mine: item.reactions[myRole as 'a' | 'b'] || '',
+    });
   }
-  return rows.slice(0, 4);
+  for (const record of feedExpenses(records)) {
+    if (record.byRole === myRole) continue;
+    rows.push({
+      ts: record.ts,
+      id: record.id,
+      kind: 'expense',
+      text: `${partner}记了「${expenseTitle(record)}」${record.flow === 'in' ? '收入 ' : ''}${formatYuan(record.amount)}`,
+      when: whenText(record.date),
+      canReact: true,
+      mine: record.reactions?.[myRole as 'a' | 'b'] || '',
+    });
+  }
+  return rows
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, FEED_SHOWN)
+    .map((row): FeedRow => {
+      const { id, kind, text, when, canReact, mine } = row;
+      return { id, kind, text, when, canReact, mine };
+    });
 }
 
 /** 主页：一进来就是本月花了多少、下一个纪念日，各功能从这里点进去。 */
@@ -195,8 +251,10 @@ Page({
     /** 限时免费快结束的提示，不用提示时为 null。 */
     freeHint: null as FreeHint | null,
     reactions: REACTIONS,
-    /** TA 近一天记了几笔账。 */
-    partnerSpent: '',
+    limits: LENGTHS,
+    /** 首屏一句话记账输入框里的字，和下面那行小字。 */
+    quickText: '',
+    quickHint: '可以一句说好几笔',
     /** 最要紧的一个攒钱目标（没攒完、截止最早），没有时为 null。 */
     goal: null as GoalRow | null,
     goalsReady: false,
@@ -249,32 +307,22 @@ Page({
     // 和记账页一致：开了两人分摊看共同支出，没开看全部支出。
     const splitting = this.data.household?.splitting === true;
     const total = splitting ? summary.sharedTotal : summary.spending.total;
-    const household = this.data.household;
-    const partnerRecords = household
-      ? records.filter(
-          (record) =>
-            record.byRole &&
-            record.byRole !== household.myRole &&
-            Date.now() - record.ts < DAY_MS,
-        ).length
-      : 0;
+    records_ = records;
     this.setData({
       spentText: formatYuan(total),
       countText: records.length ? `记了 ${records.length} 笔` : '还没有记账',
-      partnerSpent:
-        partnerRecords && household
-          ? `${partnerName(household)}最近记了 ${partnerRecords} 笔账`
-          : '',
     });
+    this.showFeed();
   },
-  showFeed(items: ActivityItem[]) {
+  /** 「TA 最近」和顶部小气泡：做过的事加上这几天记的账。哪边先读到都能显示，后到的再补上。 */
+  showFeed(items?: ActivityItem[]) {
+    if (items) activity_ = items;
     const household = this.data.household;
     if (!household || household.members.length < 2) return;
+    const partner = partnerName(household);
+    const nudges = nudgesOf(activity_, records_, household.myRole, partner);
     this.setData({
-      feed: feedRows(items, household.myRole, partnerName(household)),
-    });
-    const nudges = nudgesOf(items, household.myRole, partnerName(household));
-    this.setData({
+      feed: feedRows(activity_, records_, household.myRole, partner),
       nudge: nudges[0] || null,
       nudgeMore: Math.max(0, nudges.length - 1),
       nudgeKeys: nudges.map((item) => item.key),
@@ -300,8 +348,9 @@ Page({
   },
   /** 点一个回应；再点同一个收回。 */
   async react(event: WechatMiniprogram.TouchEvent) {
-    const { id, reaction } = event.currentTarget.dataset as {
+    const { id, kind, reaction } = event.currentTarget.dataset as {
       id: string;
+      kind: FeedRow['kind'];
       reaction: Reaction;
     };
     const row = this.data.feed.find((item) => item.id === id);
@@ -310,7 +359,10 @@ Page({
     const index = this.data.feed.indexOf(row);
     this.setData({ [`feed[${index}].mine`]: next });
     try {
-      await activityService.react(id, next);
+      if (kind === 'expense') {
+        const saved = await reactExpense(id, next);
+        records_ = records_.map((item) => (item.id === id ? saved : item));
+      } else await activityService.react(id, next);
     } catch (error) {
       this.setData({ [`feed[${index}].mine`]: row.mine });
       wx.showToast({ title: errorMessage(error), icon: 'none' });
@@ -379,6 +431,21 @@ Page({
   },
   open(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({ url: `/pages/${event.currentTarget.dataset.page}/index` });
+  },
+  inputQuick(event: WechatMiniprogram.Input) {
+    this.setData({ quickText: event.detail.value });
+  },
+  /** 首屏「记」：写了字就交给一句话记账去拆，没写就打开手动记一笔。 */
+  quickAdd() {
+    const text = this.data.quickText.trim();
+    if (!text) {
+      this.addExpense();
+      return;
+    }
+    this.setData({ quickText: '' });
+    wx.navigateTo({
+      url: `/pages/quick-add/index?text=${encodeURIComponent(text)}`,
+    });
   },
   addExpense() {
     wx.navigateTo({ url: '/pages/expense-edit/index' });

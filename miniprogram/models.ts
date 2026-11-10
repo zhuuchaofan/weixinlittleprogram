@@ -85,6 +85,8 @@ export interface Expense extends ExpenseInput {
   /** 截图导入的账目才有：来自哪个 App、原始商户名。 */
   src?: { app: BillApp; merchant: string; time: string; key: string };
   byRole: MemberRole | '';
+  /** 对方在主页「TA 最近」里点的回应，有才带。 */
+  reactions?: Partial<Record<MemberRole, Reaction>>;
   /** 被修改过才有：最后一次修改的时间和人。 */
   editedAt?: number;
   editedByRole?: MemberRole | '';
