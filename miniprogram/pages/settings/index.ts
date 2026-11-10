@@ -9,7 +9,9 @@ import { exportAllText } from '../../services/export';
 import { withLoading } from '../../services/page-load';
 import { applyTheme, setTheme, themeData } from '../../services/theme';
 import { THEMES } from '../../config/themes';
+import { AI_NAMES } from '../../config/options';
 import { todayKey } from '../../utils/date';
+import { doneStay } from '../../utils/feedback';
 
 function vipText(household: Household): string {
   if (household.vip?.active)
@@ -31,6 +33,7 @@ Page({
     myName: '',
     myPayName: '',
     vipText: '开通会员',
+    aiNames: AI_NAMES,
     themes: THEMES.map(({ id, name, swatch }) => ({ id, name, swatch })),
   },
   onShow() {
@@ -81,7 +84,7 @@ Page({
           payName: this.data.myPayName.trim(),
         }),
       );
-      this.setData({ message: '已保存。' });
+      doneStay();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

@@ -9,6 +9,7 @@ import {
   wishForDate,
   type WishBudget,
 } from '../../services/assist';
+import { doneBack } from '../../utils/feedback';
 
 const BUDGETS: { value: WishBudget; label: string }[] = [
   { value: 'none', label: '不限' },
@@ -131,7 +132,7 @@ Page({
     try {
       if (this.data.id) await dateService.update(this.data.id, input);
       else await dateService.add(input);
-      wx.navigateBack();
+      await doneBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -144,7 +145,7 @@ Page({
     this.setData({ busy: true, error: '' });
     try {
       await dateService.remove(this.data.id);
-      wx.navigateBack();
+      await doneBack('已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

@@ -10,6 +10,7 @@ import {
 } from '../../config/options';
 import { confirmAction } from '../../utils/confirm';
 import { applyTheme, themeData } from '../../services/theme';
+import { doneBack } from '../../utils/feedback';
 
 Page({
   data: {
@@ -75,7 +76,7 @@ Page({
         // 购物不重复。
         repeat: this.data.kind === 'todo' ? this.data.repeat : '',
       });
-      wx.navigateBack();
+      await doneBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {
@@ -88,7 +89,7 @@ Page({
     this.setData({ busy: true, error: '' });
     try {
       await todoService.remove(this.data.id);
-      wx.navigateBack();
+      await doneBack('已删除');
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

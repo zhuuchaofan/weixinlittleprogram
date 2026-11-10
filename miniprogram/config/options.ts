@@ -127,3 +127,8 @@ export const PAYERS: Payer[] = [...CONTRACT.payers];
 export const TODO_WHO: TodoWho[] = [...CONTRACT.todoWho];
 export const TODO_KIND_VALUES: TodoKind[] = [...CONTRACT.todoKinds];
 export const DISH_KINDS: DishKind[] = [...CONTRACT.dishKinds];
+
+/** 各项喵喵 AI 功能的叫法，统一用契约里的名字（会员页权益、设置页、购买须知都用这一串）。 */
+export const AI_NAMES = Object.values(CONTRACT.ai)
+  .map((quota) => quota.name)
+  .join('、');

@@ -93,7 +93,8 @@ Page({
       mode === 'pair'
         ? `${noCopy ? '新小家从空开始，不带走任何记录。' : '会带走一份完整副本。'}${vipLine}`
         : `这个小家的全部记录都会删掉，删了找不回来。${vipLine}`;
-    if (await confirmAction('确定退出小家？', content)) await this.leave();
+    if (await confirmAction('确定退出小家？', content, '退出'))
+      await this.leave();
   },
   async leave() {
     this.setData({ busy: true, error: '', message: '' });

@@ -4,6 +4,7 @@ import { withLoading } from '../../services/page-load';
 import { buyVip, getVip, type VipInfo } from '../../services/vip';
 import { formatYuan } from '../../utils/money';
 import { todayKey } from '../../utils/date';
+import { AI_NAMES } from '../../config/options';
 import { CONTRACT } from '../../config/contract';
 
 const EACH = { day: '每天', month: '每月' } as const;
@@ -23,6 +24,7 @@ Page({
     message: '',
     info: null as VipInfo | null,
     perks: PERKS,
+    aiNames: AI_NAMES,
     untilText: '',
     freeText: '',
     plans: [] as { id: string; name: string; days: number; price: string }[],

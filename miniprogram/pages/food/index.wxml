@@ -38,7 +38,7 @@
       <view class="row-main"><view class="row-title">{{item.name}}</view><view wx:if="{{item.reason}}" class="row-sub">{{item.reason}}</view></view>
       <text class="chevron">›</text>
     </view>
-    <view wx:if="{{aiPicks.length}}" class="small muted">只从你的菜单里挑，理由由 AI 生成，仅供参考。点一个放到上面。</view>
+    <view wx:if="{{aiPicks.length}}" class="small muted">以上内容由 AI 从你的菜单里挑出并生成理由，仅供参考。点一个放到上面。</view>
   </view>
 
   <view class="composer">

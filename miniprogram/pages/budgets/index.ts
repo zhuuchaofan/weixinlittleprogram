@@ -5,6 +5,7 @@ import { CATEGORIES, categoryLook } from '../../config/options';
 import { fenToInput, formatYuan, parseYuan } from '../../utils/money';
 import { todayKey } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
+import { doneBack } from '../../utils/feedback';
 
 type Row = {
   cat: string;
@@ -80,8 +81,7 @@ Page({
     this.setData({ busy: true, error: '' });
     try {
       await updateHousehold({ budgets });
-      wx.showToast({ title: '已保存', icon: 'success' });
-      setTimeout(() => wx.navigateBack(), 600);
+      await doneBack();
     } catch (error) {
       this.setData({ error: errorMessage(error) });
     } finally {

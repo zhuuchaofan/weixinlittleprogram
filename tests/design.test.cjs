@@ -109,3 +109,59 @@ test('按钮的外边距规则选择器要压过全局的清零', () => {
         );
   }
 });
+
+// docs/DESIGN.md「11. AI 文案」：AI 内容的标识只有一种写法。
+test('AI 标识统一写「AI 生成」', () => {
+  for (const [kind, name, dir] of folders()) {
+    const wxml = readFileSync(join(dir, 'index.wxml'), 'utf8');
+    for (const [, text] of wxml.matchAll(/class="tag">(AI[^<]*)</g))
+      assert.equal(
+        text,
+        'AI 生成',
+        `${kind}/${name}/index.wxml 的 AI 标识写成了「${text}」`,
+      );
+    assert.doesNotMatch(
+      wxml,
+      /重新生成/,
+      `${kind}/${name}/index.wxml：AI 的按钮统一叫「重新写」`,
+    );
+  }
+});
+
+// 出错后的按钮统一叫「再试一次」；勾选圈勾上是猫爪，不是 ✓。
+test('页面里不写「重试」，勾选圈里不写 ✓', () => {
+  for (const [kind, name, dir] of folders()) {
+    const wxml = readFileSync(join(dir, 'index.wxml'), 'utf8');
+    assert.doesNotMatch(
+      wxml,
+      /重试/,
+      `${kind}/${name}/index.wxml 里有「重试」，请写「再试一次」`,
+    );
+    assert.doesNotMatch(
+      wxml,
+      /class="tick-box[^>]*>[^<]*✓/,
+      `${kind}/${name}/index.wxml 的勾选圈里写了 ✓，请用 .tick-paw 猫爪`,
+    );
+  }
+});
+
+// docs/DESIGN.md「10. 保存、删除、返回」：编辑页保存 / 删除成功走 doneBack，不直接 navigateBack；
+// 弹窗按钮最多 4 个字（微信的限制，超了真机会报错）。
+test('编辑页保存后走统一反馈，弹窗按钮不超过 4 个字', () => {
+  for (const [kind, name, dir] of folders()) {
+    const ts = readFileSync(join(dir, 'index.ts'), 'utf8');
+    if (name.endsWith('-edit') || name === 'budgets') {
+      assert.match(ts, /doneBack\(/, `${kind}/${name} 保存后请用 doneBack()`);
+      assert.doesNotMatch(
+        ts,
+        /wx\.navigateBack\(/,
+        `${kind}/${name} 请用 doneBack()，不要直接 wx.navigateBack()`,
+      );
+    }
+    for (const [, text] of ts.matchAll(/(?:confirm|cancel)Text: '([^']*)'/g))
+      assert.ok(
+        [...text].length <= 4,
+        `${kind}/${name} 的弹窗按钮「${text}」超过 4 个字`,
+      );
+  }
+});
