@@ -155,6 +155,22 @@ interface FreeHint {
   sub: string;
 }
 
+// 晚上这个点之后，今天自己还一笔没记，就在输入框下面轻轻提一句。
+const EVENING_HOUR = 18;
+
+function quickHintOf(records: Expense[], myRole: string): string {
+  const today = todayKey();
+  const mine = records.some(
+    (record) =>
+      record.byRole === myRole &&
+      (record.date === today || todayKey(record.ts) === today),
+  );
+  if (mine) return '今天记过啦，还有的话接着说';
+  return new Date().getHours() >= EVENING_HOUR
+    ? '今天的账还没记，说一句就好'
+    : '可以一句说好几笔';
+}
+
 const START_KEY = 'startDismissed';
 
 function startDismissed(): boolean {
@@ -324,6 +340,7 @@ Page({
       spentText: formatYuan(total),
       countText: records.length ? `记了 ${records.length} 笔` : '还没有记账',
       showStart: !records.length && !startDismissed(),
+      quickHint: quickHintOf(records, this.data.household?.myRole || ''),
     });
     this.showFeed();
   },
