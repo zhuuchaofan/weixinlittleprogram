@@ -9,6 +9,8 @@ const { createVision } = require('./vision');
 const { createAi } = require('./ai');
 const { createXpay, DELIVER_EVENT, REFUND_EVENT } = require('./xpay');
 const { createStorage } = require('./photos');
+const { createSender } = require('./notify-send');
+const { isWeeklyTrigger } = require('./weekly');
 
 function createHouseholdRepository(db) {
   const collection = db.collection('households');
@@ -204,6 +206,72 @@ function createAiUsageRepository(db) {
   };
 }
 
+/**
+ * 订阅消息次数（subscriptions）：一人一条，_id 是 openid。
+ * weekly：每周小结还能发几次；week：最近处理过的那周（周一的日期），同一周不会处理两次。
+ */
+function createSubscriptionRepository(db) {
+  const collection = db.collection('subscriptions');
+  const _ = db.command;
+  return {
+    async get(openid) {
+      const result = await collection.where({ _id: openid }).limit(1).get();
+      return result.data[0] || null;
+    },
+    async add(openid, max, at) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = await collection
+          .where({ _id: openid, weekly: _.lt(max) })
+          .update({ weekly: _.inc(1), updatedAt: at });
+        if (result.updated === 1) return;
+        if (await this.get(openid)) return; // 已经攒满了
+        try {
+          await collection.add({
+            _id: openid,
+            weekly: 1,
+            week: '',
+            updatedAt: at,
+          });
+          return;
+        } catch {
+          // 同时点了两次，另一次先建好了：再加一次。
+        }
+      }
+    },
+    async clear(openid, at) {
+      await collection
+        .where({ _id: openid })
+        .update({ weekly: 0, updatedAt: at });
+    },
+    async listDue(week, after, limit) {
+      const where = { weekly: _.gt(0), week: _.neq(week) };
+      if (after) where._id = _.gt(after);
+      const result = await collection
+        .where(where)
+        .orderBy('_id', 'asc')
+        .limit(limit)
+        .get();
+      return result.data;
+    },
+    async markWeek(openid, week) {
+      await collection.where({ _id: openid }).update({ week });
+    },
+    /** 领走一次：还有次数、这周还没处理过才成功。 */
+    async claim(openid, week) {
+      const result = await collection
+        .where({ _id: openid, weekly: _.gt(0), week: _.neq(week) })
+        .update({ weekly: _.inc(-1), week });
+      return result.updated === 1;
+    },
+    async giveBack(openid) {
+      await collection.where({ _id: openid }).update({ weekly: _.inc(1) });
+    },
+    async remove(openid) {
+      await collection.where({ _id: openid }).remove();
+    },
+  };
+}
+
 /** 攒钱目标：通用记录操作，加上原子的「存了一笔」。 */
 function createGoalRepository(db) {
   const _ = db.command;
@@ -341,8 +409,12 @@ exports.main = async (event, context) => {
     }),
     orders: createOrderRepository(db),
     xpay: createXpay(),
+    subscriptions: createSubscriptionRepository(db),
+    sender: createSender(),
   });
   if (isDeliver) return route.deliver(event);
   if (isRefund) return route.refund(event);
+  // 每周一的定时触发器：给订阅了的人发上周小结（见 weekly.js）。
+  if (isWeeklyTrigger(event, openid)) return route.weekly();
   return route(event, openid);
 };

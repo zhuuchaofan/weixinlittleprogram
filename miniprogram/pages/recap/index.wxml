@@ -79,6 +79,20 @@
     </view>
 
     <button wx:if="{{!quiet}}" class="secondary recap-share" open-type="share">分享给 TA</button>
+
+    <view wx:if="{{weeklyKnown}}" class="card recap-card">
+      <view class="ai-head">
+        <image class="ai-cat" src="/images/ui/cat-face.svg" mode="aspectFit" />
+        <view class="ai-title">每周一收到上周小结</view>
+      </view>
+      <view class="small muted weekly-text">每周一早上，微信「服务通知」里会来一条：上周花了多少、结余多少。点一次「订阅」收一条，上周没记账就不发。</view>
+      <view wx:if="{{weeklyNote}}" class="ai-error small">{{weeklyNote}}</view>
+      <view class="ai-foot">
+        <text class="small muted">{{weeklyTimes ? '已订阅，还能收 ' + weeklyTimes + ' 次' : ''}}</text>
+        <button class="btn-small" bindtap="subscribeWeekly" loading="{{weeklyBusy}}" disabled="{{weeklyBusy}}">{{weeklyTimes ? '再订一周' : '订阅'}}</button>
+      </view>
+      <button wx:if="{{weeklyTimes}}" class="text-button weekly-stop" bindtap="stopWeekly" disabled="{{weeklyBusy}}">不用了</button>
+    </view>
   </block>
   <view class="page-end"></view>
 </view>

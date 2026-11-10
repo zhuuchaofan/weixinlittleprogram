@@ -32,3 +32,5 @@ button.recap-share:not([size='mini']) { margin-top: var(--gap-lg); }
 .ai-text { font-size: 28rpx; line-height: 1.8; white-space: pre-line; }
 .ai-error { margin-top: 12rpx; color: var(--muted); }
 .ai-foot { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin-top: 16rpx; }
+.weekly-text { line-height: 1.6; }
+button.weekly-stop:not([size='mini']) { margin-top: var(--gap-xs); }
