@@ -18,6 +18,8 @@
 | dates                 | title, date, yearly                                                                  | 纪念日                                                                                                                                                                                                                                                                                                                                                                                                         |
 | activity              | type, refId, title, date, kind                                                       | 年度回顾用的「做过的事」：type 为 dish（就吃这个）、todo（勾完）、wish（去过了）；title 是当时的名字；_id 为 `type_refId_date`，同一天只一条；原记录删了也保留                                                                                                                                                                                                                                                 |
 | ai_usage              | calls, failed, input, output, cost, features                                         | 每天一条 AI 用量，_id 为日期；cost 为估算费用（元）；features 按功能各记一份；不含内容和 openid                                                                                                                                                                                                                                                                                                                |
+| orders                | outTradeNo, householdId, openid, plan, productId, price, days, status, refunded      | 会员订单（不归某一个人的账本）：下单记 pending，到账 delivered，退款记 refunded（分）；注销时整条保留，见下文「注销账号」                                                                                                                                                                                                                                                                                      |
+| subscriptions         | weekly, week, updatedAt                                                              | 每周小结订阅消息，一人一条，_id 为 openid；weekly 是还能发几次，week 是最近处理过的那周的周一；注销时删掉                                                                                                                                                                                                                                                                                                      |
 | rsvps、guest_messages | —                                                                                    | 答谢宴旧数据，只读归档                                                                                                                                                                                                                                                                                                                                                                                         |
 
 分类、标签、字段长度等前后端共用的取值写在 `shared/contract.json`。
@@ -100,7 +102,7 @@ ROADMAP 和提交记录里用这些编号。
 | M5  | 记账   | 自定义分摊比例，如 6:4                           | 已完成        |
 | M6  | 记账   | 定期支出：房租、水电、订阅                       | 待做          |
 | M7  | 记账   | 分类预算与超支提示                               | 已完成        |
-| M8  | 记账   | 导出 CSV                                         | 暂缓          |
+| M8  | 记账   | 导出 CSV                                         | 已完成        |
 | M9  | 记账   | 多币种                                           | 不做          |
 | M10 | 记账   | 截图记账                                         | 第 1 期已完成 |
 | M11 | 记账   | 花销分析：和上月比、大额单笔、近 6 个月走势      | 已完成        |
@@ -108,7 +110,7 @@ ROADMAP 和提交记录里用这些编号。
 | M13 | 记账   | 攒钱目标                                         | 已完成        |
 | T1  | 清单   | 购物、待办两类（家务并入待办），指派，勾选       | 已完成        |
 | T2  | 清单   | 编辑条目                                         | 已完成        |
-| T3  | 清单   | 重复任务，如每周倒垃圾                           | 待做          |
+| T3  | 清单   | 重复任务，如每周倒垃圾                           | 已完成        |
 | T4  | 清单   | 到期日与提醒                                     | 暂缓          |
 | T5  | 清单   | 家务轮换                                         | 待做          |
 | F1  | 吃啥   | 随机抽与菜单管理（按怎么吃分类）                 | 已完成        |

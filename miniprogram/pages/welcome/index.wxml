@@ -12,7 +12,7 @@
       <view class="avatar-lg avatar-b">TA</view>
     </view>
   </view>
-  <view wx:if="{{checking}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在确认…</view>
+  <loading-paws wx:if="{{checking}}" theme-id="{{themeId}}" text="正在确认…" />
   <view wx:elif="{{mode === 'choose'}}" class="stack">
     <button class="primary" data-mode="create" bindtap="choose">创建小家</button>
     <button class="secondary" data-mode="join" bindtap="choose">用邀请码加入</button>

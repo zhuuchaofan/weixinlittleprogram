@@ -7,7 +7,6 @@
 
 .recap-card { margin-top: var(--gap-card); }
 .recap-head { margin-bottom: 8rpx; }
-.recap-line { font-size: 30rpx; line-height: 1.6; }
 .recap-row { display: flex; align-items: center; gap: 16rpx; min-height: 72rpx; }
 .recap-name { flex: 1; font-size: 28rpx; }
 .recap-value { font-size: 28rpx; font-variant-numeric: tabular-nums; }

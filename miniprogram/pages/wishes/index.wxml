@@ -11,7 +11,7 @@
       <button class="primary btn-inline" bindtap="add" disabled="{{busy}}">添加</button>
     </view>
     <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
-    <view wx:if="{{loading && !wishes.length}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+    <loading-paws wx:if="{{loading && !wishes.length}}" theme-id="{{themeId}}" />
     <view wx:elif="{{!open.length}}" class="empty list-gap"><image class="empty-cat" src="/images/themes/{{themeId}}/cat-sleep.svg" aria-hidden="true" />想去的地方、想一起做的事，先记下来。去过了打个勾，就会出现在「去过」里。</view>
 
     <view wx:if="{{open.length}}" class="list list-gap">
