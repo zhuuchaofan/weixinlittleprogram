@@ -72,9 +72,6 @@ export const goalService = {
 
 /** 主页「TA 最近」：近两周两人做过的事，和对它的回应。 */
 export const activityService = {
-  recent(): Promise<ActivityItem[]> {
-    return callApi<ActivityItem[]>('activity.recent');
-  },
   /** reaction 为空表示收回。 */
   react(id: string, reaction: Reaction | ''): Promise<ActivityItem> {
     return callApi<ActivityItem>('activity.react', { id, reaction });
