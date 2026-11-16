@@ -22,235 +22,33 @@ import { goalView, type GoalRow } from '../../utils/goal';
 import { chooseBillImport } from '../../services/bills';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
-import { DAY_MS, daysBetween, todayKey } from '../../utils/date';
+import { todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
 import { togetherView, type TogetherRow } from '../../utils/together';
-import { LENGTHS, REACTIONS, REACTION_PHRASES } from '../../config/options';
+import { LENGTHS, REACTIONS } from '../../config/options';
 import { errorMessage } from '../../services/cloud';
+import {
+  feedRows,
+  nudgesOf,
+  partnerName,
+  rememberSeen,
+  type FeedRow,
+  type Nudge,
+} from '../../utils/home-feed';
+import {
+  dismissStartCard,
+  freeHintOf,
+  quickHintOf,
+  rememberFreeHint,
+  startDismissed,
+  type FreeHint,
+} from '../../utils/home-hints';
 
 const loader = createLoader();
 // 最近一次读到的本月账目和动态，「TA 最近」要两份合起来排。
 let records_: Expense[] = [];
 let activity_: ActivityItem[] = [];
-
-function partnerName(household: Household): string {
-  return (
-    household.members.find((member) => member.role !== household.myRole)
-      ?.name || 'TA'
-  );
-}
-
-const DONE_TEXT = { todo: '完成了', dish: '吃了', wish: '去过了' };
-
-/** 主页顶部的小气泡：TA 回应了我做的事。key 用来记「已经看过」。 */
-interface Nudge {
-  key: string;
-  text: string;
-  sub: string;
-}
-
-const SEEN_KEY = 'seenNudges';
-// 只记最近这么多条，够覆盖两周的动态。
-const SEEN_KEPT = 60;
-
-function seenNudges(): string[] {
-  try {
-    const value = wx.getStorageSync(SEEN_KEY);
-    return Array.isArray(value) ? value : [];
-  } catch {
-    return [];
-  }
-}
-
-function rememberSeen(keys: string[]): void {
-  try {
-    const all = [...new Set([...keys, ...seenNudges()])].slice(0, SEEN_KEPT);
-    wx.setStorageSync(SEEN_KEY, all);
-  } catch {
-    // 记不住就下次再显示一次，不影响别的。
-  }
-}
-
-/** 「TA 最近」和小气泡里只看这几天记的账；导入的账单一次几十笔，不算。 */
-const FEED_EXPENSE_DAYS = 3;
-
-function feedExpenses(records: Expense[]): Expense[] {
-  const since = Date.now() - FEED_EXPENSE_DAYS * DAY_MS;
-  return records.filter(
-    (record) => record.byRole && !record.src && record.ts >= since,
-  );
-}
-
-/** 一笔账在动态里的叫法：有备注用备注，没有用分类。 */
-function expenseTitle(record: Expense): string {
-  return record.note || record.cat;
-}
-
-/** TA 回应了我做的事或我记的账、我还没看过的，最近的在前。 */
-function nudgesOf(
-  items: ActivityItem[],
-  records: Expense[],
-  myRole: string,
-  partner: string,
-): Nudge[] {
-  const seen = new Set(seenNudges());
-  const other = myRole === 'a' ? 'b' : 'a';
-  const found: Array<Nudge & { ts: number }> = [];
-  for (const item of items) {
-    if (item.byRole && item.byRole !== myRole) continue;
-    const theirs = item.reactions[other];
-    if (!theirs) continue;
-    found.push({
-      ts: item.ts,
-      key: `${item.id}:${theirs}`,
-      text: `${partner}${REACTION_PHRASES[theirs]}`,
-      sub: `因为你${DONE_TEXT[item.type]}「${item.title}」`,
-    });
-  }
-  for (const record of feedExpenses(records)) {
-    if (record.byRole !== myRole) continue;
-    const theirs = record.reactions?.[other];
-    if (!theirs) continue;
-    found.push({
-      ts: record.ts,
-      key: `${record.id}:${theirs}`,
-      text: `${partner}${REACTION_PHRASES[theirs]}`,
-      sub: `因为你记了「${expenseTitle(record)}」`,
-    });
-  }
-  return found
-    .filter((item) => !seen.has(item.key))
-    .sort((a, b) => b.ts - a.ts)
-    .map(({ key, text, sub }) => ({ key, text, sub }));
-}
-
-/** 主页「TA 最近」里的一行。 */
-interface FeedRow {
-  id: string;
-  /** 做过的事（activity）还是一笔账（expense），回应时走不同的接口。 */
-  kind: 'activity' | 'expense';
-  /** 一句话：TA 做了什么。 */
-  text: string;
-  when: string;
-  /** 对方做的事才能点回应。 */
-  canReact: boolean;
-  mine: Reaction | '';
-}
-
-function whenText(date: string): string {
-  const days = daysBetween(date, todayKey());
-  if (days <= 0) return '今天';
-  if (days === 1) return '昨天';
-  return `${Number(date.slice(5, 7))}月${Number(date.slice(8))}日`;
-}
-
-/** 限时免费快结束时主页顶部的提示。key 用来记「已经点过知道了」。 */
-interface FreeHint {
-  key: string;
-  text: string;
-  sub: string;
-}
-
-// 晚上这个点之后，今天自己还一笔没记，就在输入框下面轻轻提一句。
-const EVENING_HOUR = 18;
-
-function quickHintOf(records: Expense[], myRole: string): string {
-  const today = todayKey();
-  const mine = records.some(
-    (record) =>
-      record.byRole === myRole &&
-      (record.date === today || todayKey(record.ts) === today),
-  );
-  if (mine) return '今天记过啦，还有的话接着说';
-  return new Date().getHours() >= EVENING_HOUR
-    ? '今天的账还没记，说一句就好'
-    : '可以一句说好几笔';
-}
-
-const START_KEY = 'startDismissed';
-
-function startDismissed(): boolean {
-  try {
-    return Boolean(wx.getStorageSync(START_KEY));
-  } catch {
-    return false;
-  }
-}
-
-const FREE_HINT_KEY = 'freeHintSeen';
-// 结束前这么多天开始提示；最后两天（含当天）点过「知道了」也会再提示一次。
-const FREE_HINT_DAYS = 7;
-const FREE_HINT_LAST = 1;
-
-/** 限免还剩 7 天以内、又没真正开通会员时给一句提示；不用提示返回 null。 */
-function freeHintOf(household: Household): FreeHint | null {
-  const { free, active } = household.vip || { free: 0, active: false };
-  if (!free || active) return null;
-  const end = todayKey(free);
-  const left = daysBetween(todayKey(), end);
-  if (left < 0 || left > FREE_HINT_DAYS) return null;
-  const key = `${end}:${left <= FREE_HINT_LAST ? 'last' : 'week'}`;
-  try {
-    if (wx.getStorageSync(FREE_HINT_KEY) === key) return null;
-  } catch {
-    // 读不到就照常提示。
-  }
-  const day = `${Number(end.slice(5, 7))} 月 ${Number(end.slice(8))} 日`;
-  return {
-    key,
-    text:
-      left === 0
-        ? '限时免费今天结束'
-        : left === 1
-          ? '限时免费明天结束'
-          : `限时免费还有 ${left} 天`,
-    sub: `${day}之后记账照常免费，喵喵 AI 的次数和照片张数会变少`,
-  };
-}
-
-const FEED_SHOWN = 4;
-
-/** 「TA 最近」：对方做的事和对方这几天记的账，混在一起按时间排，都可以回应。 */
-function feedRows(
-  items: ActivityItem[],
-  records: Expense[],
-  myRole: string,
-  partner: string,
-): FeedRow[] {
-  const rows: Array<FeedRow & { ts: number }> = [];
-  for (const item of items) {
-    if (!item.byRole || item.byRole === myRole) continue;
-    rows.push({
-      ts: item.ts,
-      id: item.id,
-      kind: 'activity',
-      text: `${partner}${DONE_TEXT[item.type]}「${item.title}」`,
-      when: whenText(item.date),
-      canReact: true,
-      mine: item.reactions[myRole as 'a' | 'b'] || '',
-    });
-  }
-  for (const record of feedExpenses(records)) {
-    if (record.byRole === myRole) continue;
-    rows.push({
-      ts: record.ts,
-      id: record.id,
-      kind: 'expense',
-      text: `${partner}记了「${expenseTitle(record)}」${record.flow === 'in' ? '收入 ' : ''}${formatYuan(record.amount)}`,
-      when: whenText(record.date),
-      canReact: true,
-      mine: record.reactions?.[myRole as 'a' | 'b'] || '',
-    });
-  }
-  return rows
-    .sort((a, b) => b.ts - a.ts)
-    .slice(0, FEED_SHOWN)
-    .map((row): FeedRow => {
-      const { id, kind, text, when, canReact, mine } = row;
-      return { id, kind, text, when, canReact, mine };
-    });
-}
 
 /** 主页：一进来就是本月花了多少、下一个纪念日，各功能从这里点进去。 */
 Page({
@@ -363,11 +161,7 @@ Page({
   dismissFreeHint() {
     const key = this.data.freeHint?.key;
     this.setData({ freeHint: null });
-    try {
-      if (key) wx.setStorageSync(FREE_HINT_KEY, key);
-    } catch {
-      // 记不住就下次再提示一次，不影响别的。
-    }
+    if (key) rememberFreeHint(key);
   },
   openVip() {
     wx.navigateTo({ url: '/pages/vip/index' });
@@ -460,11 +254,7 @@ Page({
   },
   dismissStart() {
     this.setData({ showStart: false });
-    try {
-      wx.setStorageSync(START_KEY, 1);
-    } catch {
-      // 记不住就下次再显示一次，不影响别的。
-    }
+    dismissStartCard();
   },
   inputQuick(event: WechatMiniprogram.Input) {
     this.setData({ quickText: event.detail.value });
