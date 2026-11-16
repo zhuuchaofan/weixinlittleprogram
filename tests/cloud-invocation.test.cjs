@@ -22,6 +22,15 @@ test('每次云函数调用仅从当次 context 取微信身份', () => {
   assert.deepEqual(owner, { openid: 'owner', envId: 'env' });
   assert.deepEqual(visitor, { openid: 'visitor', envId: 'env' });
   assert.deepEqual(withoutIdentity, { openid: '', envId: 'env' });
+  // 定时触发器、控制台测试：调用里没有 TCB_ENV 或是空串时用备用值。
+  assert.deepEqual(invocationFromContext({ environment: {} }, parse, 'ns'), {
+    openid: '',
+    envId: 'ns',
+  });
+  assert.deepEqual(
+    invocationFromContext({ environment: { TCB_ENV: '' } }, parse, 'ns'),
+    { openid: '', envId: 'ns' },
+  );
   assert.deepEqual(
     invocationFromContext(
       null,

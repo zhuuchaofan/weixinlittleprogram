@@ -382,7 +382,8 @@ exports.main = async (event, context) => {
   const { openid, envId } = invocationFromContext(
     context,
     cloudbase.parseContext,
-    process.env.TCB_ENV || '',
+    // 进程里的 TCB_ENV 只在被小程序调用过的实例里才有；SCF_NAMESPACE 平台一定会给，值就是环境 id。
+    process.env.TCB_ENV || process.env.SCF_NAMESPACE || '',
   );
   if (!envId)
     return { ok: false, code: 'UNAVAILABLE', message: '云环境信息缺失' };
