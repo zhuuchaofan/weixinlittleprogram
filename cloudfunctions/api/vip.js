@@ -28,6 +28,35 @@ function freeUntilOf(env = process.env) {
   return Date.parse(`${value}T23:59:59.999+08:00`) || 0;
 }
 
+/**
+ * 限时活动价：到 promo.until 这一天（北京时间）的最后一刻，套餐按活动价卖，之后自动恢复原价。
+ * 日期来自 contract.json 的 vip.promo.until；云函数环境变量 VIP_PROMO_UNTIL 可以覆盖
+ * （填 YYYY-MM-DD 改日期，填 off 立刻结束），不用发版。返回时间戳，没有活动为 0。
+ */
+function promoUntilOf(env = process.env) {
+  const value = String(env.VIP_PROMO_UNTIL ?? VIP.promo?.until ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 0;
+  return Date.parse(`${value}T23:59:59.999+08:00`) || 0;
+}
+
+/**
+ * 某个套餐现在怎么卖：活动期间用活动道具（虚拟支付后台另建的道具，价格就是活动价），
+ * 否则用原价道具。扣多少钱由后台道具价格决定，下单时传的 goodsPrice 必须和它一致，
+ * 所以活动价和原价是两个不同的道具 ID。
+ * 返回 { id, name, days, price（现在实际要付的，分）, listPrice（原价）, productId }。
+ */
+function planNow(plan, at, env = process.env) {
+  const promo = plan.promo && promoUntilOf(env) > at ? plan.promo : null;
+  return {
+    id: plan.id,
+    name: plan.name,
+    days: plan.days,
+    price: promo ? promo.price : plan.price,
+    listPrice: plan.price,
+    productId: promo ? promo.productId : plan.id,
+  };
+}
+
 /** 账单文件导入的免费体验：每个小家一次，从第一次导入（fileTrialAt）算起这么久之内都算这一次。 */
 const FILE_TRIAL_MS = 24 * 60 * 60 * 1000;
 
@@ -170,10 +199,15 @@ function createVipHandler({
     actions: {
       async 'vip.get'(openid) {
         const household = await requireMembership(openid);
+        const at = now();
+        const promoUntil = promoUntilOf() > at ? promoUntilOf() : 0;
         return {
-          ...vipView(household, now()),
+          ...vipView(household, at),
           available: xpay !== null,
-          plans: VIP.plans,
+          // price 是现在实际要付的价格（活动期间是活动价），旧版会员页只读 price，照样对。
+          plans: VIP.plans.map((plan) => planNow(plan, at)),
+          // 限时活动：截止时间戳和角标文字；没有活动为 null。
+          promo: promoUntil ? { until: promoUntil, tag: VIP.promo.tag } : null,
           // 每项 AI 功能的免费 / 会员次数，会员页照着列。
           quotas: Object.entries(QUOTAS).map(([id, quota]) => ({
             id,
@@ -191,8 +225,10 @@ function createVipHandler({
             'UNAVAILABLE',
             '会员购买还没开通：需要在云函数 api 里配置虚拟支付。',
           );
-        const plan = VIP.plans.find((item) => item.id === payload?.plan);
-        if (!plan) throw new ApiError('VALIDATION', '没有这个会员套餐。');
+        const found = VIP.plans.find((item) => item.id === payload?.plan);
+        if (!found) throw new ApiError('VALIDATION', '没有这个会员套餐。');
+        // 活动价还是原价按下单这一刻算；订单里记下实际的道具和价格，发货、退款都按它对账。
+        const plan = planNow(found, now());
         const code = typeof payload?.code === 'string' ? payload.code : '';
         if (!code)
           throw new ApiError('VALIDATION', '登录有点过期了，再试一次吧。');
@@ -204,7 +240,7 @@ function createVipHandler({
           buyQuantity: 1,
           env: xpay.env,
           currencyType: 'CNY',
-          productId: plan.id,
+          productId: plan.productId,
           goodsPrice: plan.price,
           outTradeNo,
           // 透传数据，发货推送里原样带回；这里放小家 ID 方便对账。
@@ -214,7 +250,8 @@ function createVipHandler({
           outTradeNo,
           openid,
           householdId: household._id,
-          productId: plan.id,
+          productId: plan.productId,
+          plan: plan.id,
           price: plan.price,
           days: plan.days,
           env: xpay.env,
@@ -300,5 +337,7 @@ module.exports = {
   isVip,
   fileTrialOpen,
   freeUntilOf,
+  promoUntilOf,
+  planNow,
   vipView,
 };

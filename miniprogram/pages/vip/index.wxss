@@ -13,3 +13,7 @@
 .plan-price { transition: font-size 0.18s; }
 .agree { margin-top: 20rpx; text-align: center; font-size: 24rpx; color: var(--muted); }
 .agree-link { color: var(--accent); }
+/* 限时活动价：截止日期一行小字，价格前原价划线 */
+.promo-note { margin: -8rpx 0 16rpx; font-size: 24rpx; color: var(--muted); }
+.plan-prices { display: flex; align-items: baseline; }
+.plan-list-price { margin-right: 12rpx; font-size: 24rpx; color: var(--muted); text-decoration: line-through; }

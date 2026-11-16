@@ -89,18 +89,30 @@ export const CONTRACT = {
   },
   "vip": {
     "freeUntil": "2026-11-30",
+    "promo": {
+      "until": "2026-12-31",
+      "tag": "限时"
+    },
     "plans": [
       {
         "id": "vip_month",
         "name": "月度会员",
         "days": 31,
-        "price": 900
+        "price": 900,
+        "promo": {
+          "productId": "vip_month_promo",
+          "price": 600
+        }
       },
       {
         "id": "vip_year",
         "name": "年度会员",
         "days": 366,
-        "price": 6800
+        "price": 6800,
+        "promo": {
+          "productId": "vip_year_promo",
+          "price": 3800
+        }
       }
     ]
   },

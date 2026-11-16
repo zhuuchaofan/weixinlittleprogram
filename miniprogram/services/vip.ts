@@ -5,8 +5,17 @@ export interface VipPlan {
   id: string;
   name: string;
   days: number;
-  /** 价格，单位：分 */
+  /** 现在实际要付的价格（限时活动期间是活动价），单位：分 */
   price: number;
+  /** 原价，单位：分；1.23.x 及以前的云端没有这个字段 */
+  listPrice?: number;
+}
+
+export interface VipPromo {
+  /** 活动价截止时间戳，过了自动恢复原价 */
+  until: number;
+  /** 角标文字，如「限时」 */
+  tag: string;
 }
 
 export interface VipInfo {
@@ -18,6 +27,8 @@ export interface VipInfo {
   /** 云端是否配置好了虚拟支付 */
   available: boolean;
   plans: VipPlan[];
+  /** 限时活动价；没有活动为 null（旧云端没有这个字段） */
+  promo?: VipPromo | null;
 }
 
 interface VipOrder {
