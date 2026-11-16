@@ -1,4 +1,3 @@
-import { DISH_STARTERS } from '../../config/options';
 import { openExpenseWith } from '../../utils/expense-link';
 import type {
   Dish,
@@ -13,7 +12,12 @@ import { peekHousehold } from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
-import { DISH_TAG_OPTIONS, LENGTHS, dishTagLabel } from '../../config/options';
+import {
+  DISH_STARTERS,
+  DISH_TAG_OPTIONS,
+  LENGTHS,
+  dishTagLabel,
+} from '../../config/options';
 import { daysBetween, todayKey } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
 

@@ -22,19 +22,17 @@ import { goalView, type GoalRow } from '../../utils/goal';
 import { chooseBillImport } from '../../services/bills';
 import { needsReload } from '../../services/snapshot';
 import { createLoader } from '../../services/page-load';
-import { todayKey } from '../../utils/date';
+import { DAY_MS, daysBetween, todayKey } from '../../utils/date';
 import { formatYuan } from '../../utils/money';
 import { applyTheme, themeData } from '../../services/theme';
 import { togetherView, type TogetherRow } from '../../utils/together';
 import { LENGTHS, REACTIONS, REACTION_PHRASES } from '../../config/options';
 import { errorMessage } from '../../services/cloud';
-import { daysBetween } from '../../utils/date';
 
 const loader = createLoader();
 // 最近一次读到的本月账目和动态，「TA 最近」要两份合起来排。
 let records_: Expense[] = [];
 let activity_: ActivityItem[] = [];
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function partnerName(household: Household): string {
   return (

@@ -82,9 +82,6 @@ export const REACTION_PHRASES: Record<Reaction, string> = {
   great: '夸你好棒喵',
   love: '想和你贴贴',
 };
-export function reactionLabel(reaction: Reaction | undefined): string {
-  return REACTIONS.find((item) => item.value === reaction)?.label || '';
-}
 
 /** 待办的重复周期。 */
 export const TODO_REPEATS: Array<{ value: TodoRepeat; label: string }> = [

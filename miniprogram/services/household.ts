@@ -1,6 +1,7 @@
 import type { Household } from '../models';
 import { callApi } from './cloud';
 import { clearSnapshots, readSnapshot, saveSnapshot } from './snapshot';
+import { DAY_MS } from '../utils/date';
 
 // undefined = 还没读取过；null = 已确认未加入小家。
 let cached: Household | null | undefined;
@@ -14,6 +15,12 @@ function remember(household: Household | null): Household | null {
   cachedAt = Date.now();
   if (household) saveSnapshot('household', household);
   return household;
+}
+
+/** 会员还剩几天（不足一天算一天），没有会员为 0。退出小家、注销账号时写明会作废或留给对方的天数。 */
+export function vipDaysLeft(household: Household): number {
+  if (!household.vip?.active) return 0;
+  return Math.max(1, Math.ceil((household.vip.until - Date.now()) / DAY_MS));
 }
 
 /** 不读云端，立即返回手头的小家信息（冷启动时是上次存在本机的），用来先把页面画出来。 */

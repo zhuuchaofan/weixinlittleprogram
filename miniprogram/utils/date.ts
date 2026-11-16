@@ -1,5 +1,6 @@
 // 统一按中国时区（UTC+8），避免手机时区不同造成日期错位。
 const OFFSET_MS = 8 * 60 * 60 * 1000;
+export const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function formatDateTime(value: string): string {
   const time = Date.parse(value);

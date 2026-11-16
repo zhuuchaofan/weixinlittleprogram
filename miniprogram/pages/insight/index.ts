@@ -7,9 +7,14 @@ import { getInsight, writeSummary } from '../../services/insight';
 import { ApiError, errorMessage } from '../../services/cloud';
 import { createLoader } from '../../services/page-load';
 import { categoryLook } from '../../config/options';
-import { monthLabel, shiftMonth, shortDate, todayKey } from '../../utils/date';
+import {
+  formatTimestamp,
+  monthLabel,
+  shiftMonth,
+  shortDate,
+  todayKey,
+} from '../../utils/date';
 import { formatYuan } from '../../utils/money';
-import { formatTimestamp } from '../../utils/date';
 import { applyTheme, themeData } from '../../services/theme';
 
 /** 对比月叫什么：上个月，或者「8月」。 */

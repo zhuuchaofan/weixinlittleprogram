@@ -1,18 +1,13 @@
-import type { Household } from '../../models';
-import { deleteAccount, getHousehold } from '../../services/household';
+import {
+  deleteAccount,
+  getHousehold,
+  vipDaysLeft,
+} from '../../services/household';
 import { errorMessage } from '../../services/cloud';
 import { exportAllText } from '../../services/export';
 import { withLoading } from '../../services/page-load';
 import { applyTheme, themeData } from '../../services/theme';
 import { confirmAction } from '../../utils/confirm';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** 会员还剩几天（不足一天算一天），没有会员为 0。 */
-function vipDays(household: Household): number {
-  if (!household.vip?.active) return 0;
-  return Math.max(1, Math.ceil((household.vip.until - Date.now()) / DAY_MS));
-}
 
 /**
  * 注销账号（规则见 docs/PLAN.md「注销账号」）：
@@ -52,7 +47,7 @@ Page({
         partner:
           household?.members.find((member) => !member.isMe)?.name ||
           (household && household.members.length > 1 ? '对方' : ''),
-        vipDays: household ? vipDays(household) : 0,
+        vipDays: household ? vipDaysLeft(household) : 0,
       });
     });
   },
