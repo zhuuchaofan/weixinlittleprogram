@@ -9,6 +9,8 @@ const { vip: VIP, ai: QUOTAS } = require('../cloudfunctions/api/contract.json');
 
 // 限时免费期间所有小家都算会员；这里测的是免费 / 会员各自的行为，所以先关掉。
 process.env.VIP_FREE_UNTIL = 'off';
+// 限时活动价同理：下面大多数测试按原价测，活动价单独在文件最后测。
+process.env.VIP_PROMO_UNTIL = 'off';
 
 const NOW = Date.parse('2026-10-25T04:00:00Z');
 const DAY = 24 * 60 * 60 * 1000;
@@ -216,7 +218,19 @@ test('vip.get：套餐来自契约，未开通时 active 为 false', async () =>
   assert.equal(result.ok, true);
   assert.equal(result.data.active, false);
   assert.equal(result.data.available, true);
-  assert.deepEqual(result.data.plans, VIP.plans);
+  // 没有活动时按原价卖，用原价道具
+  assert.deepEqual(
+    result.data.plans,
+    VIP.plans.map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      days: plan.days,
+      price: plan.price,
+      listPrice: plan.price,
+      productId: plan.id,
+    })),
+  );
+  assert.equal(result.data.promo, null);
   // 会员页照着列每项 AI 功能的次数；1.6.0 读的两个字段留着
   assert.deepEqual(
     result.data.quotas.map((row) => [row.id, row.free, row.vip]),
@@ -630,4 +644,120 @@ test('限时免费：到日期那天的最后一刻所有小家都算会员，�
     if (saved === undefined) delete process.env.VIP_FREE_UNTIL;
     else process.env.VIP_FREE_UNTIL = saved;
   }
+});
+
+/** 临时打开限时活动价（日期可以指定），测完恢复。 */
+async function withPromo(until, run) {
+  const saved = process.env.VIP_PROMO_UNTIL;
+  try {
+    if (until === undefined) delete process.env.VIP_PROMO_UNTIL;
+    else process.env.VIP_PROMO_UNTIL = until;
+    await run();
+  } finally {
+    if (saved === undefined) delete process.env.VIP_PROMO_UNTIL;
+    else process.env.VIP_PROMO_UNTIL = saved;
+  }
+}
+
+test('限时活动价：截止日期来自契约，到那天最后一刻为止，环境变量能改日期或关掉', async () => {
+  const { promoUntilOf, planNow } = require('../cloudfunctions/api/vip');
+  await withPromo(undefined, () => {
+    const end = Date.parse(`${VIP.promo.until}T23:59:59.999+08:00`);
+    assert.equal(promoUntilOf(), end);
+    const month = VIP.plans[0];
+    assert.deepEqual(planNow(month, end - 1), {
+      id: month.id,
+      name: month.name,
+      days: month.days,
+      price: month.promo.price,
+      listPrice: month.price,
+      productId: month.promo.productId,
+    });
+    // 过了截止时间自动恢复原价、原价道具
+    assert.equal(planNow(month, end + 1).price, month.price);
+    assert.equal(planNow(month, end + 1).productId, month.id);
+  });
+  await withPromo('2027-01-15', () => {
+    assert.equal(promoUntilOf(), Date.parse('2027-01-15T23:59:59.999+08:00'));
+  });
+  await withPromo('off', () => assert.equal(promoUntilOf(), 0));
+});
+
+test('限时活动价：活动价比原价便宜，活动道具 ID 和原价道具不同', () => {
+  for (const plan of VIP.plans) {
+    assert.ok(plan.promo, `${plan.id} 没有活动价`);
+    assert.ok(plan.promo.price > 0 && plan.promo.price < plan.price);
+    assert.notEqual(plan.promo.productId, plan.id);
+  }
+});
+
+test('限时活动价：vip.get 给出活动价、原价和截止时间', async () => {
+  await withPromo('2026-12-31', async () => {
+    const { route } = await setup();
+    const data = (await route({ action: 'vip.get' }, 'oA')).data;
+    assert.deepEqual(data.promo, {
+      until: Date.parse('2026-12-31T23:59:59.999+08:00'),
+      tag: VIP.promo.tag,
+    });
+    for (const [i, plan] of VIP.plans.entries()) {
+      assert.equal(data.plans[i].price, plan.promo.price);
+      assert.equal(data.plans[i].listPrice, plan.price);
+    }
+  });
+});
+
+test('限时活动价：下单用活动道具和活动价，付款后照常开通原套餐天数', async () => {
+  await withPromo('2026-12-31', async () => {
+    const ctx = await setup();
+    const plan = VIP.plans.find((item) => item.id === 'vip_year');
+    const { result, order } = await buy(ctx, 'vip_year');
+    const signData = JSON.parse(result.signData);
+    assert.equal(signData.productId, plan.promo.productId);
+    assert.equal(signData.goodsPrice, plan.promo.price);
+    assert.equal(order.productId, plan.promo.productId);
+    assert.equal(order.plan, plan.id);
+    assert.equal(order.price, plan.promo.price);
+    assert.equal(order.days, plan.days);
+    // 微信那边按活动价收的钱
+    pay(ctx, order);
+    const reply = await ctx.route.deliver(deliverEvent(order));
+    assert.deepEqual(reply, { ErrCode: 0, ErrMsg: 'Success' });
+    assert.equal((await vipOf(ctx)).until, NOW + plan.days * DAY);
+  });
+});
+
+test('限时活动价：查单金额和活动价对不上就不开通', async () => {
+  await withPromo('2026-12-31', async () => {
+    const ctx = await setup();
+    const { order } = await buy(ctx, 'vip_month');
+    pay(ctx, order, { order_fee: 1 });
+    assert.equal((await ctx.route.deliver(deliverEvent(order))).ErrCode, 1);
+    assert.equal((await vipOf(ctx)).active, false);
+  });
+});
+
+test('限时活动价：活动价订单退款按实际付的钱算比例', async () => {
+  await withPromo('2026-12-31', async () => {
+    const ctx = await setup();
+    const plan = VIP.plans.find((item) => item.id === 'vip_year');
+    const order = await boughtAndRefunded(
+      ctx,
+      'vip_year',
+      plan.promo.price / 2,
+    );
+    await ctx.route.refund(refundEvent(order));
+    assert.equal((await vipOf(ctx)).until, NOW + (plan.days * DAY) / 2);
+  });
+});
+
+test('限时活动价：活动前下的原价订单，活动期间到账照样按原价对账开通', async () => {
+  const ctx = await setup();
+  const { order } = await buy(ctx, 'vip_month');
+  assert.equal(order.productId, 'vip_month');
+  await withPromo('2026-12-31', async () => {
+    pay(ctx, order);
+    const reply = await ctx.route.deliver(deliverEvent(order));
+    assert.deepEqual(reply, { ErrCode: 0, ErrMsg: 'Success' });
+    assert.equal((await vipOf(ctx)).active, true);
+  });
 });

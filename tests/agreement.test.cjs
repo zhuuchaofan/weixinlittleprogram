@@ -27,6 +27,14 @@ test('协议里的套餐价格和天数与契约一致', () => {
     );
 });
 
+test('协议里的限时活动价与契约一致', () => {
+  for (const plan of vip.plans)
+    assert.ok(
+      doc.includes(`${plan.name} ${plan.promo.price / 100} 元`),
+      `协议里找不到 ${plan.name}的活动价 ${plan.promo.price / 100} 元`,
+    );
+});
+
 test('协议写明不退款，没有留口子的措辞', () => {
   assert.ok(doc.includes('不支持退款'));
   assert.ok(!doc.includes('一般不支持'));

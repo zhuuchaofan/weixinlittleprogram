@@ -43,7 +43,17 @@ Page({
     aiNames: AI_NAMES,
     untilText: '',
     freeText: '',
-    plans: [] as { id: string; name: string; days: number; price: string }[],
+    plans: [] as {
+      id: string;
+      name: string;
+      days: number;
+      price: string;
+      /** 原价（划线显示）；不在活动价时为空 */
+      listPrice: string;
+    }[],
+    // 限时活动：角标文字和截止日期；没有活动为空。
+    promoTag: '',
+    promoText: '',
     // 购买须知里的「月度会员 31 天，年度会员 366 天」。
     plansText: '',
     // 选中的套餐：一页只有一个「开通 / 续费」按钮。
@@ -65,7 +75,12 @@ Page({
     const plans = info.plans.map((plan) => ({
       ...plan,
       price: formatYuan(plan.price),
+      listPrice:
+        plan.listPrice && plan.listPrice > plan.price
+          ? formatYuan(plan.listPrice)
+          : '',
     }));
+    const promo = info.promo && plans.some((plan) => plan.listPrice);
     // 默认选第一个套餐；刷新后保留之前的选择。
     const selected =
       plans.find((plan) => plan.id === this.data.selected) || plans[0];
@@ -73,6 +88,8 @@ Page({
       info,
       untilText: info.until ? todayKey(info.until) : '',
       freeText: info.free ? todayKey(info.free) : '',
+      promoTag: promo ? info.promo?.tag || '限时' : '',
+      promoText: promo && info.promo ? todayKey(info.promo.until) : '',
       plans,
       plansText: plans.map((plan) => `${plan.name} ${plan.days} 天`).join('，'),
       selected: selected?.id || '',
