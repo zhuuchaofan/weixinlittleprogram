@@ -1,0 +1,1 @@
+/* 样式都在 app.wxss 的 .status、.status-paws（组件开了 virtualHost，没有外层节点）。 */

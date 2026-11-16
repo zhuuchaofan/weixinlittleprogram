@@ -8,7 +8,7 @@
   </view>
 
   <view wx:if="{{error}}" class="notice error">{{error}}<button class="text-button" bindtap="load">再试一次</button></view>
-  <view wx:if="{{loading && !ready}}" class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>正在读取…</view>
+  <loading-paws wx:if="{{loading && !ready}}" theme-id="{{themeId}}" />
 
   <block wx:if="{{ready}}">
     <view class="hero grad-card">

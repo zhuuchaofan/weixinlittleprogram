@@ -1,0 +1,1 @@
+<view class="status"><view class="status-paws" aria-hidden="true"><image class="status-paws-img" src="/images/themes/{{themeId}}/paw-trail.svg" /></view>{{text}}</view>
