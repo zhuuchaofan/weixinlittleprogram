@@ -1,3 +1,4 @@
+require('./fetch-polyfill');
 const cloudbase = require('@cloudbase/js-sdk');
 const { createRouter } = require('./router');
 const {
