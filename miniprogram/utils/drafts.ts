@@ -21,6 +21,7 @@ const STATUS_TEXT: Record<BillStatus, string> = {
   imported: '已导入过',
   possible: '可能已记过',
   partner: '你们俩之间的转账，默认不记',
+  repeat: '和这次识别的另一笔是同一笔（截图有重叠），只勾了那一笔',
   new: '',
 };
 
@@ -30,7 +31,7 @@ function statusText(status: BillStatus | undefined): string {
   return STATUS_TEXT[status] ?? STATUS_TEXT.possible;
 }
 
-/** 只有新的默认勾选；已导入过、可能已记过、两人互转、读不全的默认不勾。 */
+/** 只有新的默认勾选；已导入过、可能已记过、两人互转、截图间重复、读不全的默认不勾。 */
 function defaultSelected(item: BillItem): boolean {
   if (item.problem) return false;
   return item.status === 'new';
