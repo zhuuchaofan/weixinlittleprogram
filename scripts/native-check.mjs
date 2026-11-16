@@ -14,13 +14,14 @@ function walk(dir, ext) {
   );
 }
 mkdirSync('artifacts', { recursive: true });
-for (const [name, ext] of [
-  ['wcc', '.wxml'],
-  ['wcsc', '.wxss'],
+// wcc 要连 .wxs 一起给，不然 <wxs src="…"> 会报 not found。
+for (const [name, exts] of [
+  ['wcc', ['.wxml', '.wxs']],
+  ['wcsc', ['.wxss']],
 ]) {
-  const files = walk('miniprogram', ext).map((p) =>
-    p.replace('miniprogram/', './'),
-  );
+  const files = exts
+    .flatMap((ext) => walk('miniprogram', ext))
+    .map((p) => p.replace('miniprogram/', './'));
   const result = spawnSync(
     `${toolsPath}/${name}.exe`,
     [...files, '-o', resolve(`artifacts/${name}-compiled.js`)],
