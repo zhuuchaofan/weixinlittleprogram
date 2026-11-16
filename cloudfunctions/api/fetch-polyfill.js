@@ -5,6 +5,7 @@ if (typeof globalThis.fetch !== 'function') {
   const nodeFetch = require('node-fetch');
   globalThis.fetch = nodeFetch;
   for (const name of ['Headers', 'Request', 'Response']) {
-    if (typeof globalThis[name] !== 'function') globalThis[name] = nodeFetch[name];
+    if (typeof globalThis[name] !== 'function')
+      globalThis[name] = nodeFetch[name];
   }
 }
