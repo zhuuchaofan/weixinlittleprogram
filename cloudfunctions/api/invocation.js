@@ -6,8 +6,9 @@ function invocationFromContext(context, parseContext, fallbackEnv = '') {
     return {
       openid:
         typeof environment.WX_OPENID === 'string' ? environment.WX_OPENID : '',
+      // 控制台测试、定时触发器的调用不带 TCB_ENV（空串也算没带），用备用值。
       envId:
-        typeof environment.TCB_ENV === 'string'
+        typeof environment.TCB_ENV === 'string' && environment.TCB_ENV
           ? environment.TCB_ENV
           : fallbackEnv,
     };
