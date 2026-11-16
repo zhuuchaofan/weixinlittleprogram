@@ -2,6 +2,7 @@
  * 截图记账、账单文件导入的查重：金额相同才算重复；src.key 一致 → 已导入过；
  * 另一种方式导入过的同一笔（同日、同一分钟、同金额、同收支）→ 也算已导入过；
  * 日期相差不超过 1 天 → 可能已记过，优先对上同一天且商户与备注相似的那条。一条已有账目只能对上一笔。
+ * 同一批截图里互相重复的（几张截图拍到同一笔，模型两次读出的商户或时间略有出入）→ 只留第一笔，其余标 repeat。
  */
 const { SETTLEMENT } = require('./ledger');
 const { DAY_MS, keyToMs, str } = require('./bill-parse');
@@ -66,16 +67,39 @@ function isPartnerTransfer(item, household) {
 }
 
 /**
- * 给每一笔打上 status：imported / possible / partner / new，
+ * 同一批截图里的两笔是不是同一笔账（几张截图有重叠时同一行会被读两次）。
+ * 账单文件有交易单号，不用猜；截图上要同一天、同金额、同收支，再看：
+ * - 两笔都读出了时刻：时刻一致才算（同一分钟同金额，商户读得略有出入也算）；时刻不同就是两笔，不误杀。
+ * - 有一笔没读出时刻（截图边缘被切掉）：商户相似才算。
+ */
+function sameShot(a, b) {
+  if (a.src?.ref || b.src?.ref) return false;
+  if (!a.amount || !a.date || a.amount !== b.amount) return false;
+  if (a.date !== b.date || a.flow !== b.flow) return false;
+  if (a.time && b.time) return a.time === b.time;
+  return similar(a.merchant, b.merchant);
+}
+
+/**
+ * 给每一笔打上 status：imported / possible / partner / repeat / new，
  * 撞上的已有账目放在 match。同一批里 key 相同的（连续截图的重叠部分）只留一笔。
  */
 function matchItems(items, records, household) {
   const seen = new Set();
-  const unique = items.filter((item) => {
+  const keyed = items.filter((item) => {
     if (seen.has(item.key)) return false;
     seen.add(item.key);
     return true;
   });
+  // key 不同但其实是同一笔的（商户或时刻读得不一样）：留第一笔去查重，其余默认不勾、写明原因，
+  // 也不参与和已有账目配对，免得一条已有账目被重复的那笔占掉。
+  const kept = [];
+  const repeats = new Set();
+  for (const item of keyed) {
+    if (kept.some((other) => sameShot(other, item))) repeats.add(item);
+    else kept.push(item);
+  }
+  const unique = kept;
   const candidates = records.filter((record) => record.cat !== SETTLEMENT);
   const used = new Set();
   const roleOf = (openid) =>
@@ -152,12 +176,19 @@ function matchItems(items, records, household) {
     if (near.has(index) || !free(record)) continue;
     near.set(index, take(record));
   }
-  return second.map((item, index) => {
+  const done = second.map((item, index) => {
     if (item.status) return item;
     if (near.has(index))
       return { ...item, status: 'possible', match: near.get(index) };
     return { ...item, status: 'new', match: null };
   });
+  // 按原来的顺序放回去，重复的那笔紧跟在原位置。
+  let next = 0;
+  return keyed.map((item) =>
+    repeats.has(item)
+      ? { ...item, status: 'repeat', match: null }
+      : done[next++],
+  );
 }
 
 /**
@@ -188,4 +219,4 @@ function rememberCategories(items, records) {
   });
 }
 
-module.exports = { similar, matchItems, rememberCategories };
+module.exports = { similar, sameShot, matchItems, rememberCategories };

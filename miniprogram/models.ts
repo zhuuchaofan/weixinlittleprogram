@@ -138,7 +138,7 @@ export interface FileSkipped {
   broken: number;
 }
 
-export type BillStatus = 'imported' | 'possible' | 'partner' | 'new';
+export type BillStatus = 'imported' | 'possible' | 'partner' | 'repeat' | 'new';
 
 /** 截图识别或账单文件读出的一笔，确认页可以改 amount、note、cat、date、flow。 */
 export interface BillItem {

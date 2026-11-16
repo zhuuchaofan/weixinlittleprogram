@@ -6,7 +6,11 @@ const {
   parseBillDate,
   parseReply,
 } = require('../cloudfunctions/api/bill-parse');
-const { similar, matchItems } = require('../cloudfunctions/api/bill-match');
+const {
+  similar,
+  sameShot,
+  matchItems,
+} = require('../cloudfunctions/api/bill-match');
 const { createVision } = require('../cloudfunctions/api/vision');
 const { createAi } = require('../cloudfunctions/api/ai');
 
@@ -1278,5 +1282,67 @@ test('支付宝账单：整条链路——查重、和小家成员的转账不�
       })
     ).code,
     'VALIDATION',
+  );
+});
+
+test('同一批截图：重叠拍到的同一笔只勾一笔，其余标 repeat 且不占已有账目', () => {
+  const household = { members: [{ openid: 'A', role: 'a', name: '球球' }] };
+  const item = (key, time, merchant, amount = 2350) => ({
+    key,
+    date: '2026-11-15',
+    time,
+    merchant,
+    amount,
+    flow: 'out',
+    kind: '消费',
+    src: {},
+  });
+  const items = [
+    item('k1', '12:30', '美团外卖'),
+    item('k2', '18:02', '罗森便利店', 1200),
+    // 第二张截图又拍到了午饭：商户读成了别的写法
+    item('k3', '12:30', '美团'),
+    // 同一天同金额但时刻不同：真的是两笔
+    item('k4', '19:45', '美团外卖'),
+    // 时刻没读出来、商户相似：和晚上那笔罗森是同一笔
+    item('k5', '', '罗森便利店（徐汇店）', 1200),
+  ];
+  const records = [
+    { _id: 'r1', date: '2026-11-15', amount: 1200, note: '罗森', by: 'A' },
+  ];
+  const result = matchItems(items, records, household);
+  assert.deepEqual(
+    result.map((one) => [one.key, one.status]),
+    [
+      ['k1', 'new'],
+      ['k2', 'possible'],
+      ['k3', 'repeat'],
+      ['k4', 'new'],
+      ['k5', 'repeat'],
+    ],
+  );
+  assert.equal(result[1].match.id, 'r1');
+  assert.equal(result[2].match, null);
+});
+
+test('同一批截图去重的判定：时刻不同、商户不像、收支不同、账单文件都不算重复', () => {
+  const base = {
+    date: '2026-11-15',
+    time: '12:30',
+    merchant: '美团外卖',
+    amount: 2350,
+    flow: 'out',
+    src: {},
+  };
+  assert.equal(sameShot(base, { ...base, merchant: '饿了么' }), true);
+  assert.equal(sameShot(base, { ...base, time: '12:31' }), false);
+  assert.equal(sameShot(base, { ...base, amount: 2360 }), false);
+  assert.equal(sameShot(base, { ...base, date: '2026-11-14' }), false);
+  assert.equal(sameShot(base, { ...base, flow: 'in' }), false);
+  assert.equal(sameShot(base, { ...base, time: '', merchant: '美团' }), true);
+  assert.equal(sameShot(base, { ...base, time: '', merchant: '滴滴' }), false);
+  assert.equal(
+    sameShot({ ...base, src: { ref: 'a' } }, { ...base, src: { ref: 'b' } }),
+    false,
   );
 });
